@@ -336,7 +336,7 @@
       "Verify customer cannot download original document",
       "Take screenshot of insurance status view"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

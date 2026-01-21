@@ -365,9 +365,31 @@ export default function ProfilePage() {
             {/* Current Status */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-500 mb-2">Document Status</label>
-              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getInsuranceStatusDisplay().bgColor} ${getInsuranceStatusDisplay().color}`}>
-                {getInsuranceStatusDisplay().label}
-              </span>
+              <div className="flex flex-wrap items-center gap-4">
+                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getInsuranceStatusDisplay().bgColor} ${getInsuranceStatusDisplay().color}`}>
+                  {getInsuranceStatusDisplay().label}
+                </span>
+                {profile?.insurance_status !== 'not_uploaded' && profile?.updated_at && (
+                  <span className="text-sm text-gray-500">
+                    Uploaded: {new Date(profile.updated_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                )}
+              </div>
+              {profile?.insurance_expiration_date && (
+                <p className="text-sm text-gray-600 mt-2">
+                  <span className="font-medium">Policy Expiration:</span> {new Date(profile.insurance_expiration_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              )}
               {profile?.insurance_status === 'pending' && (
                 <p className="text-sm text-gray-500 mt-2">
                   Your document is being reviewed. Verification typically takes up to 48 hours.
