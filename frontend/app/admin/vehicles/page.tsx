@@ -40,6 +40,43 @@ interface VehicleFormData {
   show_on_fleet_page: boolean;
 }
 
+interface ConditionReport {
+  id: number;
+  vehicle_id: number;
+  report_type: string;
+  overall_condition: string;
+  mileage: number;
+  exterior_notes: string | null;
+  interior_notes: string | null;
+  mechanical_notes: string | null;
+  damage_notes: string | null;
+  damage_details: Record<string, string> | null;
+  photo_keys: string[] | null;
+  fuel_level: number | null;
+  tire_condition: string | null;
+  created_by_id: string;
+  created_by_email: string;
+  lease_id: number | null;
+  incident_report_id: number | null;
+  admin_notes: string | null;
+  report_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ConditionReportFormData {
+  report_type: string;
+  overall_condition: string;
+  mileage: number | string;
+  exterior_notes: string;
+  interior_notes: string;
+  mechanical_notes: string;
+  damage_notes: string;
+  fuel_level: number | string;
+  tire_condition: string;
+  admin_notes: string;
+}
+
 type VehicleStatusFilter = 'all' | 'available' | 'leased' | 'maintenance' | 'unavailable' | 'pending_inspection';
 
 const statusColors: Record<string, { bg: string; text: string }> = {
@@ -74,6 +111,36 @@ const initialFormData: VehicleFormData = {
   show_on_fleet_page: true,
 };
 
+const initialConditionReportFormData: ConditionReportFormData = {
+  report_type: 'periodic',
+  overall_condition: 'good',
+  mileage: '',
+  exterior_notes: '',
+  interior_notes: '',
+  mechanical_notes: '',
+  damage_notes: '',
+  fuel_level: '',
+  tire_condition: '',
+  admin_notes: '',
+};
+
+const reportTypeOptions = [
+  { value: 'pre_lease', label: 'Pre-Lease Inspection' },
+  { value: 'post_lease', label: 'Post-Lease Return' },
+  { value: 'periodic', label: 'Periodic Inspection' },
+  { value: 'incident', label: 'Post-Incident' },
+  { value: 'maintenance', label: 'Maintenance Check' },
+  { value: 'acquisition', label: 'Acquisition Inspection' },
+];
+
+const overallConditionOptions = [
+  { value: 'excellent', label: 'Excellent', color: 'text-green-600' },
+  { value: 'good', label: 'Good', color: 'text-blue-600' },
+  { value: 'fair', label: 'Fair', color: 'text-yellow-600' },
+  { value: 'poor', label: 'Poor', color: 'text-orange-600' },
+  { value: 'needs_repair', label: 'Needs Repair', color: 'text-red-600' },
+];
+
 export default function AdminVehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,11 +151,17 @@ export default function AdminVehiclesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showConditionReportModal, setShowConditionReportModal] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<VehicleFormData>(initialFormData);
+  const [conditionReportFormData, setConditionReportFormData] = useState<ConditionReportFormData>(initialConditionReportFormData);
   const [submitting, setSubmitting] = useState(false);
+
+  // Condition reports state
+  const [conditionReports, setConditionReports] = useState<ConditionReport[]>([]);
+  const [loadingReports, setLoadingReports] = useState(false);
 
   const getAuthToken = () => {
     if (typeof window !== 'undefined') {
@@ -127,6 +200,100 @@ export default function AdminVehiclesPage() {
     fetchVehicles();
   }, [statusFilter]);
 
+  const fetchConditionReports = async (vehicleId: number) => {
+    try {
+      setLoadingReports(true);
+      const response = await fetch(
+        `http://localhost:8100/api/admin/vehicles/${vehicleId}/condition-reports`,
+        {
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch condition reports');
+      }
+
+      const data = await response.json();
+      setConditionReports(data);
+    } catch (err) {
+      console.error('Failed to fetch condition reports:', err);
+      setConditionReports([]);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const handleConditionReportInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'number') {
+      setConditionReportFormData(prev => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
+    } else {
+      setConditionReportFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleCreateConditionReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVehicle) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8100/api/admin/vehicles/${selectedVehicle.id}/condition-reports`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            vehicle_id: selectedVehicle.id,
+            ...conditionReportFormData,
+            mileage: conditionReportFormData.mileage === '' ? selectedVehicle.mileage || 0 : conditionReportFormData.mileage,
+            fuel_level: conditionReportFormData.fuel_level === '' ? null : conditionReportFormData.fuel_level,
+            exterior_notes: conditionReportFormData.exterior_notes || null,
+            interior_notes: conditionReportFormData.interior_notes || null,
+            mechanical_notes: conditionReportFormData.mechanical_notes || null,
+            damage_notes: conditionReportFormData.damage_notes || null,
+            admin_notes: conditionReportFormData.admin_notes || null,
+            tire_condition: conditionReportFormData.tire_condition || null,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to create condition report');
+      }
+
+      setShowConditionReportModal(false);
+      setConditionReportFormData(initialConditionReportFormData);
+      // Refresh the condition reports list
+      await fetchConditionReports(selectedVehicle.id);
+      // Also refresh vehicles list to update the vehicle condition
+      fetchVehicles();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create condition report');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openConditionReportModal = () => {
+    if (selectedVehicle) {
+      setConditionReportFormData({
+        ...initialConditionReportFormData,
+        mileage: selectedVehicle.mileage || '',
+      });
+      setShowConditionReportModal(true);
+    }
+  };
+
   const openAddModal = () => {
     setFormData(initialFormData);
     setShowAddModal(true);
@@ -156,6 +323,8 @@ export default function AdminVehiclesPage() {
   const openDetailModal = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
     setShowDetailModal(true);
+    // Fetch condition reports for this vehicle
+    fetchConditionReports(vehicle.id);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -882,11 +1051,63 @@ export default function AdminVehiclesPage() {
                   </p>
                 </div>
               )}
+
+              {/* Condition Reports Section */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-gray-700">Condition Reports</h4>
+                  <button
+                    onClick={openConditionReportModal}
+                    className="px-3 py-1 bg-gold-600 text-white text-xs rounded-md hover:bg-gold-700 flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Report
+                  </button>
+                </div>
+
+                {loadingReports ? (
+                  <p className="text-sm text-gray-500 text-center py-2">Loading reports...</p>
+                ) : conditionReports.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-2">No condition reports yet.</p>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {conditionReports.map((report) => (
+                      <div key={report.id} className="p-2 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-600">
+                            {reportTypeOptions.find(r => r.value === report.report_type)?.label || report.report_type}
+                          </span>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            conditionColors[report.overall_condition]?.bg || 'bg-gray-100'
+                          } ${conditionColors[report.overall_condition]?.text || 'text-gray-700'}`}>
+                            {report.overall_condition.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-gray-500">
+                            {report.mileage.toLocaleString()} mi
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(report.report_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {(report.damage_notes || report.exterior_notes) && (
+                          <p className="text-xs text-gray-600 mt-1 truncate">
+                            {report.damage_notes || report.exterior_notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3">
               <button
-                onClick={() => { setShowDetailModal(false); setSelectedVehicle(null); }}
+                onClick={() => { setShowDetailModal(false); setSelectedVehicle(null); setConditionReports([]); }}
                 className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
               >
                 Close
@@ -901,6 +1122,180 @@ export default function AdminVehiclesPage() {
                 Edit Vehicle
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Condition Report Modal */}
+      {showConditionReportModal && selectedVehicle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-luxury-charcoal">New Condition Report</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                  </p>
+                </div>
+                <button onClick={() => setShowConditionReportModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateConditionReport} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Report Type <span className="text-red-500">*</span></label>
+                  <select
+                    name="report_type"
+                    value={conditionReportFormData.report_type}
+                    onChange={handleConditionReportInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                  >
+                    {reportTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Overall Condition <span className="text-red-500">*</span></label>
+                  <select
+                    name="overall_condition"
+                    value={conditionReportFormData.overall_condition}
+                    onChange={handleConditionReportInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                  >
+                    {overallConditionOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mileage <span className="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    name="mileage"
+                    value={conditionReportFormData.mileage}
+                    onChange={handleConditionReportInputChange}
+                    required
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="Current mileage"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Level (%)</label>
+                  <input
+                    type="number"
+                    name="fuel_level"
+                    value={conditionReportFormData.fuel_level}
+                    onChange={handleConditionReportInputChange}
+                    min="0"
+                    max="100"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="0-100"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tire Condition</label>
+                  <input
+                    type="text"
+                    name="tire_condition"
+                    value={conditionReportFormData.tire_condition}
+                    onChange={handleConditionReportInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="e.g., Good tread, front left needs replacement"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Exterior Notes</label>
+                  <textarea
+                    name="exterior_notes"
+                    value={conditionReportFormData.exterior_notes}
+                    onChange={handleConditionReportInputChange}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="Body condition, paint, windows, lights..."
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Interior Notes</label>
+                  <textarea
+                    name="interior_notes"
+                    value={conditionReportFormData.interior_notes}
+                    onChange={handleConditionReportInputChange}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="Seats, dashboard, electronics, cleanliness..."
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mechanical Notes</label>
+                  <textarea
+                    name="mechanical_notes"
+                    value={conditionReportFormData.mechanical_notes}
+                    onChange={handleConditionReportInputChange}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="Engine, brakes, transmission, warning lights..."
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Damage Notes</label>
+                  <textarea
+                    name="damage_notes"
+                    value={conditionReportFormData.damage_notes}
+                    onChange={handleConditionReportInputChange}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="Any damage observed (scratches, dents, etc.)..."
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Admin Notes</label>
+                  <textarea
+                    name="admin_notes"
+                    value={conditionReportFormData.admin_notes}
+                    onChange={handleConditionReportInputChange}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    placeholder="Internal notes (not shown to customers)..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowConditionReportModal(false)}
+                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 py-2 px-4 bg-gold-600 text-white rounded-lg hover:bg-gold-700 font-medium disabled:opacity-50"
+                >
+                  {submitting ? 'Creating...' : 'Create Report'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

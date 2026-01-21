@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     S3_BUCKET_PAYMENTS: str = "fx-weekly-lease-payments"
     S3_BUCKET_INSURANCE: str = "fx-weekly-lease-insurance"
     S3_BUCKET_INCIDENTS: str = "fx-weekly-lease-incidents"
+    S3_BUCKET_CONDITION_REPORTS: str = "fx-weekly-lease-condition-reports"
     S3_SIGNED_URL_TTL_SECONDS: int = 300
 
     # Vault

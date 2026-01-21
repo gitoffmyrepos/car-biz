@@ -76,6 +76,7 @@ class StorageService:
             settings.S3_BUCKET_INSURANCE,
             settings.S3_BUCKET_PAYMENTS,
             settings.S3_BUCKET_INCIDENTS,
+            settings.S3_BUCKET_CONDITION_REPORTS,
         ]:
             bucket_path = self._local_storage_path / bucket
             bucket_path.mkdir(parents=True, exist_ok=True)

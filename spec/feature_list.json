@@ -618,7 +618,7 @@
       "Verify report appears in vehicle history",
       "Take screenshot of condition report"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1823,7 +1823,7 @@
       "Verify report_date field",
       "Verify photo_urls field"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

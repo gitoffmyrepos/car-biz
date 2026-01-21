@@ -10,7 +10,7 @@ from typing import Any, Optional
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, status, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1234,4 +1234,438 @@ async def delete_vehicle(
         "vehicle_id": vehicle.id,
         "deleted_by": user.email,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# =============================================================================
+# Vehicle Condition Reports
+# =============================================================================
+
+from app.models.vehicle_condition_report import (
+    VehicleConditionReport,
+    ConditionReportType,
+    OverallCondition,
+)
+
+
+class ConditionReportCreateRequest(BaseModel):
+    """Request to create a vehicle condition report."""
+    vehicle_id: int
+    report_type: str  # pre_lease, post_lease, periodic, incident, maintenance, acquisition
+    overall_condition: str  # excellent, good, fair, poor, needs_repair
+    mileage: int
+    exterior_notes: Optional[str] = None
+    interior_notes: Optional[str] = None
+    mechanical_notes: Optional[str] = None
+    damage_notes: Optional[str] = None
+    damage_details: Optional[dict] = None
+    fuel_level: Optional[int] = None
+    tire_condition: Optional[str] = None
+    lease_id: Optional[int] = None
+    incident_report_id: Optional[int] = None
+    admin_notes: Optional[str] = None
+
+
+class ConditionReportResponse(BaseModel):
+    """Vehicle condition report response for API."""
+    id: int
+    vehicle_id: int
+    report_type: str
+    overall_condition: str
+    mileage: int
+    exterior_notes: Optional[str]
+    interior_notes: Optional[str]
+    mechanical_notes: Optional[str]
+    damage_notes: Optional[str]
+    damage_details: Optional[dict]
+    photo_keys: Optional[list]
+    fuel_level: Optional[int]
+    tire_condition: Optional[str]
+    created_by_id: str
+    created_by_email: str
+    lease_id: Optional[int]
+    incident_report_id: Optional[int]
+    admin_notes: Optional[str]
+    report_date: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/vehicles/{vehicle_id}/condition-reports", response_model=list[ConditionReportResponse])
+async def list_vehicle_condition_reports(
+    vehicle_id: int,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+    report_type: Optional[str] = Query(None, description="Filter by report type"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List condition reports for a specific vehicle.
+
+    Requires admin or ops role.
+    Reports are returned in reverse chronological order.
+    """
+    # Verify vehicle exists
+    vehicle_result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = vehicle_result.scalar_one_or_none()
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    query = (
+        select(VehicleConditionReport)
+        .where(VehicleConditionReport.vehicle_id == vehicle_id)
+        .order_by(VehicleConditionReport.report_date.desc())
+    )
+
+    if report_type:
+        try:
+            type_enum = ConditionReportType(report_type)
+            query = query.where(VehicleConditionReport.report_type == type_enum)
+        except ValueError:
+            valid_types = [t.value for t in ConditionReportType]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid report_type. Must be one of: {', '.join(valid_types)}"
+            )
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    reports = result.scalars().all()
+
+    return [
+        ConditionReportResponse(
+            id=r.id,
+            vehicle_id=r.vehicle_id,
+            report_type=r.report_type.value,
+            overall_condition=r.overall_condition.value,
+            mileage=r.mileage,
+            exterior_notes=r.exterior_notes,
+            interior_notes=r.interior_notes,
+            mechanical_notes=r.mechanical_notes,
+            damage_notes=r.damage_notes,
+            damage_details=r.damage_details,
+            photo_keys=r.photo_keys,
+            fuel_level=r.fuel_level,
+            tire_condition=r.tire_condition,
+            created_by_id=r.created_by_id,
+            created_by_email=r.created_by_email,
+            lease_id=r.lease_id,
+            incident_report_id=r.incident_report_id,
+            admin_notes=r.admin_notes,
+            report_date=r.report_date,
+            created_at=r.created_at,
+            updated_at=r.updated_at,
+        )
+        for r in reports
+    ]
+
+
+@router.post("/vehicles/{vehicle_id}/condition-reports", response_model=ConditionReportResponse, status_code=status.HTTP_201_CREATED)
+async def create_condition_report(
+    vehicle_id: int,
+    request: ConditionReportCreateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Create a new condition report for a vehicle.
+
+    Requires admin role.
+    Photos can be uploaded separately after creating the report.
+    """
+    # Verify vehicle exists
+    vehicle_result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = vehicle_result.scalar_one_or_none()
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    # Validate report_type
+    try:
+        report_type_enum = ConditionReportType(request.report_type)
+    except ValueError:
+        valid_types = [t.value for t in ConditionReportType]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid report_type. Must be one of: {', '.join(valid_types)}"
+        )
+
+    # Validate overall_condition
+    try:
+        condition_enum = OverallCondition(request.overall_condition)
+    except ValueError:
+        valid_conditions = [c.value for c in OverallCondition]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid overall_condition. Must be one of: {', '.join(valid_conditions)}"
+        )
+
+    # Create condition report
+    report = VehicleConditionReport(
+        vehicle_id=vehicle_id,
+        report_type=report_type_enum,
+        overall_condition=condition_enum,
+        mileage=request.mileage,
+        exterior_notes=request.exterior_notes,
+        interior_notes=request.interior_notes,
+        mechanical_notes=request.mechanical_notes,
+        damage_notes=request.damage_notes,
+        damage_details=request.damage_details or {},
+        fuel_level=request.fuel_level,
+        tire_condition=request.tire_condition,
+        created_by_id=user.sub,
+        created_by_email=user.email,
+        lease_id=request.lease_id,
+        incident_report_id=request.incident_report_id,
+        admin_notes=request.admin_notes,
+    )
+
+    session.add(report)
+    await session.flush()
+    await session.refresh(report)
+
+    # Update vehicle mileage if this report has higher mileage
+    if vehicle.mileage is None or request.mileage > vehicle.mileage:
+        vehicle.mileage = request.mileage
+        vehicle.updated_at = datetime.now(timezone.utc)
+
+    # Update vehicle condition based on report
+    # Map OverallCondition to VehicleCondition
+    condition_mapping = {
+        OverallCondition.EXCELLENT: VehicleCondition.EXCELLENT,
+        OverallCondition.GOOD: VehicleCondition.GOOD,
+        OverallCondition.FAIR: VehicleCondition.FAIR,
+        OverallCondition.POOR: VehicleCondition.NEEDS_REPAIR,
+        OverallCondition.NEEDS_REPAIR: VehicleCondition.NEEDS_REPAIR,
+    }
+    if condition_enum in condition_mapping:
+        vehicle.condition = condition_mapping[condition_enum]
+        vehicle.updated_at = datetime.now(timezone.utc)
+
+    logger.info(f"Admin {user.email} created condition report {report.id} for vehicle {vehicle_id}")
+
+    return ConditionReportResponse(
+        id=report.id,
+        vehicle_id=report.vehicle_id,
+        report_type=report.report_type.value,
+        overall_condition=report.overall_condition.value,
+        mileage=report.mileage,
+        exterior_notes=report.exterior_notes,
+        interior_notes=report.interior_notes,
+        mechanical_notes=report.mechanical_notes,
+        damage_notes=report.damage_notes,
+        damage_details=report.damage_details,
+        photo_keys=report.photo_keys or [],
+        fuel_level=report.fuel_level,
+        tire_condition=report.tire_condition,
+        created_by_id=report.created_by_id,
+        created_by_email=report.created_by_email,
+        lease_id=report.lease_id,
+        incident_report_id=report.incident_report_id,
+        admin_notes=report.admin_notes,
+        report_date=report.report_date,
+        created_at=report.created_at,
+        updated_at=report.updated_at,
+    )
+
+
+@router.get("/condition-reports/{report_id}", response_model=ConditionReportResponse)
+async def get_condition_report(
+    report_id: int,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific condition report by ID.
+
+    Requires admin or ops role.
+    """
+    result = await session.execute(
+        select(VehicleConditionReport).where(VehicleConditionReport.id == report_id)
+    )
+    report = result.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Condition report not found"
+        )
+
+    return ConditionReportResponse(
+        id=report.id,
+        vehicle_id=report.vehicle_id,
+        report_type=report.report_type.value,
+        overall_condition=report.overall_condition.value,
+        mileage=report.mileage,
+        exterior_notes=report.exterior_notes,
+        interior_notes=report.interior_notes,
+        mechanical_notes=report.mechanical_notes,
+        damage_notes=report.damage_notes,
+        damage_details=report.damage_details,
+        photo_keys=report.photo_keys or [],
+        fuel_level=report.fuel_level,
+        tire_condition=report.tire_condition,
+        created_by_id=report.created_by_id,
+        created_by_email=report.created_by_email,
+        lease_id=report.lease_id,
+        incident_report_id=report.incident_report_id,
+        admin_notes=report.admin_notes,
+        report_date=report.report_date,
+        created_at=report.created_at,
+        updated_at=report.updated_at,
+    )
+
+
+@router.post("/condition-reports/{report_id}/photos")
+async def upload_condition_report_photo(
+    report_id: int,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Upload a photo for a condition report.
+
+    Requires admin role.
+    - Validates file type (images only)
+    - Validates file size (max 10MB)
+    - Stores file in MinIO/local storage
+    - Updates condition report with photo key
+    """
+    # Verify report exists
+    result = await session.execute(
+        select(VehicleConditionReport).where(VehicleConditionReport.id == report_id)
+    )
+    report = result.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Condition report not found"
+        )
+
+    # Read file content
+    file_content = await file.read()
+    original_filename = file.filename or "condition_photo"
+
+    # Allowed image types for condition photos
+    allowed_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }
+
+    # Validate file
+    is_valid, error_message, mime_type = storage_service.validate_file(
+        file_content, original_filename, allowed_types=allowed_types
+    )
+
+    if not is_valid or mime_type is None:
+        raise HTTPException(status_code=400, detail=error_message or "Invalid file type")
+
+    # Generate storage key
+    storage_key = storage_service.generate_storage_key(
+        user_id=f"vehicle_{report.vehicle_id}",
+        document_type=f"condition_report_{report_id}",
+        original_filename=original_filename,
+        mime_type=mime_type,
+    )
+
+    # Upload file
+    upload_success = await storage_service.upload_file(
+        file_content=file_content,
+        bucket=settings.S3_BUCKET_CONDITION_REPORTS,
+        key=storage_key,
+        content_type=mime_type,
+    )
+
+    if not upload_success:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload file to storage"
+        )
+
+    # Add photo key to report
+    current_photos = report.photo_keys or []
+    current_photos.append(storage_key)
+    report.photo_keys = current_photos
+    report.updated_at = datetime.now(timezone.utc)
+
+    await session.flush()
+    await session.refresh(report)
+
+    logger.info(f"Admin {user.email} uploaded photo for condition report {report_id}")
+
+    return {
+        "success": True,
+        "message": "Photo uploaded successfully",
+        "report_id": report_id,
+        "photo_key": storage_key,
+        "photo_count": len(current_photos),
+        "photo_url": storage_service.generate_signed_url(
+            bucket=settings.S3_BUCKET_CONDITION_REPORTS,
+            key=storage_key,
+            expires_in=300,
+        ),
+    }
+
+
+@router.get("/condition-reports/{report_id}/photos/{photo_index}")
+async def get_condition_report_photo_url(
+    report_id: int,
+    photo_index: int,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get signed URL for a condition report photo.
+
+    Requires admin or ops role.
+    Returns a time-limited signed URL for viewing the photo.
+    """
+    result = await session.execute(
+        select(VehicleConditionReport).where(VehicleConditionReport.id == report_id)
+    )
+    report = result.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Condition report not found"
+        )
+
+    if not report.photo_keys or photo_index >= len(report.photo_keys):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Photo not found"
+        )
+
+    photo_key = report.photo_keys[photo_index]
+
+    # Generate signed URL (valid for 5 minutes)
+    signed_url = storage_service.generate_signed_url(
+        bucket=settings.S3_BUCKET_CONDITION_REPORTS,
+        key=photo_key,
+        expires_in=300,
+    )
+
+    return {
+        "report_id": report_id,
+        "photo_index": photo_index,
+        "photo_url": signed_url,
+        "expires_in_seconds": 300,
     }

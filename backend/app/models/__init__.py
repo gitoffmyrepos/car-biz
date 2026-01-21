@@ -44,6 +44,11 @@ from app.models.vehicle import (
     VehicleStatus,
     VehicleCondition,
 )
+from app.models.vehicle_condition_report import (
+    VehicleConditionReport,
+    ConditionReportType,
+    OverallCondition,
+)
 
 __all__ = [
     "Inquiry",
@@ -72,4 +77,7 @@ __all__ = [
     "Vehicle",
     "VehicleStatus",
     "VehicleCondition",
+    "VehicleConditionReport",
+    "ConditionReportType",
+    "OverallCondition",
 ]

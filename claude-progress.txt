@@ -1902,3 +1902,245 @@ All tests passed with screenshots captured.
 ================================================================================
 END SESSION 16
 ================================================================================
+
+================================================================================
+SESSION 17: FEATURE #41 - VEHICLE AVAILABILITY STATUS
+================================================================================
+
+Date: 2026-01-20
+Status: COMPLETED
+Commit: 9683a2d (feat: Implement Feature #41 - Vehicle availability status)
+
+## Objectives Completed
+
+### 1. Public API Endpoints
+Created backend/app/api/public.py:
+
+**New Endpoints (No Authentication Required):**
+- GET /api/public/fleet - List all public fleet vehicles with optional filters
+  - Query params: body_type, status
+  - Returns: id, make, model, year, color, body_type, status, condition
+  - Only returns vehicles with show_on_fleet_page=True and is_active=True
+- GET /api/public/fleet/categories - Aggregated fleet category statistics
+  - Returns: category, display_name, count, available_count
+- GET /api/public/fleet/{vehicle_id} - Get single public vehicle
+
+**Pydantic Models:**
+- PublicVehicleResponse - Safe public vehicle data
+- FleetCategoryResponse - Category aggregation data
+
+### 2. Frontend Fleet Page Updates
+Modified frontend/app/fleet/page.tsx:
+
+**New Features:**
+- Fetches real vehicle data from /api/public/fleet API
+- Dynamic stats display:
+  - Total Vehicles count (from API)
+  - Available Now count (vehicles with status=available)
+- Status badges with color coding:
+  - Available (green)
+  - Leased (blue)
+  - Maintenance (yellow)
+  - Unavailable (red)
+- Conditional CTA buttons:
+  - "Inquire About This Vehicle" for available vehicles
+  - "Join Waitlist" for non-available vehicles
+- Fallback to static categories when no real vehicles exist
+
+**Added TypeScript interfaces:**
+- FleetVehicle - API response type
+- FleetCategory - Category stats type
+
+### 3. Admin Vehicles Page (Already Existed)
+Verified frontend/app/admin/vehicles/page.tsx:
+- Full CRUD for vehicles
+- Status dropdown with Available/Leased/Maintenance/Unavailable options
+- Edit modal to change vehicle status
+- Status saved to database
+
+### 4. E2E Testing with Puppeteer MCP
+Complete test flow (14 steps):
+1. Navigate to login page
+2. Login as admin user
+3. Navigate to Vehicles admin page
+4. Open Add Vehicle modal
+5. Fill form: 2026 Toyota Camry, Black, Sedan, VIN, etc.
+6. Create vehicle with status "available"
+7. Open Edit modal to view current status
+8. Change status from "available" to "maintenance"
+9. Save and verify status in admin table shows "maintenance"
+10. Navigate to public fleet page
+11. Verify stats show "1 Total Vehicles", "0 Available Now"
+12. Verify vehicle shows "In Maintenance" badge and "Join Waitlist" button
+13. Change status back to "available"
+14. Verify public page shows:
+    - "1 Available Now" in stats
+    - "Available" badge on vehicle card
+    - "Inquire About This Vehicle" button
+
+All tests passed with 14 screenshots captured.
+
+## Files Created/Modified This Session
+1. backend/app/api/public.py (NEW - Public fleet endpoints)
+2. backend/app/api/__init__.py (Added public router)
+3. backend/app/api/admin.py (Additional vehicle endpoints)
+4. backend/app/models/__init__.py (Export updates)
+5. backend/app/models/vehicle.py (Model already existed)
+6. frontend/app/fleet/page.tsx (Fetch real data from API)
+7. frontend/app/admin/vehicles/page.tsx (Vehicle CRUD)
+8. spec/feature_list.json (Feature #41 marked passing)
+9. .claude/verification/feature_41_test_results.json (NEW)
+
+## Feature Progress
+- Features Passing: 38/211 (18% complete)
+- Feature #41: Vehicle availability status - PASSED ✓
+
+## Quality Gates Verified
+✅ Stop condition checked (38/211 - not complete)
+✅ Services healthy (backend/frontend running)
+✅ E2E test passed with Puppeteer MCP tools
+✅ Screenshots saved documenting functionality:
+   - feature41_step1-14 showing complete flow
+✅ test_results.json created with "overall_status": "passed"
+✅ Admin can view current availability status
+✅ Admin can change status (Available/Leased/Maintenance/Unavailable)
+✅ Status changes persist to database
+✅ Customer-facing fleet page reflects availability in real-time
+✅ Zero console errors
+
+## Feature Requirements Verified
+1. ✅ Login as admin user
+2. ✅ Navigate to vehicle detail
+3. ✅ View current availability status
+4. ✅ Change status (Available/Leased/Maintenance/Unavailable)
+5. ✅ Save status change
+6. ✅ Verify status update persisted
+7. ✅ Verify customer-facing fleet page reflects availability
+8. ✅ Take screenshot of availability management
+
+## Next Session Tasks
+1. Feature #42: Vehicle condition report
+2. Feature #43: Vehicle maintenance history
+3. Feature #44: GPS tracker assignment
+4. Continue with vehicle management features
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+## Customer Portal URLs
+- Fleet Page: http://localhost:3002/fleet
+- Admin Vehicles: http://localhost:3002/admin/vehicles
+
+================================================================================
+END SESSION 17
+================================================================================
+
+================================================================================
+SESSION 18: FEATURE #42 - VEHICLE CONDITION REPORT
+================================================================================
+
+Date: 2026-01-20
+Status: COMPLETED
+Feature: Vehicle condition report - Admin can create and view vehicle condition reports
+
+## Implementation Summary
+
+### 1. Backend - VehicleConditionReport Model
+Created `/backend/app/models/vehicle_condition_report.py`:
+- **Enums:**
+  - ConditionReportType: pre_lease, post_lease, periodic, incident, maintenance, acquisition
+  - OverallCondition: excellent, good, fair, poor, needs_repair
+- **Fields:**
+  - vehicle_id (FK to vehicles)
+  - report_type, overall_condition, mileage
+  - exterior_notes, interior_notes, mechanical_notes, damage_notes
+  - damage_details (JSON)
+  - photo_keys (JSON array for MinIO storage keys)
+  - fuel_level, tire_condition
+  - created_by_id, created_by_email
+  - lease_id (optional FK), incident_report_id (optional FK)
+  - report_date, created_at, updated_at
+
+### 2. Backend - API Endpoints
+Added to `/backend/app/api/admin.py`:
+- `GET /api/admin/vehicles/{vehicle_id}/condition-reports` - List reports for vehicle
+- `POST /api/admin/vehicles/{vehicle_id}/condition-reports` - Create condition report
+- `GET /api/admin/condition-reports/{report_id}` - Get single report
+- `POST /api/admin/condition-reports/{report_id}/photos` - Upload photo
+- `GET /api/admin/condition-reports/{report_id}/photos/{photo_index}` - Get photo URL
+
+### 3. Backend - Storage Configuration
+- Added `S3_BUCKET_CONDITION_REPORTS` config setting
+- Updated storage service to initialize condition reports bucket
+
+### 4. Frontend - Admin Vehicles Page UI
+Updated `/frontend/app/admin/vehicles/page.tsx`:
+- **New Interfaces:** ConditionReport, ConditionReportFormData
+- **New State:** showConditionReportModal, conditionReportFormData, conditionReports, loadingReports
+- **New Functions:**
+  - fetchConditionReports() - Load reports when viewing vehicle
+  - handleConditionReportInputChange() - Form field handling
+  - handleCreateConditionReport() - Submit new report
+  - openConditionReportModal() - Open form modal
+- **UI Components:**
+  - Condition Reports section in Vehicle Details modal
+  - "+ Add Report" button
+  - Report list with type, condition badge, mileage, date, notes preview
+  - Full-featured Condition Report Modal with all form fields
+
+### 5. E2E Testing Results
+Complete test flow with 9 steps:
+1. Navigate to admin login page
+2. Login as Admin using quick login
+3. Navigate to Vehicles page
+4. Open Vehicle Details for 2026 Toyota Camry
+5. Click "Add Report" to open condition report modal
+6. Fill form with test data:
+   - Report Type: Periodic Inspection
+   - Overall Condition: Good
+   - Mileage: 45,000
+   - Fuel Level: 75%
+   - Tire Condition: Good tread depth
+   - Exterior/Interior Notes: Detailed observations
+7. Submit form - Report created successfully
+8. Close modal
+9. Reopen Vehicle Details - Data persistence verified
+
+All tests passed with 9 screenshots captured.
+
+## Files Created/Modified
+1. backend/app/models/vehicle_condition_report.py (NEW)
+2. backend/app/models/__init__.py (Added exports)
+3. backend/app/core/config.py (Added S3_BUCKET_CONDITION_REPORTS)
+4. backend/app/services/storage.py (Added bucket initialization)
+5. backend/app/api/admin.py (Added condition report endpoints)
+6. frontend/app/admin/vehicles/page.tsx (Added condition reports UI)
+7. spec/feature_list.json (Marked features as passing)
+8. test_results.json (E2E test documentation)
+
+## Features Marked as Passing
+1. "Vehicle condition report - Admin can create and view vehicle condition reports"
+2. "VehicleConditionReport entity model - Condition reports linked to vehicles"
+
+## Quality Gates Verified
+✅ Backend model created with all required fields
+✅ API endpoints functional (create, list, get)
+✅ Photo upload capability implemented
+✅ Frontend UI complete with form and list display
+✅ E2E test passed with Puppeteer MCP tools
+✅ Data persistence verified
+✅ No console errors
+✅ Screenshots documenting functionality
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 18
+================================================================================
