@@ -21,7 +21,8 @@ from app.core.database import get_db
 from app.models.customer_profile import CustomerProfile, InsuranceStatus
 from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus, VehiclePreference
 from app.models.lease import Lease, LeaseStatus
-from app.models.notification import Notification
+from app.models.notification import Notification, NotificationType, NotificationPriority
+from app.services.email import email_service
 from app.models.incident_report import IncidentReport, IncidentType, IncidentSeverity, IncidentStatus
 from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.services.storage import storage_service
@@ -1596,6 +1597,8 @@ class PaymentProofUploadResponse(BaseModel):
     invoice_number: str
     status: str
     proof_uploaded_at: Optional[datetime]
+    is_duplicate_flagged: bool = False
+    duplicate_warning: Optional[str] = None
 
 
 @router.get("/invoices", response_model=InvoiceListResponse)
@@ -1844,6 +1847,31 @@ async def upload_payment_proof(
     file_hash = storage_service.compute_file_hash(file_content)
     logger.info(f"Payment proof hash for invoice {invoice.invoice_number}: {file_hash[:16]}...")
 
+    # Check for duplicate payment proof (potential fraud detection)
+    duplicate_invoice = None
+    is_duplicate = False
+    duplicate_warning = None
+
+    existing_with_hash = await db.execute(
+        select(WeeklyInvoice).where(
+            WeeklyInvoice.payment_proof_hash == file_hash,
+            WeeklyInvoice.id != invoice_id  # Exclude current invoice
+        ).limit(1)  # Only need to find one duplicate
+    )
+    duplicate_invoice = existing_with_hash.scalar_one_or_none()
+
+    if duplicate_invoice:
+        is_duplicate = True
+        duplicate_warning = (
+            f"Warning: This payment proof appears to match a previously uploaded screenshot "
+            f"(Invoice #{duplicate_invoice.invoice_number}). This has been flagged for review."
+        )
+        logger.warning(
+            f"Potential duplicate payment proof detected! "
+            f"Invoice {invoice.invoice_number} matches hash from Invoice {duplicate_invoice.invoice_number}. "
+            f"User: {user.email}"
+        )
+
     # Generate storage key
     storage_key = storage_service.generate_storage_key(
         user_id=user.sub,
@@ -1881,20 +1909,76 @@ async def upload_payment_proof(
     invoice.status = InvoiceStatus.VERIFICATION_IN_PROGRESS
     invoice.rejection_reason = None  # Clear any previous rejection reason
 
+    # Set duplicate detection flags if duplicate found
+    if is_duplicate and duplicate_invoice:
+        invoice.is_duplicate_flagged = True
+        invoice.duplicate_of_invoice_id = duplicate_invoice.id
+        invoice.duplicate_flagged_at = datetime.now(timezone.utc)
+    else:
+        invoice.is_duplicate_flagged = False
+        invoice.duplicate_of_invoice_id = None
+        invoice.duplicate_flagged_at = None
+
     await db.flush()
     await db.refresh(invoice)
 
     logger.info(
         f"Payment proof uploaded for invoice {invoice.invoice_number} by {user.email}"
+        f"{' (FLAGGED AS DUPLICATE)' if is_duplicate else ''}"
     )
+
+    # Send verification pending email (48-hour verification notice)
+    try:
+        await email_service.send_payment_verification_pending(
+            to_email=profile.email,
+            customer_name=profile.full_name or "Valued Customer",
+            invoice_number=invoice.invoice_number,
+            amount=float(invoice.total_amount),
+            uploaded_at=invoice.payment_proof_uploaded_at.strftime("%Y-%m-%d %H:%M UTC") if invoice.payment_proof_uploaded_at else datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        )
+        logger.info(f"Payment verification pending email sent to {profile.email} for invoice {invoice.invoice_number}")
+    except Exception as e:
+        # Log error but don't fail the upload - email is non-critical
+        logger.error(f"Failed to send payment verification email for invoice {invoice.invoice_number}: {e}")
+
+    # Create in-app notification for payment proof received
+    try:
+        notification = Notification(
+            customer_profile_id=profile.id,
+            notification_type=NotificationType.PAYMENT_RECEIVED,
+            title="Payment Proof Received",
+            message=f"Your payment proof for Invoice #{invoice.invoice_number} (${invoice.total_amount:.2f}) has been received. "
+                    f"Verification typically takes up to 48 hours. We'll notify you once verified.",
+            priority=NotificationPriority.NORMAL,
+            related_entity_type="invoice",
+            related_entity_id=invoice.id,
+            action_url=f"/dashboard/invoices/{invoice.id}",
+            action_label="View Invoice",
+        )
+        db.add(notification)
+        await db.flush()
+        logger.info(f"In-app notification created for payment proof upload - invoice {invoice.invoice_number}")
+    except Exception as e:
+        # Log error but don't fail the upload - notification is non-critical
+        logger.error(f"Failed to create notification for invoice {invoice.invoice_number}: {e}")
+
+    # Build response message
+    response_message = "Payment proof uploaded successfully. Verification in progress (48 hours)."
+    if is_duplicate:
+        response_message = (
+            "Payment proof uploaded but has been FLAGGED for review. "
+            "This screenshot appears to match a previous upload. Our team will verify manually."
+        )
 
     return PaymentProofUploadResponse(
         success=True,
-        message="Payment proof uploaded successfully. Verification in progress (48 hours).",
+        message=response_message,
         invoice_id=invoice.id,
         invoice_number=invoice.invoice_number,
         status=invoice.status.value,
         proof_uploaded_at=invoice.payment_proof_uploaded_at,
+        is_duplicate_flagged=is_duplicate,
+        duplicate_warning=duplicate_warning,
     )
 
 

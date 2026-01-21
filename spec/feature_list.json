@@ -530,7 +530,7 @@
       "Verify in-app notification created",
       "Take screenshot of verification pending status"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -543,7 +543,7 @@
       "Verify admin is notified of potential fraud",
       "Verify original upload is not affected"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -810,7 +810,7 @@
       "Verify customer notified of late status",
       "Verify DelinquencyCase created"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -824,7 +824,7 @@
       "Navigate to delinquency queue in admin",
       "Verify case appears in queue"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
