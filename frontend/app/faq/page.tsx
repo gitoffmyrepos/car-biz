@@ -1,0 +1,391 @@
+'use client';
+
+import Link from 'next/link';
+import { useState } from 'react';
+
+interface FAQItem {
+  question: string;
+  answer: string;
+  category: string;
+}
+
+const faqItems: FAQItem[] = [
+  // Getting Started
+  {
+    category: 'Getting Started',
+    question: 'How do I apply for a weekly lease?',
+    answer: 'Getting started is easy! Simply fill out our online inquiry form on the Contact page. Our team will review your application and contact you within 24-48 hours to discuss your options and guide you through the next steps.'
+  },
+  {
+    category: 'Getting Started',
+    question: 'What are the basic requirements to lease a vehicle?',
+    answer: 'To qualify for our weekly lease program, you must be at least 21 years old, have a valid driver\'s license with at least 2 years of driving experience, provide proof of full coverage insurance, and have a clean driving record (no major violations or DUI in the past 3 years).'
+  },
+  {
+    category: 'Getting Started',
+    question: 'Is there a credit check required?',
+    answer: 'No, we do not require a credit check! Our approval process is based on your driving history, insurance coverage, and identity verification. This makes our service accessible to more drivers who may have difficulty with traditional financing.'
+  },
+  {
+    category: 'Getting Started',
+    question: 'How long does the approval process take?',
+    answer: 'Our verification process typically takes 48 hours from when you submit all required documentation. Once approved, you can pick up your vehicle as soon as the same day or the next business day.'
+  },
+
+  // Payments
+  {
+    category: 'Payments',
+    question: 'How much does it cost to lease a vehicle weekly?',
+    answer: 'Our weekly lease rates start at $150/week, depending on the vehicle type and category. This rate includes monthly maintenance service. Contact us to get specific pricing for your desired vehicle category.'
+  },
+  {
+    category: 'Payments',
+    question: 'What payment methods do you accept?',
+    answer: 'We accept payments via Zelle, CashApp, and cash (in-person). Payments are due weekly, and you can upload proof of payment through your customer dashboard for verification.'
+  },
+  {
+    category: 'Payments',
+    question: 'When are payments due?',
+    answer: 'Payments are due on the same day each week based on when you picked up your vehicle. For example, if you pick up your vehicle on a Monday, your weekly payment will be due every Monday.'
+  },
+  {
+    category: 'Payments',
+    question: 'What happens if I miss a payment?',
+    answer: 'If a payment is late, a late fee will be applied on Day 1 past the due date. You will receive escalation notices on Day 2. If payment is not received by Day 3, your lease may be terminated and the vehicle recovered. We strongly encourage you to contact us immediately if you anticipate payment difficulties.'
+  },
+  {
+    category: 'Payments',
+    question: 'Is there a security deposit required?',
+    answer: 'A refundable security deposit may be required depending on the vehicle and your application. The deposit amount will be discussed during the approval process and is fully refundable at the end of your lease term, minus any damages or outstanding fees.'
+  },
+
+  // Insurance
+  {
+    category: 'Insurance',
+    question: 'What type of insurance do I need?',
+    answer: 'You must have full coverage insurance that includes: Bodily Injury Liability ($100K/$300K minimum), Property Damage ($50K minimum), and Comprehensive & Collision coverage. FX Weekly Lease must be listed as an additional insured or lienholder on your policy.'
+  },
+  {
+    category: 'Insurance',
+    question: 'Can you help me find insurance?',
+    answer: 'While we don\'t provide insurance directly, we can recommend insurance providers who offer competitive rates for our customers. Contact our team for referrals to insurance agents familiar with our requirements.'
+  },
+  {
+    category: 'Insurance',
+    question: 'What happens if my insurance lapses?',
+    answer: 'Maintaining valid insurance is mandatory throughout your lease. If your insurance lapses, you must notify us immediately and reinstate coverage within 24 hours. Driving without valid insurance may result in immediate lease termination.'
+  },
+
+  // Vehicles
+  {
+    category: 'Vehicles',
+    question: 'What types of vehicles do you offer?',
+    answer: 'We offer a diverse fleet including Luxury Sedans, Premium SUVs, Sports & Performance vehicles, Compact & Economy cars, Executive Luxury vehicles, and Pickup Trucks. Visit our Fleet page to see all available categories.'
+  },
+  {
+    category: 'Vehicles',
+    question: 'Are the vehicles new or used?',
+    answer: 'Our vehicles are quality pre-owned vehicles that have undergone extensive inspection and reconditioning. Every vehicle is thoroughly inspected, professionally detailed, and maintained to ensure reliability and safety.'
+  },
+  {
+    category: 'Vehicles',
+    question: 'What is included with the vehicle?',
+    answer: 'Each vehicle comes with monthly maintenance service included in your weekly rate, 24/7 support line access, and a quality guarantee. You\'re responsible for fuel and basic upkeep like keeping the vehicle clean.'
+  },
+  {
+    category: 'Vehicles',
+    question: 'Can I switch vehicles during my lease?',
+    answer: 'Yes, vehicle switches may be possible depending on availability and your account standing. Contact our team to discuss switching to a different vehicle category. Additional fees may apply.'
+  },
+
+  // Policies
+  {
+    category: 'Policies',
+    question: 'Do the vehicles have GPS tracking?',
+    answer: 'Yes, all our vehicles are equipped with GPS tracking devices for fleet management and security purposes. This is disclosed in our GPS Disclosure policy and lease agreement. The tracking data is used for vehicle location in case of theft or recovery situations.'
+  },
+  {
+    category: 'Policies',
+    question: 'Can I use the vehicle for rideshare (Uber/Lyft)?',
+    answer: 'Commercial use of our vehicles, including rideshare services, requires prior written approval and may be subject to additional terms and insurance requirements. Contact us to discuss commercial use options.'
+  },
+  {
+    category: 'Policies',
+    question: 'What is your mileage policy?',
+    answer: 'Standard weekly leases include reasonable mileage for personal use. Excessive mileage beyond typical usage may result in additional fees. Contact us for details on mileage limits for your specific vehicle.'
+  },
+  {
+    category: 'Policies',
+    question: 'How do I report an accident or incident?',
+    answer: 'In case of an accident, first ensure everyone\'s safety and call emergency services if needed. Then contact us immediately through our 24/7 support line. You can also submit an incident report with photos through your customer dashboard.'
+  },
+];
+
+// Get unique categories
+const categories = Array.from(new Set(faqItems.map(item => item.category)));
+
+export default function FAQPage() {
+  const [openItems, setOpenItems] = useState<Set<number>>(new Set());
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const toggleItem = (index: number) => {
+    const newOpenItems = new Set(openItems);
+    if (newOpenItems.has(index)) {
+      newOpenItems.delete(index);
+    } else {
+      newOpenItems.add(index);
+    }
+    setOpenItems(newOpenItems);
+  };
+
+  const filteredFAQs = activeCategory
+    ? faqItems.filter(item => item.category === activeCategory)
+    : faqItems;
+
+  return (
+    <main className="min-h-screen">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+        <div className="container-luxury">
+          <div className="flex items-center justify-between h-16 md:h-20">
+            <Link href="/" className="flex items-center space-x-2">
+              <span className="text-2xl font-display font-bold text-luxury-charcoal">
+                FX<span className="text-gradient">Weekly</span>
+              </span>
+            </Link>
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="/how-it-works" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+                How It Works
+              </Link>
+              <Link href="/fleet" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+                Fleet
+              </Link>
+              <Link href="/requirements" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+                Requirements
+              </Link>
+              <Link href="/faq" className="text-luxury-charcoal font-medium transition-colors">
+                FAQ
+              </Link>
+              <Link href="/contact" className="btn btn-primary">
+                Get Started
+              </Link>
+            </div>
+            <button className="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Open menu">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 bg-gradient-luxury overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+        </div>
+        <div className="container-luxury relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="heading-display text-white mb-6">
+              Frequently Asked <span className="text-gradient">Questions</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
+              Find answers to common questions about our weekly vehicle leasing service.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Category Filter */}
+      <section className="bg-white border-b border-gray-100 sticky top-16 md:top-20 z-40">
+        <div className="container-luxury py-4">
+          <div className="flex flex-wrap items-center gap-2 justify-center">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                activeCategory === null
+                  ? 'bg-gold-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              All Questions
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeCategory === category
+                    ? 'bg-gold-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Items */}
+      <section className="section bg-luxury-cream">
+        <div className="container-luxury">
+          <div className="max-w-3xl mx-auto">
+            {activeCategory && (
+              <h2 className="text-2xl font-bold text-luxury-charcoal mb-6 text-center">
+                {activeCategory}
+              </h2>
+            )}
+            <div className="space-y-4">
+              {filteredFAQs.map((item, index) => {
+                const globalIndex = faqItems.indexOf(item);
+                const isOpen = openItems.has(globalIndex);
+
+                return (
+                  <div
+                    key={globalIndex}
+                    className="card overflow-hidden"
+                  >
+                    <button
+                      onClick={() => toggleItem(globalIndex)}
+                      className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      aria-expanded={isOpen}
+                    >
+                      <div className="flex items-start space-x-4 flex-1">
+                        {!activeCategory && (
+                          <span className="px-2 py-1 bg-gold-100 text-gold-700 text-xs font-medium rounded flex-shrink-0">
+                            {item.category}
+                          </span>
+                        )}
+                        <span className="font-medium text-luxury-charcoal pr-4">
+                          {item.question}
+                        </span>
+                      </div>
+                      <svg
+                        className={`w-5 h-5 text-gold-500 transform transition-transform flex-shrink-0 ${
+                          isOpen ? 'rotate-180' : ''
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ${
+                        isOpen ? 'max-h-96' : 'max-h-0'
+                      }`}
+                    >
+                      <div className="px-6 pb-6 text-gray-600 border-t border-gray-100 pt-4">
+                        {!activeCategory && <div className="mb-2"></div>}
+                        {item.answer}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredFAQs.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No questions found in this category.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Still Have Questions */}
+      <section className="section bg-white">
+        <div className="container-luxury">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gold-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="heading-section text-luxury-charcoal mb-4">Still Have Questions?</h2>
+            <p className="text-lg text-muted mb-8">
+              Can&apos;t find what you&apos;re looking for? Our team is here to help.
+              Reach out to us directly and we&apos;ll get back to you as soon as possible.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/contact" className="btn btn-primary px-8 py-4 w-full sm:w-auto">
+                Contact Us
+              </Link>
+              <a href="tel:5551234567" className="btn btn-outline px-8 py-4 w-full sm:w-auto">
+                Call (555) 123-4567
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="section bg-gradient-luxury text-white">
+        <div className="container-luxury text-center">
+          <h2 className="heading-section mb-4">Ready to Get Started?</h2>
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+            Now that you have answers to your questions, take the next step toward driving your dream vehicle.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/contact" className="btn btn-primary text-lg px-8 py-4 w-full sm:w-auto">
+              Start Your Application
+            </Link>
+            <Link href="/fleet" className="btn btn-outline border-white text-white hover:bg-white hover:text-luxury-charcoal text-lg px-8 py-4 w-full sm:w-auto">
+              Browse Our Fleet
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-luxury-charcoal text-white py-12">
+        <div className="container-luxury">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div className="md:col-span-1">
+              <Link href="/" className="text-2xl font-display font-bold">
+                FX<span className="text-gold-500">Weekly</span>
+              </Link>
+              <p className="mt-4 text-gray-400">
+                Premium vehicle leasing with flexible weekly payments.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</Link></li>
+                <li><Link href="/fleet" className="text-gray-400 hover:text-white transition-colors">Our Fleet</Link></li>
+                <li><Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">Requirements</Link></li>
+                <li><Link href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/gps-disclosure" className="text-gray-400 hover:text-white transition-colors">GPS Disclosure</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Contact</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>support@fxweekly.com</li>
+                <li>(555) 123-4567</li>
+              </ul>
+              <Link href="/contact" className="btn btn-primary mt-4 w-full text-center">
+                Contact Us
+              </Link>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
+            <p>&copy; {new Date().getFullYear()} FX Weekly Lease. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
+}

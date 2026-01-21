@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.core.database import init_db
 from app.api import router as api_router
 
 
@@ -23,6 +24,9 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     print(f"Environment: {settings.APP_ENV}")
+    # Initialize database tables
+    await init_db()
+    print("Database tables initialized")
     yield
     # Shutdown
     print(f"Shutting down {settings.APP_NAME}")

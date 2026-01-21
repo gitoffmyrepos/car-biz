@@ -37,7 +37,7 @@
       "Verify responsive grid layout",
       "Take screenshot documenting Fleet Preview page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -50,7 +50,7 @@
       "Verify clear formatting and readability",
       "Take screenshot documenting Requirements page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -64,7 +64,7 @@
       "Verify accordion/toggle functionality works",
       "Take screenshot documenting FAQ page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -79,7 +79,7 @@
       "Verify notes textarea is present",
       "Take screenshot documenting Contact page form"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -91,7 +91,7 @@
       "Verify text is readable and properly formatted",
       "Take screenshot documenting Terms page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -103,7 +103,7 @@
       "Verify contact information for privacy inquiries",
       "Take screenshot documenting Privacy page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -115,7 +115,7 @@
       "Verify customer consent requirements are listed",
       "Take screenshot documenting GPS Disclosure page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -132,7 +132,7 @@
       "Verify success message appears",
       "Take screenshot of submission confirmation"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -144,7 +144,7 @@
       "Verify email subject is appropriate",
       "Verify from address matches RESEND_FROM_EMAIL config"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

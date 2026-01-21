@@ -7,7 +7,12 @@ Main API router that includes all sub-routers.
 
 from fastapi import APIRouter
 
+from app.api.inquiries import router as inquiries_router
+
 router = APIRouter()
+
+# Include sub-routers
+router.include_router(inquiries_router)
 
 
 @router.get("/status", tags=["Status"])
