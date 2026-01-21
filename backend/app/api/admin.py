@@ -30,6 +30,23 @@ from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus
 from app.models.vehicle import Vehicle, VehicleStatus, VehicleCondition
 from app.models.tracker_device import TrackerDevice, TrackerStatus
+from app.models.maintenance_schedule import (
+    MaintenanceSchedule,
+    MaintenanceType,
+    MaintenanceStatus,
+    MaintenancePriority,
+)
+from app.models.delinquency_case import (
+    DelinquencyCase,
+    DelinquencyStatus,
+    EscalationLevel,
+)
+from app.models.incident_report import (
+    IncidentReport,
+    IncidentType,
+    IncidentSeverity,
+    IncidentStatus,
+)
 from app.services.storage import storage_service
 from app.services.audit import audit_service
 from app.services.notification import notification_service
@@ -3618,4 +3635,1979 @@ async def update_invoice_notes(
         "message": "Invoice notes updated",
         "invoice_id": invoice.id,
         "invoice_number": invoice.invoice_number,
+    }
+
+
+# =============================================================================
+# MAINTENANCE SCHEDULING ENDPOINTS
+# =============================================================================
+
+
+class MaintenanceScheduleCreate(BaseModel):
+    """Schema for creating a maintenance schedule."""
+    vehicle_id: int
+    maintenance_type: str
+    title: str
+    description: Optional[str] = None
+    scheduled_date: datetime
+    estimated_duration_hours: Optional[int] = None
+    priority: str = "medium"
+    service_provider: Optional[str] = None
+    service_location: Optional[str] = None
+    estimated_cost: Optional[float] = None
+    notes: Optional[str] = None
+    is_recurring: bool = False
+    recurrence_interval_days: Optional[int] = None
+    requires_vehicle_offline: bool = True
+
+
+class MaintenanceScheduleUpdate(BaseModel):
+    """Schema for updating a maintenance schedule."""
+    maintenance_type: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    scheduled_date: Optional[datetime] = None
+    estimated_duration_hours: Optional[int] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    service_provider: Optional[str] = None
+    service_location: Optional[str] = None
+    estimated_cost: Optional[float] = None
+    actual_cost: Optional[float] = None
+    notes: Optional[str] = None
+    admin_notes: Optional[str] = None
+
+
+class MaintenanceCompleteRequest(BaseModel):
+    """Schema for completing a maintenance schedule."""
+    actual_cost: Optional[float] = None
+    mileage_at_service: Optional[int] = None
+    completion_notes: Optional[str] = None
+
+
+@router.get("/maintenance")
+async def get_maintenance_schedules(
+    filter_status: Optional[str] = Query(None, alias="status"),
+    vehicle_id: Optional[int] = None,
+    maintenance_type: Optional[str] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get all maintenance schedules with optional filtering.
+
+    Requires admin role.
+    """
+    _ = user
+
+    query = select(MaintenanceSchedule).order_by(MaintenanceSchedule.scheduled_date.desc())
+
+    # Apply filters
+    if filter_status:
+        try:
+            status_enum = MaintenanceStatus(filter_status)
+            query = query.where(MaintenanceSchedule.status == status_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status: {filter_status}"
+            )
+
+    if vehicle_id:
+        query = query.where(MaintenanceSchedule.vehicle_id == vehicle_id)
+
+    if maintenance_type:
+        try:
+            type_enum = MaintenanceType(maintenance_type)
+            query = query.where(MaintenanceSchedule.maintenance_type == type_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid maintenance type: {maintenance_type}"
+            )
+
+    if from_date:
+        query = query.where(MaintenanceSchedule.scheduled_date >= from_date)
+
+    if to_date:
+        query = query.where(MaintenanceSchedule.scheduled_date <= to_date)
+
+    # Get total count
+    count_query = select(func.count()).select_from(MaintenanceSchedule)
+    if filter_status:
+        count_query = count_query.where(MaintenanceSchedule.status == MaintenanceStatus(filter_status))
+    if vehicle_id:
+        count_query = count_query.where(MaintenanceSchedule.vehicle_id == vehicle_id)
+
+    total = await session.scalar(count_query) or 0
+
+    # Apply pagination
+    query = query.offset(offset).limit(limit)
+
+    result = await session.execute(query)
+    schedules = result.scalars().all()
+
+    # Get vehicle info for each schedule
+    items = []
+    for schedule in schedules:
+        vehicle = await session.get(Vehicle, schedule.vehicle_id)
+        vehicle_info = f"{vehicle.year} {vehicle.make} {vehicle.model}" if vehicle else "Unknown"
+
+        items.append({
+            "id": schedule.id,
+            "vehicle_id": schedule.vehicle_id,
+            "vehicle_info": vehicle_info,
+            "maintenance_type": schedule.maintenance_type.value,
+            "title": schedule.title,
+            "description": schedule.description,
+            "scheduled_date": schedule.scheduled_date.isoformat() if schedule.scheduled_date else None,
+            "estimated_duration_hours": schedule.estimated_duration_hours,
+            "status": schedule.status.value,
+            "priority": schedule.priority.value,
+            "service_provider": schedule.service_provider,
+            "service_location": schedule.service_location,
+            "estimated_cost": float(schedule.estimated_cost) if schedule.estimated_cost else None,
+            "actual_cost": float(schedule.actual_cost) if schedule.actual_cost else None,
+            "completed_at": schedule.completed_at.isoformat() if schedule.completed_at else None,
+            "completed_by": schedule.completed_by,
+            "created_by": schedule.created_by,
+            "created_at": schedule.created_at.isoformat() if schedule.created_at else None,
+            "is_recurring": schedule.is_recurring,
+            "requires_vehicle_offline": schedule.requires_vehicle_offline,
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/maintenance/types")
+async def get_maintenance_types(
+    _user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Get all available maintenance types, statuses, and priorities.
+
+    Requires admin role.
+    """
+    return {
+        "types": [{"value": t.value, "label": t.value.replace("_", " ").title()} for t in MaintenanceType],
+        "statuses": [{"value": s.value, "label": s.value.replace("_", " ").title()} for s in MaintenanceStatus],
+        "priorities": [{"value": p.value, "label": p.value.title()} for p in MaintenancePriority],
+    }
+
+
+@router.get("/maintenance/{schedule_id}")
+async def get_maintenance_schedule(
+    schedule_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get a single maintenance schedule by ID.
+
+    Requires admin role.
+    """
+    _ = user
+
+    schedule = await session.get(MaintenanceSchedule, schedule_id)
+
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Maintenance schedule not found"
+        )
+
+    vehicle = await session.get(Vehicle, schedule.vehicle_id)
+    vehicle_info = f"{vehicle.year} {vehicle.make} {vehicle.model}" if vehicle else "Unknown"
+
+    return {
+        "id": schedule.id,
+        "vehicle_id": schedule.vehicle_id,
+        "vehicle_info": vehicle_info,
+        "vehicle_vin": vehicle.vin if vehicle else None,
+        "vehicle_license_plate": vehicle.license_plate if vehicle else None,
+        "maintenance_type": schedule.maintenance_type.value,
+        "title": schedule.title,
+        "description": schedule.description,
+        "scheduled_date": schedule.scheduled_date.isoformat() if schedule.scheduled_date else None,
+        "estimated_duration_hours": schedule.estimated_duration_hours,
+        "status": schedule.status.value,
+        "priority": schedule.priority.value,
+        "service_provider": schedule.service_provider,
+        "service_location": schedule.service_location,
+        "estimated_cost": float(schedule.estimated_cost) if schedule.estimated_cost else None,
+        "actual_cost": float(schedule.actual_cost) if schedule.actual_cost else None,
+        "mileage_at_service": schedule.mileage_at_service,
+        "next_service_mileage": schedule.next_service_mileage,
+        "completed_at": schedule.completed_at.isoformat() if schedule.completed_at else None,
+        "completed_by": schedule.completed_by,
+        "completion_notes": schedule.completion_notes,
+        "created_by": schedule.created_by,
+        "assigned_to": schedule.assigned_to,
+        "notes": schedule.notes,
+        "admin_notes": schedule.admin_notes,
+        "is_recurring": schedule.is_recurring,
+        "recurrence_interval_days": schedule.recurrence_interval_days,
+        "requires_vehicle_offline": schedule.requires_vehicle_offline,
+        "created_at": schedule.created_at.isoformat() if schedule.created_at else None,
+        "updated_at": schedule.updated_at.isoformat() if schedule.updated_at else None,
+    }
+
+
+@router.post("/maintenance", status_code=status.HTTP_201_CREATED)
+async def create_maintenance_schedule(
+    data: MaintenanceScheduleCreate,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Create a new maintenance schedule for a vehicle.
+
+    Requires admin role.
+    """
+    # Verify vehicle exists
+    vehicle = await session.get(Vehicle, data.vehicle_id)
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    # Validate maintenance type
+    try:
+        maint_type = MaintenanceType(data.maintenance_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid maintenance type: {data.maintenance_type}. Valid types: {[t.value for t in MaintenanceType]}"
+        )
+
+    # Validate priority
+    try:
+        priority = MaintenancePriority(data.priority)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid priority: {data.priority}. Valid values: {[p.value for p in MaintenancePriority]}"
+        )
+
+    # Create the schedule
+    schedule = MaintenanceSchedule(
+        vehicle_id=data.vehicle_id,
+        maintenance_type=maint_type,
+        title=data.title,
+        description=data.description,
+        scheduled_date=data.scheduled_date,
+        estimated_duration_hours=data.estimated_duration_hours,
+        status=MaintenanceStatus.SCHEDULED,
+        priority=priority,
+        service_provider=data.service_provider,
+        service_location=data.service_location,
+        estimated_cost=Decimal(str(data.estimated_cost)) if data.estimated_cost else None,
+        notes=data.notes,
+        is_recurring=data.is_recurring,
+        recurrence_interval_days=data.recurrence_interval_days,
+        requires_vehicle_offline=data.requires_vehicle_offline,
+        created_by=user.email,
+    )
+
+    session.add(schedule)
+    await session.commit()
+    await session.refresh(schedule)
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.MAINTENANCE_SCHEDULE,
+        target_type="maintenance_schedule",
+        target_id=str(schedule.id),
+        target_description=f"Maintenance '{schedule.title}' for {vehicle.year} {vehicle.make} {vehicle.model}",
+    )
+
+    vehicle_info = f"{vehicle.year} {vehicle.make} {vehicle.model}"
+
+    return {
+        "success": True,
+        "message": "Maintenance schedule created",
+        "schedule_id": schedule.id,
+        "vehicle_info": vehicle_info,
+        "scheduled_date": schedule.scheduled_date.isoformat(),
+        "maintenance_type": schedule.maintenance_type.value,
+        "created_by": schedule.created_by,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.patch("/maintenance/{schedule_id}")
+async def update_maintenance_schedule(
+    schedule_id: int,
+    data: MaintenanceScheduleUpdate,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update a maintenance schedule.
+
+    Requires admin role.
+    """
+    schedule = await session.get(MaintenanceSchedule, schedule_id)
+
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Maintenance schedule not found"
+        )
+
+    # Update fields if provided
+    if data.maintenance_type is not None:
+        try:
+            schedule.maintenance_type = MaintenanceType(data.maintenance_type)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid maintenance type: {data.maintenance_type}"
+            )
+
+    if data.title is not None:
+        schedule.title = data.title
+
+    if data.description is not None:
+        schedule.description = data.description
+
+    if data.scheduled_date is not None:
+        schedule.scheduled_date = data.scheduled_date
+
+    if data.estimated_duration_hours is not None:
+        schedule.estimated_duration_hours = data.estimated_duration_hours
+
+    if data.status is not None:
+        try:
+            schedule.status = MaintenanceStatus(data.status)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status: {data.status}"
+            )
+
+    if data.priority is not None:
+        try:
+            schedule.priority = MaintenancePriority(data.priority)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid priority: {data.priority}"
+            )
+
+    if data.service_provider is not None:
+        schedule.service_provider = data.service_provider
+
+    if data.service_location is not None:
+        schedule.service_location = data.service_location
+
+    if data.estimated_cost is not None:
+        schedule.estimated_cost = Decimal(str(data.estimated_cost))
+
+    if data.actual_cost is not None:
+        schedule.actual_cost = Decimal(str(data.actual_cost))
+
+    if data.notes is not None:
+        schedule.notes = data.notes
+
+    if data.admin_notes is not None:
+        schedule.admin_notes = data.admin_notes
+
+    schedule.updated_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": "Maintenance schedule updated",
+        "schedule_id": schedule.id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/maintenance/{schedule_id}/start")
+async def start_maintenance(
+    schedule_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Mark maintenance as in progress.
+
+    Requires admin role.
+    """
+    schedule = await session.get(MaintenanceSchedule, schedule_id)
+
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Maintenance schedule not found"
+        )
+
+    if schedule.status != MaintenanceStatus.SCHEDULED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot start maintenance with status: {schedule.status.value}"
+        )
+
+    # Update status
+    schedule.mark_in_progress()
+
+    # Optionally update vehicle status
+    if schedule.requires_vehicle_offline:
+        vehicle = await session.get(Vehicle, schedule.vehicle_id)
+        if vehicle:
+            vehicle.status = VehicleStatus.MAINTENANCE
+            vehicle.updated_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.MAINTENANCE_UPDATE,
+        target_type="maintenance_schedule",
+        target_id=str(schedule.id),
+        target_description=f"Started maintenance '{schedule.title}'",
+    )
+
+    return {
+        "success": True,
+        "message": "Maintenance started",
+        "schedule_id": schedule.id,
+        "status": schedule.status.value,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/maintenance/{schedule_id}/complete")
+async def complete_maintenance(
+    schedule_id: int,
+    data: MaintenanceCompleteRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Mark maintenance as completed.
+
+    Requires admin role.
+    """
+    schedule = await session.get(MaintenanceSchedule, schedule_id)
+
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Maintenance schedule not found"
+        )
+
+    if schedule.status not in [MaintenanceStatus.SCHEDULED, MaintenanceStatus.IN_PROGRESS]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot complete maintenance with status: {schedule.status.value}"
+        )
+
+    # Mark as completed
+    schedule.mark_completed(
+        completed_by=user.email,
+        actual_cost=Decimal(str(data.actual_cost)) if data.actual_cost else None,
+        mileage=data.mileage_at_service,
+        notes=data.completion_notes,
+    )
+
+    # Update vehicle status back to available
+    if schedule.requires_vehicle_offline:
+        vehicle = await session.get(Vehicle, schedule.vehicle_id)
+        if vehicle and vehicle.status == VehicleStatus.MAINTENANCE:
+            # Only change if not leased
+            if not vehicle.current_lease_id:
+                vehicle.status = VehicleStatus.AVAILABLE
+            vehicle.updated_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.MAINTENANCE_UPDATE,
+        target_type="maintenance_schedule",
+        target_id=str(schedule.id),
+        target_description=f"Completed maintenance '{schedule.title}'",
+    )
+
+    return {
+        "success": True,
+        "message": "Maintenance completed",
+        "schedule_id": schedule.id,
+        "status": schedule.status.value,
+        "completed_at": schedule.completed_at.isoformat() if schedule.completed_at else None,
+        "completed_by": schedule.completed_by,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/maintenance/{schedule_id}/cancel")
+async def cancel_maintenance(
+    schedule_id: int,
+    reason: Optional[str] = None,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Cancel a maintenance schedule.
+
+    Requires admin role.
+    """
+    schedule = await session.get(MaintenanceSchedule, schedule_id)
+
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Maintenance schedule not found"
+        )
+
+    if schedule.status in [MaintenanceStatus.COMPLETED, MaintenanceStatus.CANCELLED]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot cancel maintenance with status: {schedule.status.value}"
+        )
+
+    # Cancel the schedule
+    schedule.cancel(reason)
+
+    # If vehicle was set to maintenance, revert it
+    if schedule.requires_vehicle_offline:
+        vehicle = await session.get(Vehicle, schedule.vehicle_id)
+        if vehicle and vehicle.status == VehicleStatus.MAINTENANCE:
+            if not vehicle.current_lease_id:
+                vehicle.status = VehicleStatus.AVAILABLE
+            vehicle.updated_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.MAINTENANCE_CANCEL,
+        target_type="maintenance_schedule",
+        target_id=str(schedule.id),
+        target_description=f"Cancelled maintenance '{schedule.title}'",
+    )
+
+    return {
+        "success": True,
+        "message": "Maintenance cancelled",
+        "schedule_id": schedule.id,
+        "status": schedule.status.value,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.delete("/maintenance/{schedule_id}")
+async def delete_maintenance_schedule(
+    schedule_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Delete a maintenance schedule.
+
+    Only allows deletion of scheduled or cancelled maintenance.
+    Requires admin role.
+    """
+    schedule = await session.get(MaintenanceSchedule, schedule_id)
+
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Maintenance schedule not found"
+        )
+
+    if schedule.status not in [MaintenanceStatus.SCHEDULED, MaintenanceStatus.CANCELLED]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete maintenance with status: {schedule.status.value}. Only scheduled or cancelled maintenance can be deleted."
+        )
+
+    schedule_title = schedule.title
+    await session.delete(schedule)
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.MAINTENANCE_DELETE,
+        target_type="maintenance_schedule",
+        target_id=str(schedule_id),
+        target_description=f"Deleted maintenance '{schedule_title}'",
+    )
+
+    return {
+        "success": True,
+        "message": "Maintenance schedule deleted",
+        "schedule_id": schedule_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# ==============================================================================
+# Delinquency Case Management Endpoints
+# ==============================================================================
+
+class DelinquencyCaseCreateRequest(BaseModel):
+    """Schema for creating a delinquency case."""
+    customer_profile_id: int
+    invoice_id: int
+    lease_id: int
+    vehicle_id: Optional[int] = None
+    amount_owed: float
+    notes: Optional[str] = None
+
+
+class DelinquencyCaseUpdateRequest(BaseModel):
+    """Schema for updating a delinquency case."""
+    status: Optional[str] = None
+    escalation_level: Optional[str] = None
+    notes: Optional[str] = None
+    admin_notes: Optional[str] = None
+    assigned_to: Optional[str] = None
+    is_priority: Optional[bool] = None
+
+
+class ContactAttemptRequest(BaseModel):
+    """Schema for recording a contact attempt."""
+    method: str  # phone, email, sms
+    notes: Optional[str] = None
+
+
+class RecoveryAuthorizationRequest(BaseModel):
+    """Schema for authorizing recovery."""
+    notes: Optional[str] = None
+
+
+class TowScheduleRequest(BaseModel):
+    """Schema for scheduling a tow."""
+    scheduled_at: datetime
+    notes: Optional[str] = None
+
+
+class ResolveDelinquencyRequest(BaseModel):
+    """Schema for resolving a delinquency case."""
+    resolution_type: str  # paid, settled, written_off, recovered
+    notes: Optional[str] = None
+
+
+def generate_case_number() -> str:
+    """Generate a unique delinquency case number."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    import random
+    suffix = random.randint(100, 999)
+    return f"DC-{timestamp}-{suffix}"
+
+
+@router.get("/delinquency/types")
+async def get_delinquency_types(
+    _user: AuthenticatedUser = Depends(require_admin),
+) -> dict[str, Any]:
+    """
+    Get delinquency status and escalation level options.
+
+    Requires admin role.
+    """
+    return {
+        "statuses": [
+            {"value": s.value, "label": s.value.replace("_", " ").title()}
+            for s in DelinquencyStatus
+        ],
+        "escalation_levels": [
+            {"value": e.value, "label": e.value.replace("_", " ").upper()}
+            for e in EscalationLevel
+        ],
+    }
+
+
+@router.get("/delinquency")
+async def get_delinquency_cases(
+    filter_status: Optional[str] = Query(None, alias="status"),
+    escalation_level: Optional[str] = None,
+    customer_id: Optional[int] = None,
+    is_priority: Optional[bool] = None,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Get delinquency cases with optional filtering.
+
+    Requires admin role.
+    """
+    query = select(DelinquencyCase).order_by(DelinquencyCase.created_at.desc())
+
+    if filter_status:
+        try:
+            status_enum = DelinquencyStatus(filter_status)
+            query = query.where(DelinquencyCase.status == status_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status: {filter_status}"
+            )
+
+    if escalation_level:
+        try:
+            level_enum = EscalationLevel(escalation_level)
+            query = query.where(DelinquencyCase.escalation_level == level_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid escalation level: {escalation_level}"
+            )
+
+    if customer_id:
+        query = query.where(DelinquencyCase.customer_profile_id == customer_id)
+
+    if is_priority is not None:
+        query = query.where(DelinquencyCase.is_priority == is_priority)
+
+    # Get total count
+    count_query = select(func.count()).select_from(query.subquery())
+    total = await session.scalar(count_query) or 0
+
+    # Apply pagination
+    query = query.offset(offset).limit(limit)
+    result = await session.execute(query)
+    cases = result.scalars().all()
+
+    # Build response with customer and vehicle info
+    items = []
+    for case in cases:
+        # Get customer info
+        customer = await session.get(CustomerProfile, case.customer_profile_id)
+        customer_info = customer.full_name or customer.email if customer else "Unknown"
+        customer_email = customer.email if customer else None
+
+        # Get vehicle info
+        vehicle_info = None
+        if case.vehicle_id:
+            vehicle = await session.get(Vehicle, case.vehicle_id)
+            if vehicle:
+                vehicle_info = f"{vehicle.year} {vehicle.make} {vehicle.model}"
+
+        items.append({
+            "id": case.id,
+            "case_number": case.case_number,
+            "customer_profile_id": case.customer_profile_id,
+            "customer_name": customer_info,
+            "customer_email": customer_email,
+            "invoice_id": case.invoice_id,
+            "lease_id": case.lease_id,
+            "vehicle_id": case.vehicle_id,
+            "vehicle_info": vehicle_info,
+            "status": case.status.value,
+            "escalation_level": case.escalation_level.value,
+            "amount_owed": float(case.amount_owed),
+            "late_fees_accumulated": float(case.late_fees_accumulated),
+            "total_owed": float(case.total_owed),
+            "amount_paid": float(case.amount_paid),
+            "remaining_balance": float(case.remaining_balance),
+            "days_delinquent": case.days_delinquent,
+            "delinquent_since": case.delinquent_since.isoformat(),
+            "contact_attempts": case.contact_attempts,
+            "last_contact_at": case.last_contact_at.isoformat() if case.last_contact_at else None,
+            "recovery_authorized": case.recovery_authorized,
+            "tow_scheduled": case.tow_scheduled,
+            "is_priority": case.is_priority,
+            "assigned_to": case.assigned_to,
+            "notes": case.notes,
+            "admin_notes": case.admin_notes,
+            "created_at": case.created_at.isoformat(),
+            "updated_at": case.updated_at.isoformat(),
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/delinquency/{case_id}")
+async def get_delinquency_case(
+    case_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Get a single delinquency case by ID.
+
+    Requires admin role.
+    """
+    case = await session.get(DelinquencyCase, case_id)
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delinquency case not found"
+        )
+
+    # Get customer info
+    customer = await session.get(CustomerProfile, case.customer_profile_id)
+    customer_info = {
+        "id": customer.id,
+        "name": customer.full_name or customer.email if customer else "Unknown",
+        "email": customer.email if customer else None,
+        "phone": customer.phone if customer else None,
+    } if customer else None
+
+    # Get vehicle info
+    vehicle_info = None
+    if case.vehicle_id:
+        vehicle = await session.get(Vehicle, case.vehicle_id)
+        if vehicle:
+            vehicle_info = {
+                "id": vehicle.id,
+                "make": vehicle.make,
+                "model": vehicle.model,
+                "year": vehicle.year,
+                "vin": vehicle.vin,
+                "license_plate": vehicle.license_plate,
+            }
+
+    # Get invoice info
+    invoice = await session.get(WeeklyInvoice, case.invoice_id)
+    invoice_info = {
+        "id": invoice.id,
+        "invoice_number": invoice.invoice_number,
+        "amount": float(invoice.amount),
+        "total_amount": float(invoice.total_amount),
+        "due_date": invoice.due_date.isoformat(),
+        "status": invoice.status.value,
+    } if invoice else None
+
+    return {
+        "id": case.id,
+        "case_number": case.case_number,
+        "customer": customer_info,
+        "vehicle": vehicle_info,
+        "invoice": invoice_info,
+        "lease_id": case.lease_id,
+        "status": case.status.value,
+        "escalation_level": case.escalation_level.value,
+        "amount_owed": float(case.amount_owed),
+        "late_fees_accumulated": float(case.late_fees_accumulated),
+        "total_owed": float(case.total_owed),
+        "amount_paid": float(case.amount_paid),
+        "remaining_balance": float(case.remaining_balance),
+        "days_delinquent": case.days_delinquent,
+        "delinquent_since": case.delinquent_since.isoformat(),
+        "last_escalation_at": case.last_escalation_at.isoformat() if case.last_escalation_at else None,
+        "next_escalation_at": case.next_escalation_at.isoformat() if case.next_escalation_at else None,
+        "contact_attempts": case.contact_attempts,
+        "last_contact_at": case.last_contact_at.isoformat() if case.last_contact_at else None,
+        "last_contact_method": case.last_contact_method,
+        "recovery_authorized": case.recovery_authorized,
+        "recovery_authorized_by": case.recovery_authorized_by,
+        "recovery_authorized_at": case.recovery_authorized_at.isoformat() if case.recovery_authorized_at else None,
+        "tow_scheduled": case.tow_scheduled,
+        "tow_scheduled_at": case.tow_scheduled_at.isoformat() if case.tow_scheduled_at else None,
+        "vehicle_recovered_at": case.vehicle_recovered_at.isoformat() if case.vehicle_recovered_at else None,
+        "resolved_at": case.resolved_at.isoformat() if case.resolved_at else None,
+        "resolved_by": case.resolved_by,
+        "resolution_type": case.resolution_type,
+        "resolution_notes": case.resolution_notes,
+        "is_priority": case.is_priority,
+        "assigned_to": case.assigned_to,
+        "assigned_at": case.assigned_at.isoformat() if case.assigned_at else None,
+        "notes": case.notes,
+        "admin_notes": case.admin_notes,
+        "created_at": case.created_at.isoformat(),
+        "updated_at": case.updated_at.isoformat(),
+    }
+
+
+@router.post("/delinquency")
+async def create_delinquency_case(
+    data: DelinquencyCaseCreateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Create a new delinquency case.
+
+    Requires admin role.
+    """
+    # Verify customer exists
+    customer = await session.get(CustomerProfile, data.customer_profile_id)
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer not found"
+        )
+
+    # Verify invoice exists
+    invoice = await session.get(WeeklyInvoice, data.invoice_id)
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+
+    # Verify lease exists
+    lease = await session.get(Lease, data.lease_id)
+    if not lease:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lease not found"
+        )
+
+    # Check for existing case for this invoice
+    existing = await session.execute(
+        select(DelinquencyCase).where(DelinquencyCase.invoice_id == data.invoice_id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Delinquency case already exists for this invoice"
+        )
+
+    # Create the case
+    case = DelinquencyCase(
+        customer_profile_id=data.customer_profile_id,
+        invoice_id=data.invoice_id,
+        lease_id=data.lease_id,
+        vehicle_id=data.vehicle_id,
+        case_number=generate_case_number(),
+        amount_owed=Decimal(str(data.amount_owed)),
+        late_fees_accumulated=Decimal("0.00"),
+        total_owed=Decimal(str(data.amount_owed)),
+        remaining_balance=Decimal(str(data.amount_owed)),
+        delinquent_since=datetime.now(timezone.utc),
+        notes=data.notes,
+    )
+
+    session.add(case)
+    await session.commit()
+    await session.refresh(case)
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.DELINQUENCY_ESCALATION,
+        target_type="delinquency_case",
+        target_id=str(case.id),
+        target_description=f"Created delinquency case {case.case_number}",
+    )
+
+    return {
+        "success": True,
+        "message": "Delinquency case created",
+        "case_id": case.id,
+        "case_number": case.case_number,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.put("/delinquency/{case_id}")
+async def update_delinquency_case(
+    case_id: int,
+    data: DelinquencyCaseUpdateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Update a delinquency case.
+
+    Requires admin role.
+    """
+    case = await session.get(DelinquencyCase, case_id)
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delinquency case not found"
+        )
+
+    if data.status:
+        try:
+            case.status = DelinquencyStatus(data.status)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status: {data.status}"
+            )
+
+    if data.escalation_level:
+        try:
+            case.escalation_level = EscalationLevel(data.escalation_level)
+            case.last_escalation_at = datetime.now(timezone.utc)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid escalation level: {data.escalation_level}"
+            )
+
+    if data.notes is not None:
+        case.notes = data.notes
+
+    if data.admin_notes is not None:
+        case.admin_notes = data.admin_notes
+
+    if data.assigned_to is not None:
+        case.assigned_to = data.assigned_to
+        case.assigned_at = datetime.now(timezone.utc) if data.assigned_to else None
+
+    if data.is_priority is not None:
+        case.is_priority = data.is_priority
+
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.DELINQUENCY_ESCALATION,
+        target_type="delinquency_case",
+        target_id=str(case.id),
+        target_description=f"Updated delinquency case {case.case_number}",
+    )
+
+    return {
+        "success": True,
+        "message": "Delinquency case updated",
+        "case_id": case.id,
+        "case_number": case.case_number,
+        "status": case.status.value,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/delinquency/{case_id}/contact")
+async def record_contact_attempt(
+    case_id: int,
+    data: ContactAttemptRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Record a contact attempt for a delinquency case.
+
+    Requires admin role.
+    """
+    case = await session.get(DelinquencyCase, case_id)
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delinquency case not found"
+        )
+
+    case.record_contact(data.method)
+    if data.notes:
+        existing_notes = case.notes or ""
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        case.notes = f"{existing_notes}\n[{timestamp}] Contact ({data.method}): {data.notes}".strip()
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": "Contact attempt recorded",
+        "case_id": case.id,
+        "contact_attempts": case.contact_attempts,
+        "last_contact_at": case.last_contact_at.isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/delinquency/{case_id}/escalate")
+async def escalate_delinquency(
+    case_id: int,
+    level: str,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Escalate a delinquency case to a new level.
+
+    Requires admin role.
+    """
+    case = await session.get(DelinquencyCase, case_id)
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delinquency case not found"
+        )
+
+    try:
+        new_level = EscalationLevel(level)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid escalation level: {level}"
+        )
+
+    case.escalate(new_level)
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.DELINQUENCY_ESCALATION,
+        target_type="delinquency_case",
+        target_id=str(case.id),
+        target_description=f"Escalated case {case.case_number} to {level}",
+    )
+
+    return {
+        "success": True,
+        "message": f"Case escalated to {level}",
+        "case_id": case.id,
+        "escalation_level": case.escalation_level.value,
+        "status": case.status.value,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/delinquency/{case_id}/authorize-recovery")
+async def authorize_recovery(
+    case_id: int,
+    data: RecoveryAuthorizationRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Authorize vehicle recovery for a delinquency case.
+
+    Requires admin role.
+    """
+    case = await session.get(DelinquencyCase, case_id)
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delinquency case not found"
+        )
+
+    case.authorize_recovery(user.email)
+    case.escalation_level = EscalationLevel.LEVEL_4
+    if data.notes:
+        existing_notes = case.admin_notes or ""
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        case.admin_notes = f"{existing_notes}\n[{timestamp}] Recovery authorized: {data.notes}".strip()
+
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.RECOVERY_AUTHORIZATION,
+        target_type="delinquency_case",
+        target_id=str(case.id),
+        target_description=f"Authorized recovery for case {case.case_number}",
+    )
+
+    return {
+        "success": True,
+        "message": "Recovery authorized",
+        "case_id": case.id,
+        "recovery_authorized": case.recovery_authorized,
+        "recovery_authorized_at": case.recovery_authorized_at.isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/delinquency/{case_id}/schedule-tow")
+async def schedule_tow(
+    case_id: int,
+    data: TowScheduleRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Schedule a tow for a delinquency case.
+
+    Requires admin role.
+    """
+    case = await session.get(DelinquencyCase, case_id)
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delinquency case not found"
+        )
+
+    if not case.recovery_authorized:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recovery must be authorized before scheduling tow"
+        )
+
+    case.schedule_tow(data.scheduled_at)
+    if data.notes:
+        existing_notes = case.admin_notes or ""
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        case.admin_notes = f"{existing_notes}\n[{timestamp}] Tow scheduled: {data.notes}".strip()
+
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.TOW_ACTION,
+        target_type="delinquency_case",
+        target_id=str(case.id),
+        target_description=f"Scheduled tow for case {case.case_number}",
+    )
+
+    return {
+        "success": True,
+        "message": "Tow scheduled",
+        "case_id": case.id,
+        "tow_scheduled": case.tow_scheduled,
+        "tow_scheduled_at": case.tow_scheduled_at.isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/delinquency/{case_id}/resolve")
+async def resolve_delinquency(
+    case_id: int,
+    data: ResolveDelinquencyRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Resolve a delinquency case.
+
+    Requires admin role.
+    """
+    case = await session.get(DelinquencyCase, case_id)
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delinquency case not found"
+        )
+
+    valid_resolution_types = ["paid", "settled", "written_off", "recovered"]
+    if data.resolution_type not in valid_resolution_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid resolution type. Must be one of: {', '.join(valid_resolution_types)}"
+        )
+
+    case.resolve(
+        resolution_type=data.resolution_type,
+        resolved_by=user.email,
+        notes=data.notes
+    )
+
+    await session.commit()
+
+    # Log the action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.DELINQUENCY_ESCALATION,
+        target_type="delinquency_case",
+        target_id=str(case.id),
+        target_description=f"Resolved case {case.case_number} as {data.resolution_type}",
+    )
+
+    return {
+        "success": True,
+        "message": f"Case resolved as {data.resolution_type}",
+        "case_id": case.id,
+        "status": case.status.value,
+        "resolution_type": case.resolution_type,
+        "resolved_at": case.resolved_at.isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# =============================================================================
+# Incident Report Management
+# =============================================================================
+
+class IncidentReportResponse(BaseModel):
+    """Response model for incident report."""
+    id: int
+    customer_profile_id: int
+    customer_email: str
+    customer_name: Optional[str]
+    lease_id: Optional[int]
+    incident_type: str
+    severity: str
+    status: str
+    title: str
+    description: str
+    location: Optional[str]
+    incident_date: datetime
+    photo_keys: Optional[list[str]]
+    assigned_to: Optional[str]
+    admin_notes: Optional[str]
+    resolution_notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    reviewed_at: Optional[datetime]
+    resolved_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class IncidentUpdateRequest(BaseModel):
+    """Request to update incident report."""
+    status: Optional[str] = None
+    severity: Optional[str] = None
+    admin_notes: Optional[str] = None
+    resolution_notes: Optional[str] = None
+    assigned_to: Optional[str] = None
+
+
+@router.get("/incidents/types")
+async def get_incident_types(
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Get available incident types, severities, and statuses.
+    """
+    return {
+        "types": [{"value": t.value, "label": t.value.replace("_", " ").title()} for t in IncidentType],
+        "severities": [{"value": s.value, "label": s.value.title()} for s in IncidentSeverity],
+        "statuses": [{"value": s.value, "label": s.value.replace("_", " ").title()} for s in IncidentStatus],
+    }
+
+
+@router.get("/incidents", response_model=list[IncidentReportResponse])
+async def list_incident_reports(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = Query(None, description="Filter by status"),
+    type_filter: Optional[str] = Query(None, description="Filter by incident type"),
+    severity_filter: Optional[str] = Query(None, description="Filter by severity"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List incident reports with optional filtering.
+
+    Requires admin role.
+    """
+    query = select(IncidentReport).order_by(IncidentReport.created_at.desc())
+
+    if status_filter:
+        try:
+            status_enum = IncidentStatus(status_filter)
+            query = query.where(IncidentReport.status == status_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join([s.value for s in IncidentStatus])}"
+            )
+
+    if type_filter:
+        try:
+            type_enum = IncidentType(type_filter)
+            query = query.where(IncidentReport.incident_type == type_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid type. Must be one of: {', '.join([t.value for t in IncidentType])}"
+            )
+
+    if severity_filter:
+        try:
+            severity_enum = IncidentSeverity(severity_filter)
+            query = query.where(IncidentReport.severity == severity_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid severity. Must be one of: {', '.join([s.value for s in IncidentSeverity])}"
+            )
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    incidents = result.scalars().all()
+
+    return [
+        IncidentReportResponse(
+            id=i.id,
+            customer_profile_id=i.customer_profile_id,
+            customer_email=i.customer_email,
+            customer_name=i.customer_name,
+            lease_id=i.lease_id,
+            incident_type=i.incident_type.value,
+            severity=i.severity.value,
+            status=i.status.value,
+            title=i.title,
+            description=i.description,
+            location=i.location,
+            incident_date=i.incident_date,
+            photo_keys=i.photo_keys,
+            assigned_to=i.assigned_to,
+            admin_notes=i.admin_notes,
+            resolution_notes=i.resolution_notes,
+            created_at=i.created_at,
+            updated_at=i.updated_at,
+            reviewed_at=i.reviewed_at,
+            resolved_at=i.resolved_at,
+        )
+        for i in incidents
+    ]
+
+
+@router.get("/incidents/{incident_id}", response_model=IncidentReportResponse)
+async def get_incident_report(
+    incident_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get detailed incident report by ID.
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(IncidentReport).where(IncidentReport.id == incident_id)
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident report not found"
+        )
+
+    return IncidentReportResponse(
+        id=incident.id,
+        customer_profile_id=incident.customer_profile_id,
+        customer_email=incident.customer_email,
+        customer_name=incident.customer_name,
+        lease_id=incident.lease_id,
+        incident_type=incident.incident_type.value,
+        severity=incident.severity.value,
+        status=incident.status.value,
+        title=incident.title,
+        description=incident.description,
+        location=incident.location,
+        incident_date=incident.incident_date,
+        photo_keys=incident.photo_keys,
+        assigned_to=incident.assigned_to,
+        admin_notes=incident.admin_notes,
+        resolution_notes=incident.resolution_notes,
+        created_at=incident.created_at,
+        updated_at=incident.updated_at,
+        reviewed_at=incident.reviewed_at,
+        resolved_at=incident.resolved_at,
+    )
+
+
+@router.put("/incidents/{incident_id}")
+async def update_incident_report(
+    incident_id: int,
+    request: IncidentUpdateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update incident report (status, notes, severity, assignment).
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(IncidentReport).where(IncidentReport.id == incident_id)
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident report not found"
+        )
+
+    # Update fields if provided
+    if request.status:
+        try:
+            new_status = IncidentStatus(request.status)
+            incident.status = new_status
+
+            # Track review/resolution times
+            if new_status == IncidentStatus.UNDER_REVIEW and not incident.reviewed_at:
+                incident.reviewed_at = datetime.now(timezone.utc)
+            elif new_status in [IncidentStatus.RESOLVED, IncidentStatus.CLOSED]:
+                incident.resolved_at = datetime.now(timezone.utc)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join([s.value for s in IncidentStatus])}"
+            )
+
+    if request.severity:
+        try:
+            incident.severity = IncidentSeverity(request.severity)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid severity. Must be one of: {', '.join([s.value for s in IncidentSeverity])}"
+            )
+
+    if request.admin_notes is not None:
+        incident.admin_notes = request.admin_notes
+
+    if request.resolution_notes is not None:
+        incident.resolution_notes = request.resolution_notes
+
+    if request.assigned_to is not None:
+        incident.assigned_to = request.assigned_to
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": "Incident report updated",
+        "incident_id": incident.id,
+        "status": incident.status.value,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/incidents/{incident_id}/start-review")
+async def start_incident_review(
+    incident_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Start reviewing an incident (changes status to under_review).
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(IncidentReport).where(IncidentReport.id == incident_id)
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident report not found"
+        )
+
+    incident.status = IncidentStatus.UNDER_REVIEW
+    incident.reviewed_at = datetime.now(timezone.utc)
+    incident.assigned_to = user.email
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": "Incident review started",
+        "incident_id": incident.id,
+        "status": incident.status.value,
+        "assigned_to": incident.assigned_to,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/incidents/{incident_id}/resolve")
+async def resolve_incident(
+    incident_id: int,
+    resolution_notes: str = Query(..., description="Resolution notes"),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Resolve an incident with resolution notes.
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(IncidentReport).where(IncidentReport.id == incident_id)
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident report not found"
+        )
+
+    incident.status = IncidentStatus.RESOLVED
+    incident.resolution_notes = resolution_notes
+    incident.resolved_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": "Incident resolved",
+        "incident_id": incident.id,
+        "status": incident.status.value,
+        "resolved_at": incident.resolved_at.isoformat() if incident.resolved_at else None,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/incidents/{incident_id}/photos")
+async def get_incident_photos(
+    incident_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get signed URLs for incident photos.
+
+    Requires admin role.
+    Returns short-lived signed URLs for each photo.
+    """
+    result = await session.execute(
+        select(IncidentReport).where(IncidentReport.id == incident_id)
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident report not found"
+        )
+
+    if not incident.photo_keys:
+        return {"photos": []}
+
+    # Generate signed URLs for each photo
+    photos = []
+    for key in incident.photo_keys:
+        try:
+            signed_url = storage_service.generate_signed_url(
+                bucket=settings.S3_BUCKET_INCIDENTS,
+                key=key,
+                expires_in=settings.S3_SIGNED_URL_TTL_SECONDS,
+            )
+            photos.append({
+                "key": key,
+                "url": signed_url,
+            })
+        except Exception as e:
+            logger.error(f"Failed to generate signed URL for {key}: {e}")
+            photos.append({
+                "key": key,
+                "url": None,
+                "error": "Failed to generate URL",
+            })
+
+    return {"photos": photos}
+
+
+# ============================================================
+# System Settings Management
+# ============================================================
+
+from app.models.system_settings import SystemSettings, DEFAULT_SETTINGS
+
+
+class SettingsListResponse(BaseModel):
+    """Response for settings list."""
+    settings: list
+    categories: list
+    total: int
+
+
+class SettingUpdateRequest(BaseModel):
+    """Request to update a setting."""
+    value: str
+
+
+class SettingCreateRequest(BaseModel):
+    """Request to create a new setting."""
+    setting_key: str
+    setting_value: str
+    display_name: str
+    description: Optional[str] = None
+    category: str
+    value_type: str = "string"
+
+
+@router.get("/settings")
+async def get_all_settings(
+    category: Optional[str] = Query(None, description="Filter by category"),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get all system settings.
+
+    Requires admin role.
+    Returns all settings grouped by category.
+    """
+    query = select(SystemSettings).where(SystemSettings.is_active == True)
+
+    if category:
+        query = query.where(SystemSettings.category == category)
+
+    query = query.order_by(SystemSettings.category, SystemSettings.display_name)
+
+    result = await session.execute(query)
+    settings_list = result.scalars().all()
+
+    # Get unique categories
+    categories_result = await session.execute(
+        select(SystemSettings.category).distinct().where(SystemSettings.is_active == True)
+    )
+    categories = [row[0] for row in categories_result.fetchall()]
+
+    return {
+        "settings": [
+            {
+                "id": s.id,
+                "key": s.setting_key,
+                "value": s.setting_value if not s.is_sensitive else "********",
+                "display_name": s.display_name,
+                "description": s.description,
+                "category": s.category,
+                "value_type": s.value_type,
+                "is_sensitive": s.is_sensitive,
+                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+                "updated_by": s.updated_by,
+            }
+            for s in settings_list
+        ],
+        "categories": sorted(categories),
+        "total": len(settings_list),
+    }
+
+
+@router.get("/settings/{setting_key}")
+async def get_setting(
+    setting_key: str,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific setting by key.
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(SystemSettings).where(
+            SystemSettings.setting_key == setting_key,
+            SystemSettings.is_active == True
+        )
+    )
+    setting = result.scalar_one_or_none()
+
+    if not setting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Setting '{setting_key}' not found"
+        )
+
+    return {
+        "id": setting.id,
+        "key": setting.setting_key,
+        "value": setting.setting_value if not setting.is_sensitive else "********",
+        "display_name": setting.display_name,
+        "description": setting.description,
+        "category": setting.category,
+        "value_type": setting.value_type,
+        "is_sensitive": setting.is_sensitive,
+        "updated_at": setting.updated_at.isoformat() if setting.updated_at else None,
+        "updated_by": setting.updated_by,
+    }
+
+
+@router.put("/settings/{setting_key}")
+async def update_setting(
+    setting_key: str,
+    request: SettingUpdateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update a system setting.
+
+    Requires admin role.
+    Logs the change to audit trail.
+    """
+    result = await session.execute(
+        select(SystemSettings).where(
+            SystemSettings.setting_key == setting_key,
+            SystemSettings.is_active == True
+        )
+    )
+    setting = result.scalar_one_or_none()
+
+    if not setting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Setting '{setting_key}' not found"
+        )
+
+    # Store old value for audit
+    old_value = setting.setting_value
+
+    # Validate value type
+    if setting.value_type == "number":
+        try:
+            float(request.value)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Value must be a valid number"
+            )
+    elif setting.value_type == "boolean":
+        if request.value.lower() not in ("true", "false", "1", "0", "yes", "no"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Value must be a valid boolean (true/false)"
+            )
+
+    # Update setting
+    setting.setting_value = request.value
+    setting.updated_at = datetime.now(timezone.utc)
+    setting.updated_by = user.email
+
+    # Log to audit trail
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.SETTING_UPDATE,
+        target_type="SystemSettings",
+        target_id=str(setting.id),
+        target_description=f"Setting '{setting_key}' ({setting.display_name})",
+        before_state={"key": setting_key, "value": old_value if not setting.is_sensitive else "********"},
+        after_state={"key": setting_key, "value": request.value if not setting.is_sensitive else "********"},
+    )
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": f"Setting '{setting_key}' updated",
+        "key": setting.setting_key,
+        "value": setting.setting_value if not setting.is_sensitive else "********",
+        "updated_by": setting.updated_by,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/settings/seed")
+async def seed_default_settings(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Seed default settings if they don't exist.
+
+    Requires admin role.
+    Only creates settings that don't already exist.
+    """
+    created = 0
+    skipped = 0
+
+    for default in DEFAULT_SETTINGS:
+        # Check if setting already exists
+        result = await session.execute(
+            select(SystemSettings).where(
+                SystemSettings.setting_key == default["setting_key"]
+            )
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            skipped += 1
+            continue
+
+        # Create new setting
+        new_setting = SystemSettings(
+            setting_key=default["setting_key"],
+            setting_value=default["setting_value"],
+            display_name=default["display_name"],
+            description=default.get("description"),
+            category=default["category"],
+            value_type=default.get("value_type", "string"),
+        )
+        session.add(new_setting)
+        created += 1
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": f"Settings seeded: {created} created, {skipped} skipped",
+        "created": created,
+        "skipped": skipped,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.delete("/settings/{setting_key}")
+async def delete_setting(
+    setting_key: str,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Soft delete a system setting (deactivate).
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(SystemSettings).where(
+            SystemSettings.setting_key == setting_key,
+            SystemSettings.is_active == True
+        )
+    )
+    setting = result.scalar_one_or_none()
+
+    if not setting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Setting '{setting_key}' not found"
+        )
+
+    # Soft delete
+    setting.is_active = False
+    setting.updated_by = user.email
+
+    # Log to audit trail
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.SETTING_DELETE,
+        target_type="SystemSettings",
+        target_id=str(setting.id),
+        target_description=f"Setting '{setting_key}' ({setting.display_name})",
+        after_state={"key": setting_key, "deleted": True},
+    )
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": f"Setting '{setting_key}' deleted",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }

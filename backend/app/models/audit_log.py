@@ -46,6 +46,16 @@ class AuditAction(str, PyEnum):
     CUSTOMER_UNBAN = "customer_unban"
     PROFILE_UPDATE_BY_ADMIN = "profile_update_by_admin"
 
+    # Maintenance related
+    MAINTENANCE_SCHEDULE = "maintenance_schedule"
+    MAINTENANCE_UPDATE = "maintenance_update"
+    MAINTENANCE_CANCEL = "maintenance_cancel"
+    MAINTENANCE_DELETE = "maintenance_delete"
+
+    # Settings related
+    SETTING_UPDATE = "setting_update"
+    SETTING_DELETE = "setting_delete"
+
     # Generic
     ADMIN_ACTION = "admin_action"
     DATA_EXPORT = "data_export"

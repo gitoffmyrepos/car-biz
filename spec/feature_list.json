@@ -739,7 +739,7 @@
       "Verify customer notified with reason",
       "Take screenshot of payment rejection"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -769,7 +769,7 @@
       "Verify MaintenanceSchedule record created",
       "Take screenshot of maintenance scheduling"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -784,7 +784,7 @@
       "Verify schedule marked as complete",
       "Take screenshot of service completion"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -838,7 +838,7 @@
       "View customer history and payment attempts",
       "Take screenshot of delinquency queue"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -968,7 +968,7 @@
       "Update incident status",
       "Take screenshot of incident triage"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -984,7 +984,7 @@
       "Verify sensitive data is redacted in logs",
       "Take screenshot of audit log viewer"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -998,7 +998,7 @@
       "Verify settings persisted",
       "Take screenshot of admin settings"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
