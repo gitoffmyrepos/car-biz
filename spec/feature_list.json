@@ -158,7 +158,7 @@
       "Verify timestamps are displayed",
       "Take screenshot of admin inquiry list"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
