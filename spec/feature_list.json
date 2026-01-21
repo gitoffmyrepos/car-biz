@@ -24,7 +24,7 @@
       "Verify responsive design on mobile",
       "Take screenshot documenting How It Works page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
