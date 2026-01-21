@@ -797,7 +797,7 @@
       "Verify reminder content includes due date and amount",
       "Take screenshot of reminder notification"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

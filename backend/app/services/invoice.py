@@ -16,8 +16,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.models.lease import Lease, LeaseStatus
+from app.models.customer_profile import CustomerProfile
 from app.models.notification import NotificationType, NotificationPriority
 from app.services.notification import notification_service
+from app.services.email import email_service
 
 logger = logging.getLogger(__name__)
 
@@ -360,6 +362,120 @@ class InvoiceService:
             logger.warning(f"Failed to create payment verification notification: {e}")
 
         return invoice
+
+    async def send_due_date_reminders(
+        self,
+        db: AsyncSession,
+        days_before_due: int = 2,
+        include_day_of: bool = True,
+    ) -> Tuple[int, int]:
+        """
+        Send due date reminder notifications for invoices with approaching due dates.
+
+        Args:
+            db: Database session
+            days_before_due: Send reminders for invoices due within this many days
+            include_day_of: Also send reminders for invoices due today
+
+        Returns:
+            Tuple of (reminders_sent, emails_sent)
+        """
+        now = datetime.now(timezone.utc)
+
+        # Find invoices that need reminders:
+        # - Status is PENDING or DUE (not paid, late, etc.)
+        # - Due date is within days_before_due days
+        # - Haven't sent reminder today (or at all)
+        end_date = now + timedelta(days=days_before_due)
+
+        # Build query for invoices needing reminders
+        if include_day_of:
+            # Include all invoices due from now until end_date
+            query = select(WeeklyInvoice).where(
+                WeeklyInvoice.status.in_([InvoiceStatus.PENDING, InvoiceStatus.DUE]),
+                WeeklyInvoice.due_date <= end_date,
+            )
+        else:
+            # Exclude invoices due today (only future due dates)
+            query = select(WeeklyInvoice).where(
+                WeeklyInvoice.status.in_([InvoiceStatus.PENDING, InvoiceStatus.DUE]),
+                WeeklyInvoice.due_date > now,
+                WeeklyInvoice.due_date <= end_date,
+            )
+
+        # Exclude invoices that already had a reminder sent today
+        result = await db.execute(query)
+        invoices = result.scalars().all()
+
+        reminders_sent = 0
+        emails_sent = 0
+
+        for invoice in invoices:
+            # Check if reminder was already sent today
+            if invoice.reminder_sent_at:
+                last_reminder_date = invoice.reminder_sent_at.date()
+                if last_reminder_date == now.date():
+                    logger.debug(f"Skipping invoice {invoice.id} - reminder already sent today")
+                    continue
+
+            # Get customer profile for email and name
+            customer = await db.get(CustomerProfile, invoice.customer_profile_id)
+            if not customer:
+                logger.warning(f"Customer profile {invoice.customer_profile_id} not found for invoice {invoice.id}")
+                continue
+
+            # Calculate days until due
+            days_until_due = (invoice.due_date.replace(tzinfo=timezone.utc) - now).days
+            if days_until_due < 0:
+                days_until_due = 0
+
+            # Create in-app notification
+            try:
+                await notification_service.create_notification(
+                    db=db,
+                    customer_profile_id=invoice.customer_profile_id,
+                    notification_type=NotificationType.PAYMENT_DUE_REMINDER,
+                    title="Payment Reminder",
+                    message=f"Your payment of ${invoice.total_amount:.2f} for invoice #{invoice.invoice_number} is due {f'in {days_until_due} days' if days_until_due > 1 else 'tomorrow' if days_until_due == 1 else 'today'}.",
+                    priority=NotificationPriority.HIGH if days_until_due <= 1 else NotificationPriority.NORMAL,
+                    action_url="/payments",
+                    action_label="View Invoice",
+                    related_entity_type="invoice",
+                    related_entity_id=invoice.id,
+                )
+                reminders_sent += 1
+            except Exception as e:
+                logger.error(f"Failed to create reminder notification for invoice {invoice.id}: {e}")
+
+            # Send email reminder if customer has email notifications enabled
+            if customer.notification_email:
+                try:
+                    email_result = await email_service.send_due_date_reminder(
+                        to_email=customer.email,
+                        customer_name=customer.full_name or "Valued Customer",
+                        invoice_number=invoice.invoice_number,
+                        amount=float(invoice.total_amount),
+                        due_date=invoice.due_date.strftime("%B %d, %Y"),
+                        days_until_due=days_until_due,
+                    )
+                    if email_result.get("success"):
+                        emails_sent += 1
+                except Exception as e:
+                    logger.error(f"Failed to send reminder email for invoice {invoice.id}: {e}")
+
+            # Update invoice reminder tracking
+            invoice.reminder_sent_at = now
+            invoice.reminder_count = (invoice.reminder_count or 0) + 1
+
+        # Commit all changes
+        if reminders_sent > 0:
+            await db.commit()
+
+        logger.info(
+            f"Due date reminders sent: {reminders_sent} notifications, {emails_sent} emails"
+        )
+
+        return reminders_sent, emails_sent
 
     def calculate_payment_hash(self, file_content: bytes) -> str:
         """

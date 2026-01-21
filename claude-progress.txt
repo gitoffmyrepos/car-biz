@@ -2686,3 +2686,92 @@ Status: COMPLETED
 ================================================================================
 END SESSION 23
 ================================================================================
+
+
+================================================================================
+SESSION 24: Due Date Reminder Notifications
+================================================================================
+
+Date: 2026-01-21
+Status: COMPLETED
+
+## Feature Implemented
+Feature #47: Due date reminder notifications - System sends due date reminders to customers via email and in-app
+
+## Implementation Details
+
+### Backend Files Modified
+1. **backend/app/services/email.py**
+   - Added send_due_date_reminder() method
+   - HTML/text email templates with dynamic days_until_due
+   - Professional styling with FX Weekly branding
+
+2. **backend/app/models/weekly_invoice.py**
+   - Added reminder_sent_at (DateTime) field for tracking when reminder was sent
+   - Added reminder_count (Integer) field for tracking number of reminders
+
+3. **backend/app/services/invoice.py**
+   - Added send_due_date_reminders() method
+   - Finds invoices due within configurable days_before_due parameter
+   - Creates in-app notifications
+   - Sends email reminders to customers with email notifications enabled
+   - Implements duplicate prevention (won't send again same day)
+   - Updates invoice reminder tracking fields
+
+4. **backend/app/api/admin.py**
+   - Added POST /api/admin/invoices/send-reminders endpoint
+   - Query params: days_before_due (0-7), include_day_of (boolean)
+   - Admin authentication required
+   - Audit logging for batch reminder operations
+
+### Database Changes
+- Added reminder_sent_at column to weekly_invoices table
+- Added reminder_count column to weekly_invoices table
+
+## E2E Test Results
+Test Status: PASSED
+
+### Test Steps Completed
+1. Login to Admin Portal - PASSED
+2. Navigate to Payments page, verify invoices - PASSED
+3. View invoice details for test invoice INV-00001-W056-20260121 - PASSED
+4. Trigger due date reminders via API (POST /api/admin/invoices/send-reminders) - PASSED
+   - Result: 1 notification sent, 1 email sent
+5. Verify notification created in database - PASSED
+   - Notification ID 11: "Payment Reminder" - "Your payment of $299.99 for invoice #INV-00001-W056-20260121 is due in 2 days."
+6. Verify invoice reminder tracking updated - PASSED
+   - reminder_sent_at: 2026-01-21T09:01:59
+   - reminder_count: 1
+7. Verify customer can access notification via API (GET /api/customer/notifications) - PASSED
+   - Customer receives notification with unread_count: 1
+8. Verify duplicate prevention works - PASSED
+   - Second API call same day: reminders_sent: 0, emails_sent: 0
+
+### Screenshots Captured
+- feature_47_step2_admin_dashboard.png
+- feature_47_step3_payments_page.png
+- feature_47_step4_invoice_details.png
+- feature_47_final_admin_payments.png
+
+## Features Implemented
+1. Due date reminder email template with dynamic days until due
+2. In-app notification for due date reminders
+3. Reminder tracking (timestamp and count) on invoices
+4. Duplicate prevention (same-day reminders blocked)
+5. Configurable days_before_due parameter (0-7 days)
+6. Option to include/exclude day-of reminders
+7. Audit logging for reminder batch operations
+
+## Progress Update
+- Features Passing: 48/211 (22.7% complete)
+- Feature #47 marked as passing in feature_list.json
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: fx-weekly-lease-postgres
+- Redis: fx-weekly-lease-redis
+
+================================================================================
+END SESSION 24
+================================================================================

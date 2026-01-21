@@ -92,6 +92,10 @@ class WeeklyInvoice(Base):
     late_fee_applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     days_late: Mapped[int] = mapped_column(Integer, default=0)
 
+    # Reminder tracking
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reminder_count: Mapped[int] = mapped_column(Integer, default=0)
+
     # Notes
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

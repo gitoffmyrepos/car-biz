@@ -3638,6 +3638,69 @@ async def update_invoice_notes(
     }
 
 
+class ReminderResponse(BaseModel):
+    """Response for due date reminder job."""
+    success: bool
+    reminders_sent: int
+    emails_sent: int
+    message: str
+    timestamp: str
+
+
+@router.post("/invoices/send-reminders", response_model=ReminderResponse)
+async def send_due_date_reminders(
+    days_before_due: int = Query(default=2, ge=0, le=7, description="Send reminders for invoices due within this many days"),
+    include_day_of: bool = Query(default=True, description="Include invoices due today"),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Trigger due date reminder notifications.
+
+    Sends both in-app notifications and emails to customers with invoices
+    approaching their due date.
+
+    Requires admin role.
+    """
+    try:
+        reminders_sent, emails_sent = await invoice_service.send_due_date_reminders(
+            db=session,
+            days_before_due=days_before_due,
+            include_day_of=include_day_of,
+        )
+
+        # Log the action
+        await audit_service.log_action(
+            session=session,
+            user=user,
+            action=AuditAction.ADMIN_ACTION,
+            target_type="reminder_job",
+            target_id=f"reminder-batch-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+            after_state={
+                "days_before_due": days_before_due,
+                "include_day_of": include_day_of,
+                "reminders_sent": reminders_sent,
+                "emails_sent": emails_sent,
+            },
+            request_id=f"reminder-{datetime.now(timezone.utc).isoformat()}",
+        )
+
+        return ReminderResponse(
+            success=True,
+            reminders_sent=reminders_sent,
+            emails_sent=emails_sent,
+            message=f"Sent {reminders_sent} reminder notifications and {emails_sent} emails",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to send due date reminders: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send reminders: {str(e)}"
+        )
+
+
 # =============================================================================
 # MAINTENANCE SCHEDULING ENDPOINTS
 # =============================================================================
