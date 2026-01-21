@@ -255,7 +255,7 @@
       "Verify responsive layout",
       "Take screenshot of customer dashboard"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
