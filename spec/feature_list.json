@@ -241,7 +241,7 @@
       "Verify Keycloak session is ended",
       "Take screenshot of logout flow"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

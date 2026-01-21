@@ -7,7 +7,7 @@
  * Customer dashboard showing leases, available vehicles, and account info.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
@@ -15,10 +15,11 @@ import { useAuth } from '@/lib/auth';
 export default function CustomerDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const isLoggingOut = useRef(false);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (unless logging out)
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !isLoggingOut.current) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
@@ -31,6 +32,7 @@ export default function CustomerDashboard() {
   }, [isLoading, user, router]);
 
   const handleLogout = () => {
+    isLoggingOut.current = true;
     logout();
     router.push('/');
   };
