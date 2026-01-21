@@ -1,0 +1,53 @@
+{
+  "feature_description": "Admin weekly invoices view - Admin can view all weekly invoices with filters",
+  "test_date": "2026-01-21",
+  "overall_status": "passed",
+  "e2e_results": [
+    {
+      "step": "Navigate to login page",
+      "status": "passed",
+      "screenshot": "invoices_step1_login_page.png"
+    },
+    {
+      "step": "Login as admin using Quick Login",
+      "status": "passed",
+      "screenshot": "invoices_step2_after_admin_login.png"
+    },
+    {
+      "step": "Navigate to Payments page",
+      "status": "passed",
+      "screenshot": "invoices_step3_payments_page.png",
+      "notes": "Page shows: 4 total invoices, 1 pending, 0 verification, 2 paid, 1 late, $574.99 pending, $500.00 collected"
+    },
+    {
+      "step": "Filter invoices by Late status",
+      "status": "passed",
+      "screenshot": "invoices_step4_filtered_late.png",
+      "notes": "Filter correctly shows only 1 late invoice, Clear Filters button appears"
+    },
+    {
+      "step": "Open invoice detail modal",
+      "status": "passed",
+      "screenshot": "invoices_step5_invoice_detail_modal.png",
+      "notes": "Modal shows customer info, vehicle info, invoice details, payment info, timestamps"
+    },
+    {
+      "step": "Close modal and verify final state",
+      "status": "passed",
+      "screenshot": "invoices_step6_final_state.png"
+    }
+  ],
+  "features_verified": {
+    "invoice_list": true,
+    "statistics_cards": true,
+    "status_filter": true,
+    "customer_search": true,
+    "date_range_filters": true,
+    "clear_filters_button": true,
+    "invoice_detail_modal": true,
+    "late_fee_display": true,
+    "status_badges": true
+  },
+  "console_errors": [],
+  "visual_issues": []
+}

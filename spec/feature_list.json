@@ -707,7 +707,7 @@
       "Click invoice for detail view",
       "Take screenshot of invoice management"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
