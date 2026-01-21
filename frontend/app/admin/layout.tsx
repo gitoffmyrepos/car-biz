@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 // Admin sidebar navigation items
 const adminNavItems = [
@@ -91,12 +92,65 @@ const adminNavItems = [
   },
 ];
 
+interface UserInfo {
+  email: string;
+  name: string;
+  roles: string[];
+  is_admin: boolean;
+  is_ops: boolean;
+}
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  useEffect(() => {
+    // Check authentication and authorization
+    const checkAuth = async () => {
+      const token = localStorage.getItem('fx_weekly_lease_token');
+
+      if (!token) {
+        router.push('/login?redirect=/admin');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          localStorage.removeItem('fx_weekly_lease_token');
+          router.push('/login?redirect=/admin');
+          return;
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+
+        // Check if user has admin or ops role
+        if (!userData.is_admin && !userData.is_ops) {
+          setAccessDenied(true);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/login?redirect=/admin');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const isActiveRoute = (href: string) => {
     if (href === '/admin') {
@@ -104,6 +158,52 @@ export default function AdminLayout({
     }
     return pathname.startsWith(href);
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Access denied state
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-6">
+            You don&apos;t have permission to access the admin portal.
+            This area is restricted to administrators and operations staff.
+          </p>
+          <div className="space-y-3">
+            <Link
+              href="/dashboard"
+              className="block w-full bg-gold-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-gold-600 transition-colors"
+            >
+              Go to Dashboard
+            </Link>
+            <Link
+              href="/"
+              className="block w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -131,9 +231,9 @@ export default function AdminLayout({
             {/* User menu */}
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gold-500 rounded-full flex items-center justify-center text-sm font-bold">
-                A
+                {user?.name?.[0]?.toUpperCase() || 'A'}
               </div>
-              <span className="text-sm hidden md:inline">Admin User</span>
+              <span className="text-sm hidden md:inline">{user?.name || 'Admin User'}</span>
             </div>
 
             {/* Back to site */}

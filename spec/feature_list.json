@@ -201,7 +201,7 @@
       "Verify 401 Unauthorized response",
       "Verify token claims are properly parsed"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -215,7 +215,7 @@
       "Verify ops role has appropriate access",
       "Take screenshot documenting RBAC enforcement"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
