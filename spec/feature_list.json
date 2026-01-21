@@ -188,7 +188,7 @@
       "Verify redirect to customer dashboard",
       "Take screenshot of successful registration"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
