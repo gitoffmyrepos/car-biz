@@ -11,6 +11,7 @@ from app.api.auth import router as auth_router
 from app.api.inquiries import router as inquiries_router
 from app.api.admin import router as admin_router
 from app.api.customer import router as customer_router
+from app.api.files import router as files_router
 
 router = APIRouter()
 
@@ -19,6 +20,7 @@ router.include_router(auth_router)
 router.include_router(inquiries_router)
 router.include_router(admin_router)
 router.include_router(customer_router)
+router.include_router(files_router)
 
 
 @router.get("/status", tags=["Status"])

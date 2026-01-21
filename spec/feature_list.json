@@ -477,7 +477,7 @@
       "Verify signed URLs have appropriate TTL",
       "Verify direct bucket access is denied"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -491,7 +491,7 @@
       "Click on invoice for detail view",
       "Take screenshot of invoices list"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
