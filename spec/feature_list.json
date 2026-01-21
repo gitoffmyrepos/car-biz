@@ -408,7 +408,7 @@
       "Verify request record created in system",
       "Take screenshot of vehicle request submission"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

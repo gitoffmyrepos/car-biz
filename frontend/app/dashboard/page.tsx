@@ -125,7 +125,24 @@ export default function CustomerDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Request Vehicle Card */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-charcoal mb-4">Request a Vehicle</h2>
+            <p className="text-gray-600 mb-4">
+              Ready to lease? Submit a vehicle request and we&apos;ll get you on the road.
+            </p>
+            <Link
+              href="/vehicle-request"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 transition-colors"
+            >
+              Request Vehicle
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
+          </div>
+
           {/* Browse Vehicles Card */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-semibold text-charcoal mb-4">Browse Available Vehicles</h2>
@@ -134,7 +151,7 @@ export default function CustomerDashboard() {
             </p>
             <Link
               href="/fleet"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 border-2 border-charcoal text-charcoal font-semibold rounded-lg hover:bg-charcoal hover:text-white transition-colors"
             >
               View Fleet
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

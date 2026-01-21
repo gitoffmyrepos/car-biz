@@ -15,6 +15,11 @@ from app.models.audit_log import (
     AuditLog,
     AuditAction,
 )
+from app.models.vehicle_request import (
+    VehicleRequest,
+    VehicleRequestStatus,
+    VehiclePreference,
+)
 
 __all__ = [
     "Inquiry",
@@ -26,4 +31,7 @@ __all__ = [
     "InsuranceStatus",
     "AuditLog",
     "AuditAction",
+    "VehicleRequest",
+    "VehicleRequestStatus",
+    "VehiclePreference",
 ]
