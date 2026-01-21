@@ -298,7 +298,7 @@
       "Upload valid file type with correct size",
       "Verify acceptance and processing"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
