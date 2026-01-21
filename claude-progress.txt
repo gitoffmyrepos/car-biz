@@ -516,3 +516,135 @@ Created frontend/app/admin/inquiries/page.tsx:
 ================================================================================
 END SESSION 5
 ================================================================================
+
+================================================================================
+SESSION 6: FEATURES #14-15 - JWT VALIDATION AND RBAC ENFORCEMENT
+================================================================================
+
+Date: 2026-01-21
+Status: COMPLETED
+Commit: daacf6c (feat: Implement Features #14 and #15 - JWT validation and RBAC)
+
+## Objectives Completed
+
+### 1. Backend Admin API with RBAC Protection
+Created backend/app/api/admin.py:
+
+**Protected Endpoints:**
+- GET /api/admin/dashboard/stats - Admin dashboard statistics (require_admin)
+- GET /api/admin/inquiries - List all inquiries (require_ops)
+- PUT /api/admin/inquiries/{inquiry_id}/status - Update inquiry status (require_ops)
+- GET /api/admin/protected/admin-only - Test endpoint for admin access
+- GET /api/admin/protected/ops-access - Test endpoint for ops access
+
+**RBAC Implementation:**
+- Used existing require_admin and require_ops decorators from app/core/auth.py
+- Admin role has full access to all admin endpoints
+- Ops role has access to operational endpoints (admin inherits ops access)
+- Customer role gets 403 Forbidden on all admin endpoints
+
+### 2. Frontend Admin Layout with RBAC
+Updated frontend/app/admin/layout.tsx:
+
+**Authentication Check:**
+- Reads JWT token from localStorage (fx_weekly_lease_token)
+- Validates token against backend /api/auth/me endpoint
+- Redirects to login page if no token or invalid token
+
+**Authorization Check:**
+- Verifies user has is_admin or is_ops role
+- Shows "Access Denied" page for unauthorized users
+- Provides "Go to Dashboard" and "Return Home" buttons
+
+**User Experience:**
+- Loading spinner during authentication check
+- Clean error messaging for access denied
+- Smooth redirect flow to login when needed
+
+### 3. Backend JWT Validation Tests
+Tested via curl commands:
+
+**Unauthenticated Requests:**
+- GET /api/admin/protected/admin-only → 401 "Not authenticated"
+
+**Invalid Token:**
+- Authorization: Bearer invalid-token → 401 "Invalid development token format"
+
+**Valid Customer Token (dev:customer:customer@example.com):**
+- GET /api/auth/me → 200 with user info and customer role
+- GET /api/admin/protected/admin-only → 403 "Insufficient permissions"
+
+**Valid Admin Token (dev:admin:admin@example.com):**
+- GET /api/auth/me → 200 with user info and admin role
+- GET /api/admin/protected/admin-only → 200 "Welcome, admin!"
+- GET /api/admin/protected/ops-access → 200 "Welcome to operations!"
+
+**Valid Ops Token (dev:ops:ops@example.com):**
+- GET /api/admin/protected/ops-access → 200 "Welcome to operations!"
+
+### 4. E2E Testing with Puppeteer MCP
+Tested complete RBAC flow:
+
+**Customer User Test:**
+1. Navigate to login page
+2. Log in with role: customer, email: customer@test.com
+3. Navigate to /admin
+4. Verify "Access Denied" page displayed
+5. Screenshot captured: feature_14_15_customer_access_denied.png
+
+**Admin User Test:**
+1. Clear localStorage and log in with role: admin, email: admin@test.com
+2. Navigate to /admin
+3. Verify admin dashboard loads with full functionality
+4. Screenshot captured: feature_14_15_admin_access_granted.png
+
+## Files Created/Modified This Session
+1. backend/app/api/admin.py (NEW - Admin API with RBAC protection)
+2. backend/app/api/__init__.py (Added admin router)
+3. frontend/app/admin/layout.tsx (Updated with RBAC check)
+4. spec/feature_list.json (Features #14 and #15 marked passing)
+5. .claude/verification/test_results.json (updated)
+
+## Feature Progress
+- Features Passing: 16/211
+- Features #0-15: All PASSED ✓
+- Session implemented: Features #14 and #15
+
+## Quality Gates Verified
+✅ Stop condition checked (16/211 - not complete)
+✅ Services healthy (backend/frontend running)
+✅ E2E test passed with Puppeteer MCP tools
+✅ Screenshots saved to .claude/verification/
+✅ test_results.json created with "overall_status": "passed"
+✅ Backend RBAC verified via curl tests
+✅ Frontend RBAC verified via Puppeteer
+✅ Zero console errors
+✅ Browser cleaned up
+
+## RBAC Summary
+
+| Role     | Admin Endpoints | Ops Endpoints | Customer Endpoints |
+|----------|-----------------|---------------|-------------------|
+| admin    | ✅ 200          | ✅ 200        | ❌ N/A            |
+| ops      | ❌ 403          | ✅ 200        | ❌ N/A            |
+| customer | ❌ 403          | ❌ 403        | ✅ 200 (future)   |
+
+## Next Session Tasks
+1. Feature #16: Customer dashboard with profile
+2. Feature #17: Customer vehicle request submission
+3. Feature #18: Insurance document upload
+4. Continue with customer experience features
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+## Admin Portal URLs
+- Admin Dashboard: http://localhost:3002/admin
+- Login Page: http://localhost:3002/login
+
+================================================================================
+END SESSION 6
+================================================================================
