@@ -4,15 +4,24 @@
  * Weekly Vehicle Leasing Platform - Customer Profile Page
  * Salvage-to-Lux Fleet Management
  *
- * Customer profile view and edit page.
+ * Customer profile view and edit page with insurance upload.
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8100/api';
+
+// Insurance status display config
+const insuranceStatusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
+  not_uploaded: { label: 'Not Uploaded', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  pending: { label: 'Pending Verification', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
+  approved: { label: 'Approved', color: 'text-green-700', bgColor: 'bg-green-100' },
+  rejected: { label: 'Rejected', color: 'text-red-700', bgColor: 'bg-red-100' },
+  expired: { label: 'Expired', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+};
 
 interface CustomerProfile {
   id: number;
@@ -69,6 +78,13 @@ export default function ProfilePage() {
     notification_email: true,
     notification_sms: false,
   });
+
+  // Insurance upload state
+  const [isUploadingInsurance, setIsUploadingInsurance] = useState(false);
+  const [insuranceUploadError, setInsuranceUploadError] = useState<string | null>(null);
+  const [insuranceUploadSuccess, setInsuranceUploadSuccess] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect to login if not authenticated (unless logging out)
   useEffect(() => {
@@ -175,6 +191,91 @@ export default function ProfilePage() {
     }
   };
 
+  // Insurance upload handler
+  const handleInsuranceUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+
+    // Reset states
+    setInsuranceUploadError(null);
+    setInsuranceUploadSuccess(null);
+    setIsUploadingInsurance(true);
+    setUploadProgress(0);
+
+    // Validate file type client-side
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setInsuranceUploadError('Invalid file type. Please upload a JPG, PNG, WebP, or PDF file.');
+      setIsUploadingInsurance(false);
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setInsuranceUploadError('File too large. Maximum size is 10MB.');
+      setIsUploadingInsurance(false);
+      return;
+    }
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // Simulate progress for better UX
+      setUploadProgress(30);
+
+      const response = await fetch(`${API_BASE_URL}/customer/insurance/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      setUploadProgress(70);
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadProgress(100);
+        setInsuranceUploadSuccess(data.message || 'Insurance document uploaded successfully!');
+
+        // Update profile state
+        if (profile) {
+          setProfile({
+            ...profile,
+            insurance_status: data.insurance_status,
+          });
+        }
+
+        // Clear success after 5 seconds
+        setTimeout(() => setInsuranceUploadSuccess(null), 5000);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setInsuranceUploadError(errorData.detail || 'Failed to upload document. Please try again.');
+      }
+    } catch (err) {
+      setInsuranceUploadError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsUploadingInsurance(false);
+      setUploadProgress(0);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [token, profile]);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Get insurance status display
+  const getInsuranceStatusDisplay = () => {
+    const status = profile?.insurance_status || 'not_uploaded';
+    return insuranceStatusConfig[status] || insuranceStatusConfig.not_uploaded;
+  };
+
   if (isLoading || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-luxury-cream flex items-center justify-center">
@@ -254,6 +355,126 @@ export default function ProfilePage() {
                   {profile?.is_verified ? 'Verified' : 'Pending Verification'}
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Insurance Document Section */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-charcoal mb-4">Insurance Verification</h2>
+
+            {/* Current Status */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-500 mb-2">Document Status</label>
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getInsuranceStatusDisplay().bgColor} ${getInsuranceStatusDisplay().color}`}>
+                {getInsuranceStatusDisplay().label}
+              </span>
+              {profile?.insurance_status === 'pending' && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Your document is being reviewed. Verification typically takes up to 48 hours.
+                </p>
+              )}
+              {profile?.insurance_status === 'rejected' && (
+                <p className="text-sm text-red-600 mt-2">
+                  Your document was not accepted. Please upload a clear copy of your valid insurance card.
+                </p>
+              )}
+              {profile?.insurance_status === 'expired' && (
+                <p className="text-sm text-orange-600 mt-2">
+                  Your insurance has expired. Please upload an updated insurance document.
+                </p>
+              )}
+            </div>
+
+            {/* Upload Section */}
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-gold transition-colors">
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleInsuranceUpload}
+                accept=".jpg,.jpeg,.png,.webp,.pdf"
+                className="hidden"
+                id="insurance-upload"
+              />
+
+              {/* Upload Icon */}
+              <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+
+              {/* Upload Status */}
+              {isUploadingInsurance ? (
+                <div>
+                  <div className="flex justify-center mb-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gold"></div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">Uploading document...</p>
+                  {/* Progress Bar */}
+                  <div className="w-full max-w-xs mx-auto bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-gold h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-600 mb-2">
+                    {profile?.insurance_status === 'not_uploaded'
+                      ? 'Upload your driver insurance document'
+                      : 'Upload a new insurance document'}
+                  </p>
+                  <p className="text-xs text-gray-400 mb-4">
+                    Accepted formats: JPG, PNG, WebP, PDF (Max 10MB)
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleUploadClick}
+                    className="inline-flex items-center px-4 py-2 bg-gold text-charcoal font-medium rounded-lg hover:bg-gold/90 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {profile?.insurance_status === 'not_uploaded' ? 'Upload Document' : 'Replace Document'}
+                  </button>
+                </>
+              )}
+
+              {/* Success Message */}
+              {insuranceUploadSuccess && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-700 flex items-center justify-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {insuranceUploadSuccess}
+                  </p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {insuranceUploadError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 flex items-center justify-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {insuranceUploadError}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Requirements */}
+            <div className="mt-4 text-sm text-gray-500">
+              <p className="font-medium text-gray-700 mb-1">Document Requirements:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Clear, readable photo or scan of your insurance card</li>
+                <li>Must show policy holder name, policy number, and coverage dates</li>
+                <li>Document must be current and not expired</li>
+              </ul>
             </div>
           </div>
 

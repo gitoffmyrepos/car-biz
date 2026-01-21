@@ -5,17 +5,22 @@ Salvage-to-Lux Fleet Management
 Customer profile management endpoints.
 """
 
+import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.config import settings
 from app.core.database import get_db
-from app.models.customer_profile import CustomerProfile
+from app.models.customer_profile import CustomerProfile, InsuranceStatus
+from app.services.storage import storage_service
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/customer", tags=["Customer"])
@@ -186,3 +191,117 @@ async def patch_profile(
     Alias for PUT /profile - both support partial updates.
     """
     return await update_profile(update_data, user, db)
+
+
+class InsuranceUploadResponse(BaseModel):
+    """Response for insurance upload."""
+    success: bool
+    message: str
+    insurance_status: str
+    document_key: Optional[str] = None
+
+
+@router.post("/insurance/upload", response_model=InsuranceUploadResponse)
+async def upload_insurance_document(
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Upload driver insurance documentation.
+
+    - Validates file type (images, PDF)
+    - Validates file size (max 10MB)
+    - Stores file in MinIO/local storage
+    - Updates customer profile with pending status
+    """
+    # Read file content
+    file_content = await file.read()
+    original_filename = file.filename or "insurance_document"
+
+    # Validate file
+    is_valid, error_message, mime_type = storage_service.validate_file(
+        file_content, original_filename
+    )
+
+    if not is_valid or mime_type is None:
+        raise HTTPException(status_code=400, detail=error_message or "Invalid file type")
+
+    # Get or create customer profile
+    profile = await get_or_create_profile(user, db)
+
+    # Generate storage key
+    storage_key = storage_service.generate_storage_key(
+        user_id=user.sub,
+        document_type="insurance",
+        original_filename=original_filename,
+        mime_type=mime_type,
+    )
+
+    # Compute file hash for duplicate detection
+    file_hash = storage_service.compute_file_hash(file_content)
+    logger.info(f"Insurance document hash: {file_hash[:16]}...")
+
+    # Upload to storage
+    success = await storage_service.upload_file(
+        file_content=file_content,
+        bucket=settings.S3_BUCKET_INSURANCE,
+        key=storage_key,
+        content_type=mime_type,
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload document. Please try again."
+        )
+
+    # Delete old insurance document if exists
+    if profile.insurance_document_key:
+        await storage_service.delete_file(
+            bucket=settings.S3_BUCKET_INSURANCE,
+            key=profile.insurance_document_key
+        )
+
+    # Update profile
+    profile.insurance_document_key = storage_key
+    profile.insurance_status = InsuranceStatus.PENDING
+    await db.flush()
+    await db.refresh(profile)
+
+    logger.info(
+        f"Insurance document uploaded for user {user.sub}: {storage_key}"
+    )
+
+    return InsuranceUploadResponse(
+        success=True,
+        message="Insurance document uploaded successfully. Verification pending (48 hours).",
+        insurance_status=profile.insurance_status.value,
+        document_key=storage_key,
+    )
+
+
+@router.get("/insurance/status")
+async def get_insurance_status(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get current insurance document status.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Generate signed URL if document exists
+    document_url = None
+    if profile.insurance_document_key:
+        document_url = storage_service.generate_signed_url(
+            bucket=settings.S3_BUCKET_INSURANCE,
+            key=profile.insurance_document_key,
+        )
+
+    return {
+        "insurance_status": profile.insurance_status.value,
+        "insurance_expiration_date": profile.insurance_expiration_date,
+        "has_document": bool(profile.insurance_document_key),
+        "document_url": document_url,
+    }

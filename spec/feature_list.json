@@ -285,7 +285,7 @@
       "Verify document status shows 'Pending Verification'",
       "Take screenshot of insurance upload"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
