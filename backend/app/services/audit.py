@@ -300,5 +300,42 @@ class AuditService:
         )
 
 
+    async def log_tracker_assignment(
+        self,
+        session: AsyncSession,
+        user: AuthenticatedUser,
+        tracker_id: int,
+        vehicle_id: int,
+        is_assignment: bool,
+        tracker_device_id: str,
+        vehicle_description: str,
+        notes: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> AuditLog:
+        """
+        Log tracker assignment or unassignment to a vehicle.
+        """
+        action = (
+            AuditAction.TRACKER_ASSIGNMENT
+            if is_assignment
+            else AuditAction.TRACKER_UNASSIGNMENT
+        )
+
+        return await self.log_action(
+            session=session,
+            user=user,
+            action=action,
+            target_type="tracker_device",
+            target_id=str(tracker_id),
+            target_description=f"Tracker {tracker_device_id} {'assigned to' if is_assignment else 'unassigned from'} {vehicle_description}",
+            before_state={"assigned_vehicle_id": None if is_assignment else vehicle_id},
+            after_state={"assigned_vehicle_id": vehicle_id if is_assignment else None},
+            notes=notes,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+
+
 # Singleton instance
 audit_service = AuditService()

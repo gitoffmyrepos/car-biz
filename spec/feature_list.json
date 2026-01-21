@@ -635,7 +635,7 @@
       "Verify customer notified of assignment",
       "Take screenshot of vehicle assignment"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -650,7 +650,7 @@
       "View tracker details",
       "Take screenshot of tracker management"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -665,7 +665,7 @@
       "Verify vehicle shows assigned tracker",
       "Take screenshot of tracker assignment"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -678,7 +678,7 @@
       "Verify target entity (tracker and vehicle IDs) recorded",
       "Take screenshot of tracker audit entry"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

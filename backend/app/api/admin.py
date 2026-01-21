@@ -29,8 +29,10 @@ from app.models.lease import Lease, LeaseStatus
 from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus
 from app.models.vehicle import Vehicle, VehicleStatus, VehicleCondition
+from app.models.tracker_device import TrackerDevice, TrackerStatus
 from app.services.storage import storage_service
 from app.services.audit import audit_service
+from app.services.notification import notification_service
 
 logger = logging.getLogger(__name__)
 
@@ -1669,3 +1671,1272 @@ async def get_condition_report_photo_url(
         "photo_url": signed_url,
         "expires_in_seconds": 300,
     }
+
+
+# =============================================================================
+# Vehicle Assignment (Lease Creation)
+# =============================================================================
+
+class VehicleAssignmentRequest(BaseModel):
+    """Request to assign a vehicle to a customer, creating a lease."""
+    vehicle_id: int
+    customer_profile_id: int
+    vehicle_request_id: Optional[int] = None
+    weekly_payment: float
+    security_deposit: Optional[float] = None
+    start_date: datetime
+    end_date: Optional[datetime] = None  # Open-ended leases don't have end date
+    notes: Optional[str] = None
+    admin_notes: Optional[str] = None
+
+
+class VehicleAssignmentResponse(BaseModel):
+    """Response for vehicle assignment action."""
+    success: bool
+    message: str
+    lease_id: int
+    vehicle_id: int
+    customer_profile_id: int
+    vehicle_info: str
+    weekly_payment: float
+    start_date: datetime
+    assigned_by: str
+    timestamp: str
+
+
+@router.get("/vehicle-requests", response_model=list[dict[str, Any]])
+async def list_vehicle_requests(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List all vehicle requests.
+
+    Requires admin or ops role.
+    Optionally filter by status: pending, reviewing, approved, assigned, rejected, cancelled
+    """
+    query = select(VehicleRequest).order_by(VehicleRequest.created_at.desc())
+
+    if status_filter:
+        try:
+            status_enum = VehicleRequestStatus(status_filter)
+            query = query.where(VehicleRequest.status == status_enum)
+        except ValueError:
+            valid_statuses = [s.value for s in VehicleRequestStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    requests = result.scalars().all()
+
+    return [
+        {
+            "id": req.id,
+            "customer_profile_id": req.customer_profile_id,
+            "customer_email": req.customer_email,
+            "customer_name": req.customer_name,
+            "status": req.status.value,
+            "vehicle_preference": req.vehicle_preference.value if req.vehicle_preference else None,
+            "notes": req.notes,
+            "preferred_start_date": req.preferred_start_date.isoformat() if req.preferred_start_date else None,
+            "admin_notes": req.admin_notes,
+            "rejection_reason": req.rejection_reason,
+            "assigned_vehicle_id": req.assigned_vehicle_id,
+            "assigned_vehicle_info": req.assigned_vehicle_info,
+            "created_at": req.created_at.isoformat() if req.created_at else None,
+            "updated_at": req.updated_at.isoformat() if req.updated_at else None,
+            "reviewed_at": req.reviewed_at.isoformat() if req.reviewed_at else None,
+            "assigned_at": req.assigned_at.isoformat() if req.assigned_at else None,
+        }
+        for req in requests
+    ]
+
+
+@router.get("/vehicle-requests/{request_id}")
+async def get_vehicle_request(
+    request_id: int,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific vehicle request by ID.
+
+    Requires admin or ops role.
+    """
+    result = await session.execute(
+        select(VehicleRequest).where(VehicleRequest.id == request_id)
+    )
+    vr = result.scalar_one_or_none()
+
+    if not vr:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle request not found"
+        )
+
+    return {
+        "id": vr.id,
+        "customer_profile_id": vr.customer_profile_id,
+        "customer_email": vr.customer_email,
+        "customer_name": vr.customer_name,
+        "status": vr.status.value,
+        "vehicle_preference": vr.vehicle_preference.value if vr.vehicle_preference else None,
+        "notes": vr.notes,
+        "preferred_start_date": vr.preferred_start_date.isoformat() if vr.preferred_start_date else None,
+        "admin_notes": vr.admin_notes,
+        "rejection_reason": vr.rejection_reason,
+        "assigned_vehicle_id": vr.assigned_vehicle_id,
+        "assigned_vehicle_info": vr.assigned_vehicle_info,
+        "created_at": vr.created_at.isoformat() if vr.created_at else None,
+        "updated_at": vr.updated_at.isoformat() if vr.updated_at else None,
+        "reviewed_at": vr.reviewed_at.isoformat() if vr.reviewed_at else None,
+        "assigned_at": vr.assigned_at.isoformat() if vr.assigned_at else None,
+    }
+
+
+@router.patch("/vehicle-requests/{request_id}/status")
+async def update_vehicle_request_status(
+    request_id: int,
+    new_status: str,
+    notes: Optional[str] = None,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update vehicle request status.
+
+    Requires admin or ops role.
+    Valid statuses: pending, reviewing, approved, rejected, cancelled
+    Note: Use assign-vehicle endpoint to change status to 'assigned'
+    """
+    # Validate status
+    if new_status == "assigned":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot set status to 'assigned' directly. Use the assign-vehicle endpoint."
+        )
+
+    try:
+        status_enum = VehicleRequestStatus(new_status)
+    except ValueError:
+        valid_statuses = [s.value for s in VehicleRequestStatus if s != VehicleRequestStatus.ASSIGNED]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        )
+
+    # Get vehicle request
+    result = await session.execute(
+        select(VehicleRequest).where(VehicleRequest.id == request_id)
+    )
+    vr = result.scalar_one_or_none()
+
+    if not vr:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle request not found"
+        )
+
+    old_status = vr.status.value
+    vr.status = status_enum
+    vr.updated_at = datetime.now(timezone.utc)
+
+    if new_status == "reviewing":
+        vr.reviewed_at = datetime.now(timezone.utc)
+
+    if new_status == "rejected" and notes:
+        vr.rejection_reason = notes
+
+    if notes:
+        vr.admin_notes = notes
+
+    await session.commit()
+
+    logger.info(f"Admin {user.email} updated vehicle request {request_id} status from '{old_status}' to '{new_status}'")
+
+    return AdminActionResponse(
+        success=True,
+        message=f"Vehicle request #{request_id} status updated from '{old_status}' to '{new_status}'",
+        actor=user.email,
+        action="update_vehicle_request_status",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+@router.post("/assign-vehicle", response_model=VehicleAssignmentResponse)
+async def assign_vehicle_to_customer(
+    request: VehicleAssignmentRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Assign a vehicle to a customer, creating a new lease contract.
+
+    Requires admin role.
+
+    This endpoint:
+    1. Validates vehicle is available
+    2. Validates customer exists and has approved insurance
+    3. Creates a new Lease record
+    4. Updates vehicle status to 'leased' and links to lease
+    5. Updates vehicle request status to 'assigned' (if provided)
+    6. Sends notification to customer
+
+    Args:
+        request: VehicleAssignmentRequest with vehicle_id, customer_profile_id,
+                 weekly_payment, start_date, and optional fields
+    """
+    # 1. Validate vehicle exists and is available
+    vehicle_result = await session.execute(
+        select(Vehicle).where(Vehicle.id == request.vehicle_id)
+    )
+    vehicle = vehicle_result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    if not vehicle.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vehicle is not active"
+        )
+
+    if vehicle.status != VehicleStatus.AVAILABLE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Vehicle is not available (current status: {vehicle.status.value})"
+        )
+
+    # 2. Validate customer exists and has approved insurance
+    customer_result = await session.execute(
+        select(CustomerProfile).where(CustomerProfile.id == request.customer_profile_id)
+    )
+    customer = customer_result.scalar_one_or_none()
+
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer not found"
+        )
+
+    if customer.insurance_status != InsuranceStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Customer insurance is not approved (current status: {customer.insurance_status.value})"
+        )
+
+    # 3. Validate vehicle request if provided
+    vehicle_request = None
+    if request.vehicle_request_id:
+        vr_result = await session.execute(
+            select(VehicleRequest).where(VehicleRequest.id == request.vehicle_request_id)
+        )
+        vehicle_request = vr_result.scalar_one_or_none()
+
+        if not vehicle_request:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vehicle request not found"
+            )
+
+        if vehicle_request.customer_profile_id != request.customer_profile_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vehicle request does not belong to the specified customer"
+            )
+
+        if vehicle_request.status == VehicleRequestStatus.ASSIGNED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vehicle request has already been assigned"
+            )
+
+    # 4. Create lease record
+    vehicle_info = f"{vehicle.year} {vehicle.make} {vehicle.model}"
+
+    lease = Lease(
+        customer_profile_id=request.customer_profile_id,
+        vehicle_request_id=request.vehicle_request_id,
+        vehicle_make=vehicle.make,
+        vehicle_model=vehicle.model,
+        vehicle_year=vehicle.year,
+        vehicle_vin=vehicle.vin,
+        vehicle_color=vehicle.color,
+        vehicle_license_plate=vehicle.license_plate,
+        status=LeaseStatus.ACTIVE,
+        weekly_payment=Decimal(str(request.weekly_payment)),
+        security_deposit=Decimal(str(request.security_deposit)) if request.security_deposit else None,
+        start_date=request.start_date,
+        end_date=request.end_date,
+        notes=request.notes,
+        admin_notes=request.admin_notes,
+    )
+
+    session.add(lease)
+    await session.flush()
+    await session.refresh(lease)
+
+    # 5. Update vehicle status and link to lease
+    vehicle.status = VehicleStatus.LEASED
+    vehicle.current_lease_id = lease.id
+    vehicle.updated_at = datetime.now(timezone.utc)
+
+    # 6. Update vehicle request status to assigned (if provided)
+    if vehicle_request:
+        vehicle_request.status = VehicleRequestStatus.ASSIGNED
+        vehicle_request.assigned_vehicle_id = vehicle.id
+        vehicle_request.assigned_vehicle_info = vehicle_info
+        vehicle_request.assigned_at = datetime.now(timezone.utc)
+        vehicle_request.updated_at = datetime.now(timezone.utc)
+
+    # 7. Send notification to customer
+    await notification_service.create_vehicle_assigned_notification(
+        db=session,
+        customer_profile_id=request.customer_profile_id,
+        vehicle_info=vehicle_info,
+        lease_id=lease.id,
+    )
+
+    await session.commit()
+
+    logger.info(
+        f"Admin {user.email} assigned vehicle {vehicle.id} ({vehicle_info}) to customer {customer.email} "
+        f"(lease_id={lease.id}, weekly_payment=${request.weekly_payment})"
+    )
+
+    return VehicleAssignmentResponse(
+        success=True,
+        message=f"Vehicle {vehicle_info} successfully assigned to customer",
+        lease_id=lease.id,
+        vehicle_id=vehicle.id,
+        customer_profile_id=request.customer_profile_id,
+        vehicle_info=vehicle_info,
+        weekly_payment=float(lease.weekly_payment),
+        start_date=lease.start_date,
+        assigned_by=user.email,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+@router.get("/available-vehicles", response_model=list[VehicleResponse])
+async def list_available_vehicles(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    List all available vehicles that can be assigned to customers.
+
+    Requires admin or ops role.
+    Returns only active vehicles with status 'available'.
+    """
+    query = (
+        select(Vehicle)
+        .where(Vehicle.is_active == True)
+        .where(Vehicle.status == VehicleStatus.AVAILABLE)
+        .order_by(Vehicle.make, Vehicle.model, Vehicle.year)
+    )
+
+    result = await session.execute(query)
+    vehicles = result.scalars().all()
+
+    return [
+        VehicleResponse(
+            id=v.id,
+            vin=v.vin,
+            make=v.make,
+            model=v.model,
+            year=v.year,
+            color=v.color,
+            body_type=v.body_type,
+            license_plate=v.license_plate,
+            engine=v.engine,
+            transmission=v.transmission,
+            mileage=v.mileage,
+            weekly_rate=float(v.weekly_rate) if v.weekly_rate else 0.0,
+            security_deposit=float(v.security_deposit) if v.security_deposit else None,
+            status=v.status.value,
+            condition=v.condition.value,
+            acquisition_source=v.acquisition_source,
+            acquisition_cost=float(v.acquisition_cost) if v.acquisition_cost else None,
+            repair_cost=float(v.repair_cost) if v.repair_cost else None,
+            current_lease_id=v.current_lease_id,
+            current_tracker_id=v.current_tracker_id,
+            notes=v.notes,
+            admin_notes=v.admin_notes,
+            is_active=v.is_active,
+            show_on_fleet_page=v.show_on_fleet_page,
+            created_at=v.created_at,
+            updated_at=v.updated_at,
+        )
+        for v in vehicles
+    ]
+
+
+@router.get("/leases", response_model=list[dict[str, Any]])
+async def list_leases(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List all leases.
+
+    Requires admin or ops role.
+    Optionally filter by status: active, completed, terminated, suspended
+    """
+    query = select(Lease).order_by(Lease.created_at.desc())
+
+    if status_filter:
+        try:
+            status_enum = LeaseStatus(status_filter)
+            query = query.where(Lease.status == status_enum)
+        except ValueError:
+            valid_statuses = [s.value for s in LeaseStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    leases = result.scalars().all()
+
+    return [
+        {
+            "id": lease.id,
+            "customer_profile_id": lease.customer_profile_id,
+            "vehicle_request_id": lease.vehicle_request_id,
+            "vehicle_make": lease.vehicle_make,
+            "vehicle_model": lease.vehicle_model,
+            "vehicle_year": lease.vehicle_year,
+            "vehicle_vin": lease.vehicle_vin,
+            "vehicle_color": lease.vehicle_color,
+            "vehicle_license_plate": lease.vehicle_license_plate,
+            "status": lease.status.value,
+            "weekly_payment": float(lease.weekly_payment),
+            "security_deposit": float(lease.security_deposit) if lease.security_deposit else None,
+            "start_date": lease.start_date.isoformat() if lease.start_date else None,
+            "end_date": lease.end_date.isoformat() if lease.end_date else None,
+            "notes": lease.notes,
+            "admin_notes": lease.admin_notes,
+            "created_at": lease.created_at.isoformat() if lease.created_at else None,
+            "updated_at": lease.updated_at.isoformat() if lease.updated_at else None,
+            "terminated_at": lease.terminated_at.isoformat() if lease.terminated_at else None,
+            "termination_reason": lease.termination_reason,
+        }
+        for lease in leases
+    ]
+
+
+@router.get("/leases/{lease_id}")
+async def get_lease(
+    lease_id: int,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific lease by ID.
+
+    Requires admin or ops role.
+    """
+    result = await session.execute(
+        select(Lease).where(Lease.id == lease_id)
+    )
+    lease = result.scalar_one_or_none()
+
+    if not lease:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lease not found"
+        )
+
+    return {
+        "id": lease.id,
+        "customer_profile_id": lease.customer_profile_id,
+        "vehicle_request_id": lease.vehicle_request_id,
+        "vehicle_make": lease.vehicle_make,
+        "vehicle_model": lease.vehicle_model,
+        "vehicle_year": lease.vehicle_year,
+        "vehicle_vin": lease.vehicle_vin,
+        "vehicle_color": lease.vehicle_color,
+        "vehicle_license_plate": lease.vehicle_license_plate,
+        "status": lease.status.value,
+        "weekly_payment": float(lease.weekly_payment),
+        "security_deposit": float(lease.security_deposit) if lease.security_deposit else None,
+        "start_date": lease.start_date.isoformat() if lease.start_date else None,
+        "end_date": lease.end_date.isoformat() if lease.end_date else None,
+        "notes": lease.notes,
+        "admin_notes": lease.admin_notes,
+        "created_at": lease.created_at.isoformat() if lease.created_at else None,
+        "updated_at": lease.updated_at.isoformat() if lease.updated_at else None,
+        "terminated_at": lease.terminated_at.isoformat() if lease.terminated_at else None,
+        "termination_reason": lease.termination_reason,
+    }
+
+
+# =============================================================================
+# Tracker Device Management (CRUD)
+# =============================================================================
+
+class TrackerCreateRequest(BaseModel):
+    """Request to create a new tracker device."""
+    device_id: str
+    serial_number: str
+    model: str
+    manufacturer: Optional[str] = None
+    firmware_version: Optional[str] = None
+    sim_number: Optional[str] = None
+    sim_carrier: Optional[str] = None
+    imei: Optional[str] = None
+    status: str = "available"
+    provider_name: Optional[str] = None
+    provider_device_id: Optional[str] = None
+    purchase_date: Optional[datetime] = None
+    purchase_cost: Optional[str] = None
+    warranty_expiry: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class TrackerUpdateRequest(BaseModel):
+    """Request to update a tracker device."""
+    device_id: Optional[str] = None
+    serial_number: Optional[str] = None
+    model: Optional[str] = None
+    manufacturer: Optional[str] = None
+    firmware_version: Optional[str] = None
+    sim_number: Optional[str] = None
+    sim_carrier: Optional[str] = None
+    imei: Optional[str] = None
+    status: Optional[str] = None
+    provider_name: Optional[str] = None
+    provider_device_id: Optional[str] = None
+    purchase_cost: Optional[str] = None
+    warranty_expiry: Optional[datetime] = None
+    notes: Optional[str] = None
+    admin_notes: Optional[str] = None
+
+
+class TrackerResponse(BaseModel):
+    """Tracker device response for API."""
+    id: int
+    device_id: str
+    serial_number: str
+    model: str
+    manufacturer: Optional[str]
+    firmware_version: Optional[str]
+    sim_number: Optional[str]
+    sim_carrier: Optional[str]
+    imei: Optional[str]
+    status: str
+    assigned_vehicle_id: Optional[int]
+    assigned_vehicle_info: Optional[str]
+    assigned_at: Optional[datetime]
+    last_latitude: Optional[str]
+    last_longitude: Optional[str]
+    last_location_update: Optional[datetime]
+    last_checkin: Optional[datetime]
+    provider_name: Optional[str]
+    provider_device_id: Optional[str]
+    purchase_date: Optional[datetime]
+    purchase_cost: Optional[str]
+    warranty_expiry: Optional[datetime]
+    notes: Optional[str]
+    admin_notes: Optional[str]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/trackers", response_model=list[TrackerResponse])
+async def list_trackers(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List all tracker devices in inventory.
+
+    Requires admin or ops role.
+    Optionally filter by status: available, assigned, maintenance, decommissioned, lost
+    """
+    query = select(TrackerDevice).where(TrackerDevice.is_active == True).order_by(TrackerDevice.created_at.desc())
+
+    if status_filter:
+        try:
+            status_enum = TrackerStatus(status_filter)
+            query = query.where(TrackerDevice.status == status_enum)
+        except ValueError:
+            valid_statuses = [s.value for s in TrackerStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    trackers = result.scalars().all()
+
+    return [
+        TrackerResponse(
+            id=t.id,
+            device_id=t.device_id,
+            serial_number=t.serial_number,
+            model=t.model,
+            manufacturer=t.manufacturer,
+            firmware_version=t.firmware_version,
+            sim_number=t.sim_number,
+            sim_carrier=t.sim_carrier,
+            imei=t.imei,
+            status=t.status.value,
+            assigned_vehicle_id=t.assigned_vehicle_id,
+            assigned_vehicle_info=t.assigned_vehicle_info,
+            assigned_at=t.assigned_at,
+            last_latitude=t.last_latitude,
+            last_longitude=t.last_longitude,
+            last_location_update=t.last_location_update,
+            last_checkin=t.last_checkin,
+            provider_name=t.provider_name,
+            provider_device_id=t.provider_device_id,
+            purchase_date=t.purchase_date,
+            purchase_cost=t.purchase_cost,
+            warranty_expiry=t.warranty_expiry,
+            notes=t.notes,
+            admin_notes=t.admin_notes,
+            is_active=t.is_active,
+            created_at=t.created_at,
+            updated_at=t.updated_at,
+        )
+        for t in trackers
+    ]
+
+
+@router.get("/trackers/{tracker_id}", response_model=TrackerResponse)
+async def get_tracker(
+    tracker_id: int,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific tracker device by ID.
+
+    Requires admin or ops role.
+    """
+    result = await session.execute(
+        select(TrackerDevice).where(TrackerDevice.id == tracker_id)
+    )
+    tracker = result.scalar_one_or_none()
+
+    if not tracker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tracker device not found"
+        )
+
+    return TrackerResponse(
+        id=tracker.id,
+        device_id=tracker.device_id,
+        serial_number=tracker.serial_number,
+        model=tracker.model,
+        manufacturer=tracker.manufacturer,
+        firmware_version=tracker.firmware_version,
+        sim_number=tracker.sim_number,
+        sim_carrier=tracker.sim_carrier,
+        imei=tracker.imei,
+        status=tracker.status.value,
+        assigned_vehicle_id=tracker.assigned_vehicle_id,
+        assigned_vehicle_info=tracker.assigned_vehicle_info,
+        assigned_at=tracker.assigned_at,
+        last_latitude=tracker.last_latitude,
+        last_longitude=tracker.last_longitude,
+        last_location_update=tracker.last_location_update,
+        last_checkin=tracker.last_checkin,
+        provider_name=tracker.provider_name,
+        provider_device_id=tracker.provider_device_id,
+        purchase_date=tracker.purchase_date,
+        purchase_cost=tracker.purchase_cost,
+        warranty_expiry=tracker.warranty_expiry,
+        notes=tracker.notes,
+        admin_notes=tracker.admin_notes,
+        is_active=tracker.is_active,
+        created_at=tracker.created_at,
+        updated_at=tracker.updated_at,
+    )
+
+
+@router.post("/trackers", response_model=TrackerResponse, status_code=status.HTTP_201_CREATED)
+async def create_tracker(
+    request: TrackerCreateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Create a new tracker device.
+
+    Requires admin role.
+    """
+    # Check device_id uniqueness
+    existing_device_id = await session.execute(
+        select(TrackerDevice).where(TrackerDevice.device_id == request.device_id)
+    )
+    if existing_device_id.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tracker with device ID '{request.device_id}' already exists"
+        )
+
+    # Check serial_number uniqueness
+    existing_serial = await session.execute(
+        select(TrackerDevice).where(TrackerDevice.serial_number == request.serial_number)
+    )
+    if existing_serial.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tracker with serial number '{request.serial_number}' already exists"
+        )
+
+    # Validate status
+    try:
+        status_enum = TrackerStatus(request.status)
+    except ValueError:
+        valid_statuses = [s.value for s in TrackerStatus]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        )
+
+    # Create tracker
+    tracker = TrackerDevice(
+        device_id=request.device_id,
+        serial_number=request.serial_number,
+        model=request.model,
+        manufacturer=request.manufacturer,
+        firmware_version=request.firmware_version,
+        sim_number=request.sim_number,
+        sim_carrier=request.sim_carrier,
+        imei=request.imei,
+        status=status_enum,
+        provider_name=request.provider_name,
+        provider_device_id=request.provider_device_id,
+        purchase_date=request.purchase_date,
+        purchase_cost=request.purchase_cost,
+        warranty_expiry=request.warranty_expiry,
+        notes=request.notes,
+    )
+
+    session.add(tracker)
+    await session.flush()
+    await session.refresh(tracker)
+
+    logger.info(f"Admin {user.email} created tracker device {tracker.id} (device_id: {tracker.device_id})")
+
+    return TrackerResponse(
+        id=tracker.id,
+        device_id=tracker.device_id,
+        serial_number=tracker.serial_number,
+        model=tracker.model,
+        manufacturer=tracker.manufacturer,
+        firmware_version=tracker.firmware_version,
+        sim_number=tracker.sim_number,
+        sim_carrier=tracker.sim_carrier,
+        imei=tracker.imei,
+        status=tracker.status.value,
+        assigned_vehicle_id=tracker.assigned_vehicle_id,
+        assigned_vehicle_info=tracker.assigned_vehicle_info,
+        assigned_at=tracker.assigned_at,
+        last_latitude=tracker.last_latitude,
+        last_longitude=tracker.last_longitude,
+        last_location_update=tracker.last_location_update,
+        last_checkin=tracker.last_checkin,
+        provider_name=tracker.provider_name,
+        provider_device_id=tracker.provider_device_id,
+        purchase_date=tracker.purchase_date,
+        purchase_cost=tracker.purchase_cost,
+        warranty_expiry=tracker.warranty_expiry,
+        notes=tracker.notes,
+        admin_notes=tracker.admin_notes,
+        is_active=tracker.is_active,
+        created_at=tracker.created_at,
+        updated_at=tracker.updated_at,
+    )
+
+
+@router.put("/trackers/{tracker_id}", response_model=TrackerResponse)
+async def update_tracker(
+    tracker_id: int,
+    request: TrackerUpdateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update an existing tracker device.
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(TrackerDevice).where(TrackerDevice.id == tracker_id)
+    )
+    tracker = result.scalar_one_or_none()
+
+    if not tracker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tracker device not found"
+        )
+
+    # Check device_id uniqueness if being updated
+    if request.device_id is not None and request.device_id != tracker.device_id:
+        existing = await session.execute(
+            select(TrackerDevice).where(
+                TrackerDevice.device_id == request.device_id,
+                TrackerDevice.id != tracker_id
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Tracker with device ID '{request.device_id}' already exists"
+            )
+        tracker.device_id = request.device_id
+
+    # Check serial_number uniqueness if being updated
+    if request.serial_number is not None and request.serial_number != tracker.serial_number:
+        existing = await session.execute(
+            select(TrackerDevice).where(
+                TrackerDevice.serial_number == request.serial_number,
+                TrackerDevice.id != tracker_id
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Tracker with serial number '{request.serial_number}' already exists"
+            )
+        tracker.serial_number = request.serial_number
+
+    # Update other fields if provided
+    if request.model is not None:
+        tracker.model = request.model
+    if request.manufacturer is not None:
+        tracker.manufacturer = request.manufacturer
+    if request.firmware_version is not None:
+        tracker.firmware_version = request.firmware_version
+    if request.sim_number is not None:
+        tracker.sim_number = request.sim_number
+    if request.sim_carrier is not None:
+        tracker.sim_carrier = request.sim_carrier
+    if request.imei is not None:
+        tracker.imei = request.imei
+    if request.provider_name is not None:
+        tracker.provider_name = request.provider_name
+    if request.provider_device_id is not None:
+        tracker.provider_device_id = request.provider_device_id
+    if request.purchase_cost is not None:
+        tracker.purchase_cost = request.purchase_cost
+    if request.warranty_expiry is not None:
+        tracker.warranty_expiry = request.warranty_expiry
+    if request.notes is not None:
+        tracker.notes = request.notes
+    if request.admin_notes is not None:
+        tracker.admin_notes = request.admin_notes
+
+    # Validate and update status
+    if request.status is not None:
+        try:
+            status_enum = TrackerStatus(request.status)
+            tracker.status = status_enum
+        except ValueError:
+            valid_statuses = [s.value for s in TrackerStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+
+    tracker.updated_at = datetime.now(timezone.utc)
+
+    await session.flush()
+    await session.refresh(tracker)
+
+    logger.info(f"Admin {user.email} updated tracker device {tracker.id} (device_id: {tracker.device_id})")
+
+    return TrackerResponse(
+        id=tracker.id,
+        device_id=tracker.device_id,
+        serial_number=tracker.serial_number,
+        model=tracker.model,
+        manufacturer=tracker.manufacturer,
+        firmware_version=tracker.firmware_version,
+        sim_number=tracker.sim_number,
+        sim_carrier=tracker.sim_carrier,
+        imei=tracker.imei,
+        status=tracker.status.value,
+        assigned_vehicle_id=tracker.assigned_vehicle_id,
+        assigned_vehicle_info=tracker.assigned_vehicle_info,
+        assigned_at=tracker.assigned_at,
+        last_latitude=tracker.last_latitude,
+        last_longitude=tracker.last_longitude,
+        last_location_update=tracker.last_location_update,
+        last_checkin=tracker.last_checkin,
+        provider_name=tracker.provider_name,
+        provider_device_id=tracker.provider_device_id,
+        purchase_date=tracker.purchase_date,
+        purchase_cost=tracker.purchase_cost,
+        warranty_expiry=tracker.warranty_expiry,
+        notes=tracker.notes,
+        admin_notes=tracker.admin_notes,
+        is_active=tracker.is_active,
+        created_at=tracker.created_at,
+        updated_at=tracker.updated_at,
+    )
+
+
+@router.delete("/trackers/{tracker_id}")
+async def delete_tracker(
+    tracker_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Delete a tracker device (soft delete by setting is_active=False).
+
+    Requires admin role.
+    Cannot delete trackers currently assigned to vehicles.
+    """
+    result = await session.execute(
+        select(TrackerDevice).where(TrackerDevice.id == tracker_id)
+    )
+    tracker = result.scalar_one_or_none()
+
+    if not tracker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tracker device not found"
+        )
+
+    # Check if tracker is currently assigned
+    if tracker.status == TrackerStatus.ASSIGNED or tracker.assigned_vehicle_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete tracker device that is currently assigned to a vehicle"
+        )
+
+    # Soft delete
+    tracker.is_active = False
+    tracker.updated_at = datetime.now(timezone.utc)
+
+    logger.info(f"Admin {user.email} deleted (soft) tracker device {tracker.id} (device_id: {tracker.device_id})")
+
+    return {
+        "success": True,
+        "message": f"Tracker device {tracker.device_id} has been deleted",
+        "tracker_id": tracker.id,
+        "deleted_by": user.email,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/trackers/available", response_model=list[TrackerResponse])
+async def list_available_trackers(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    List all available tracker devices that can be assigned to vehicles.
+
+    Requires admin or ops role.
+    Returns only active trackers with status 'available'.
+    """
+    query = (
+        select(TrackerDevice)
+        .where(TrackerDevice.is_active == True)
+        .where(TrackerDevice.status == TrackerStatus.AVAILABLE)
+        .order_by(TrackerDevice.model, TrackerDevice.device_id)
+    )
+
+    result = await session.execute(query)
+    trackers = result.scalars().all()
+
+    return [
+        TrackerResponse(
+            id=t.id,
+            device_id=t.device_id,
+            serial_number=t.serial_number,
+            model=t.model,
+            manufacturer=t.manufacturer,
+            firmware_version=t.firmware_version,
+            sim_number=t.sim_number,
+            sim_carrier=t.sim_carrier,
+            imei=t.imei,
+            status=t.status.value,
+            assigned_vehicle_id=t.assigned_vehicle_id,
+            assigned_vehicle_info=t.assigned_vehicle_info,
+            assigned_at=t.assigned_at,
+            last_latitude=t.last_latitude,
+            last_longitude=t.last_longitude,
+            last_location_update=t.last_location_update,
+            last_checkin=t.last_checkin,
+            provider_name=t.provider_name,
+            provider_device_id=t.provider_device_id,
+            purchase_date=t.purchase_date,
+            purchase_cost=t.purchase_cost,
+            warranty_expiry=t.warranty_expiry,
+            notes=t.notes,
+            admin_notes=t.admin_notes,
+            is_active=t.is_active,
+            created_at=t.created_at,
+            updated_at=t.updated_at,
+        )
+        for t in trackers
+    ]
+
+
+# ==================== Tracker Assignment Endpoints ====================
+
+
+class TrackerAssignmentRequest(BaseModel):
+    """Request to assign a tracker to a vehicle."""
+    vehicle_id: int
+
+
+@router.post("/trackers/{tracker_id}/assign", response_model=TrackerResponse)
+async def assign_tracker_to_vehicle(
+    tracker_id: int,
+    request: TrackerAssignmentRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Assign a tracker device to a vehicle.
+
+    Requires admin role.
+
+    - Tracker must be available (not already assigned)
+    - Vehicle must exist and be active
+    - Creates audit log entry for the assignment
+    """
+    # Get tracker
+    result = await session.execute(
+        select(TrackerDevice).where(TrackerDevice.id == tracker_id)
+    )
+    tracker = result.scalar_one_or_none()
+
+    if not tracker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tracker device not found"
+        )
+
+    if not tracker.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tracker device is not active"
+        )
+
+    if tracker.status == TrackerStatus.ASSIGNED or tracker.assigned_vehicle_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tracker is already assigned to a vehicle"
+        )
+
+    # Get vehicle
+    result = await session.execute(
+        select(Vehicle).where(Vehicle.id == request.vehicle_id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    if not vehicle.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vehicle is not active"
+        )
+
+    # Check if vehicle already has a tracker
+    if vehicle.current_tracker_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vehicle already has a tracker assigned. Unassign it first."
+        )
+
+    # Create vehicle description for display
+    vehicle_description = f"{vehicle.year} {vehicle.make} {vehicle.model}"
+
+    # Assign tracker to vehicle
+    tracker.assigned_vehicle_id = vehicle.id
+    tracker.assigned_vehicle_info = vehicle_description
+    tracker.assigned_at = datetime.now(timezone.utc)
+    tracker.status = TrackerStatus.ASSIGNED
+    tracker.updated_at = datetime.now(timezone.utc)
+
+    # Update vehicle's current_tracker_id
+    vehicle.current_tracker_id = tracker.id
+    vehicle.updated_at = datetime.now(timezone.utc)
+
+    # Create audit log entry
+    await audit_service.log_tracker_assignment(
+        session=session,
+        user=user,
+        tracker_id=tracker.id,
+        vehicle_id=vehicle.id,
+        is_assignment=True,
+        tracker_device_id=tracker.device_id,
+        vehicle_description=vehicle_description,
+    )
+
+    await session.commit()
+    await session.refresh(tracker)
+
+    logger.info(f"Admin {user.email} assigned tracker {tracker.device_id} to vehicle {vehicle.id} ({vehicle_description})")
+
+    return TrackerResponse(
+        id=tracker.id,
+        device_id=tracker.device_id,
+        serial_number=tracker.serial_number,
+        model=tracker.model,
+        manufacturer=tracker.manufacturer,
+        firmware_version=tracker.firmware_version,
+        sim_number=tracker.sim_number,
+        sim_carrier=tracker.sim_carrier,
+        imei=tracker.imei,
+        status=tracker.status.value,
+        assigned_vehicle_id=tracker.assigned_vehicle_id,
+        assigned_vehicle_info=tracker.assigned_vehicle_info,
+        assigned_at=tracker.assigned_at,
+        last_latitude=tracker.last_latitude,
+        last_longitude=tracker.last_longitude,
+        last_location_update=tracker.last_location_update,
+        last_checkin=tracker.last_checkin,
+        provider_name=tracker.provider_name,
+        provider_device_id=tracker.provider_device_id,
+        purchase_date=tracker.purchase_date,
+        purchase_cost=tracker.purchase_cost,
+        warranty_expiry=tracker.warranty_expiry,
+        notes=tracker.notes,
+        admin_notes=tracker.admin_notes,
+        is_active=tracker.is_active,
+        created_at=tracker.created_at,
+        updated_at=tracker.updated_at,
+    )
+
+
+@router.post("/trackers/{tracker_id}/unassign", response_model=TrackerResponse)
+async def unassign_tracker_from_vehicle(
+    tracker_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Unassign a tracker device from its current vehicle.
+
+    Requires admin role.
+
+    - Tracker must be currently assigned
+    - Creates audit log entry for the unassignment
+    """
+    # Get tracker
+    result = await session.execute(
+        select(TrackerDevice).where(TrackerDevice.id == tracker_id)
+    )
+    tracker = result.scalar_one_or_none()
+
+    if not tracker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tracker device not found"
+        )
+
+    if tracker.status != TrackerStatus.ASSIGNED or not tracker.assigned_vehicle_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tracker is not currently assigned to any vehicle"
+        )
+
+    # Get the vehicle to update
+    vehicle_id = tracker.assigned_vehicle_id
+    vehicle_description = tracker.assigned_vehicle_info or "Unknown vehicle"
+
+    result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    # Unassign tracker
+    tracker.assigned_vehicle_id = None
+    tracker.assigned_vehicle_info = None
+    tracker.assigned_at = None
+    tracker.status = TrackerStatus.AVAILABLE
+    tracker.updated_at = datetime.now(timezone.utc)
+
+    # Update vehicle if it exists
+    if vehicle:
+        vehicle.current_tracker_id = None
+        vehicle.updated_at = datetime.now(timezone.utc)
+
+    # Create audit log entry
+    await audit_service.log_tracker_assignment(
+        session=session,
+        user=user,
+        tracker_id=tracker.id,
+        vehicle_id=vehicle_id,
+        is_assignment=False,
+        tracker_device_id=tracker.device_id,
+        vehicle_description=vehicle_description,
+    )
+
+    await session.commit()
+    await session.refresh(tracker)
+
+    logger.info(f"Admin {user.email} unassigned tracker {tracker.device_id} from vehicle {vehicle_id}")
+
+    return TrackerResponse(
+        id=tracker.id,
+        device_id=tracker.device_id,
+        serial_number=tracker.serial_number,
+        model=tracker.model,
+        manufacturer=tracker.manufacturer,
+        firmware_version=tracker.firmware_version,
+        sim_number=tracker.sim_number,
+        sim_carrier=tracker.sim_carrier,
+        imei=tracker.imei,
+        status=tracker.status.value,
+        assigned_vehicle_id=tracker.assigned_vehicle_id,
+        assigned_vehicle_info=tracker.assigned_vehicle_info,
+        assigned_at=tracker.assigned_at,
+        last_latitude=tracker.last_latitude,
+        last_longitude=tracker.last_longitude,
+        last_location_update=tracker.last_location_update,
+        last_checkin=tracker.last_checkin,
+        provider_name=tracker.provider_name,
+        provider_device_id=tracker.provider_device_id,
+        purchase_date=tracker.purchase_date,
+        purchase_cost=tracker.purchase_cost,
+        warranty_expiry=tracker.warranty_expiry,
+        notes=tracker.notes,
+        admin_notes=tracker.admin_notes,
+        is_active=tracker.is_active,
+        created_at=tracker.created_at,
+        updated_at=tracker.updated_at,
+    )
