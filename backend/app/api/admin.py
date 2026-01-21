@@ -33,6 +33,7 @@ from app.models.tracker_device import TrackerDevice, TrackerStatus
 from app.services.storage import storage_service
 from app.services.audit import audit_service
 from app.services.notification import notification_service
+from app.services.invoice import invoice_service
 
 logger = logging.getLogger(__name__)
 
@@ -2940,3 +2941,681 @@ async def unassign_tracker_from_vehicle(
         created_at=tracker.created_at,
         updated_at=tracker.updated_at,
     )
+
+
+# =====================================================
+# Weekly Invoice Management Endpoints
+# =====================================================
+
+
+class AdminInvoiceResponse(BaseModel):
+    """Admin response for invoice details."""
+    id: int
+    lease_id: int
+    customer_profile_id: int
+    customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
+    invoice_number: str
+    week_number: int
+    amount: float
+    late_fee: float
+    total_amount: float
+    period_start: datetime
+    period_end: datetime
+    due_date: datetime
+    status: str
+    payment_method: Optional[str] = None
+    payment_proof_uploaded_at: Optional[datetime] = None
+    has_payment_proof: bool = False
+    verified_at: Optional[datetime] = None
+    verified_by_id: Optional[str] = None
+    verification_notes: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    is_late: bool
+    days_late: int
+    late_fee_applied_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    admin_notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    paid_at: Optional[datetime] = None
+    # Lease info
+    vehicle_info: Optional[str] = None
+    weekly_payment: Optional[float] = None
+
+
+class AdminInvoiceListResponse(BaseModel):
+    """Admin response for invoice list."""
+    invoices: list[AdminInvoiceResponse]
+    total_count: int
+    pending_count: int
+    verification_in_progress_count: int
+    paid_count: int
+    late_count: int
+    total_pending_amount: float
+    total_collected_amount: float
+
+
+class InvoiceGenerationRequest(BaseModel):
+    """Request to generate invoices."""
+    week_number: Optional[int] = None  # If not provided, generates for current week
+    lease_id: Optional[int] = None  # If provided, generates only for this lease
+
+
+class InvoiceGenerationResponse(BaseModel):
+    """Response for invoice generation."""
+    success: bool
+    message: str
+    invoices_created: int
+    leases_processed: int
+
+
+class PaymentVerificationRequest(BaseModel):
+    """Request to verify a payment."""
+    approved: bool
+    notes: Optional[str] = None
+    rejection_reason: Optional[str] = None
+
+
+class PaymentVerificationResponse(BaseModel):
+    """Response for payment verification."""
+    success: bool
+    message: str
+    invoice_id: int
+    invoice_number: str
+    new_status: str
+    verified_by: str
+    timestamp: str
+
+
+@router.get("/invoices", response_model=AdminInvoiceListResponse)
+async def get_all_invoices(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = None,
+    customer_id: Optional[int] = None,
+    lease_id: Optional[int] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """
+    Get all weekly invoices with optional filters.
+
+    Requires admin role.
+
+    Filters:
+    - status_filter: Filter by status (pending, due, verification_in_progress, paid, late, rejected)
+    - customer_id: Filter by customer profile ID
+    - lease_id: Filter by lease ID
+    - from_date: Filter invoices with due date after this date (YYYY-MM-DD)
+    - to_date: Filter invoices with due date before this date (YYYY-MM-DD)
+    """
+    # Validate admin access
+    _ = user
+
+    # Build base query
+    query = select(WeeklyInvoice)
+
+    # Apply filters
+    if status_filter:
+        try:
+            status_enum = InvoiceStatus(status_filter.lower())
+            query = query.where(WeeklyInvoice.status == status_enum)
+        except ValueError:
+            pass
+
+    if customer_id:
+        query = query.where(WeeklyInvoice.customer_profile_id == customer_id)
+
+    if lease_id:
+        query = query.where(WeeklyInvoice.lease_id == lease_id)
+
+    if from_date:
+        try:
+            from_dt = datetime.strptime(from_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            query = query.where(WeeklyInvoice.due_date >= from_dt)
+        except ValueError:
+            pass
+
+    if to_date:
+        try:
+            to_dt = datetime.strptime(to_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            query = query.where(WeeklyInvoice.due_date <= to_dt)
+        except ValueError:
+            pass
+
+    # Get all invoices for statistics
+    all_result = await session.execute(select(WeeklyInvoice))
+    all_invoices = all_result.scalars().all()
+
+    # Calculate statistics
+    pending_count = len([i for i in all_invoices if i.status == InvoiceStatus.PENDING])
+    verification_in_progress_count = len([i for i in all_invoices if i.status == InvoiceStatus.VERIFICATION_IN_PROGRESS])
+    paid_count = len([i for i in all_invoices if i.status == InvoiceStatus.PAID])
+    late_count = len([i for i in all_invoices if i.status == InvoiceStatus.LATE])
+    total_pending_amount = float(sum(
+        i.total_amount for i in all_invoices
+        if i.status in [InvoiceStatus.PENDING, InvoiceStatus.DUE, InvoiceStatus.LATE, InvoiceStatus.VERIFICATION_IN_PROGRESS]
+    ))
+    total_collected_amount = float(sum(
+        i.total_amount for i in all_invoices
+        if i.status == InvoiceStatus.PAID
+    ))
+
+    # Get paginated results
+    result = await session.execute(
+        query.order_by(WeeklyInvoice.due_date.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    invoices = result.scalars().all()
+
+    # Fetch related data (customer profiles and leases)
+    invoice_responses = []
+    for inv in invoices:
+        # Get customer profile
+        customer = await session.get(CustomerProfile, inv.customer_profile_id)
+        customer_name = customer.full_name if customer else None
+        customer_email = customer.email if customer else None
+
+        # Get lease
+        lease = await session.get(Lease, inv.lease_id)
+        vehicle_info = f"{lease.vehicle_year} {lease.vehicle_make} {lease.vehicle_model}" if lease else None
+        weekly_payment = float(lease.weekly_payment) if lease else None
+
+        invoice_responses.append(AdminInvoiceResponse(
+            id=inv.id,
+            lease_id=inv.lease_id,
+            customer_profile_id=inv.customer_profile_id,
+            customer_name=customer_name,
+            customer_email=customer_email,
+            invoice_number=inv.invoice_number,
+            week_number=inv.week_number,
+            amount=float(inv.amount),
+            late_fee=float(inv.late_fee),
+            total_amount=float(inv.total_amount),
+            period_start=inv.period_start,
+            period_end=inv.period_end,
+            due_date=inv.due_date,
+            status=inv.status.value,
+            payment_method=inv.payment_method,
+            payment_proof_uploaded_at=inv.payment_proof_uploaded_at,
+            has_payment_proof=bool(inv.payment_proof_key),
+            verified_at=inv.verified_at,
+            verified_by_id=inv.verified_by_id,
+            verification_notes=inv.verification_notes,
+            rejection_reason=inv.rejection_reason,
+            is_late=inv.is_late,
+            days_late=inv.days_late,
+            late_fee_applied_at=inv.late_fee_applied_at,
+            notes=inv.notes,
+            admin_notes=inv.admin_notes,
+            created_at=inv.created_at,
+            updated_at=inv.updated_at,
+            paid_at=inv.paid_at,
+            vehicle_info=vehicle_info,
+            weekly_payment=weekly_payment,
+        ))
+
+    return AdminInvoiceListResponse(
+        invoices=invoice_responses,
+        total_count=len(all_invoices),
+        pending_count=pending_count,
+        verification_in_progress_count=verification_in_progress_count,
+        paid_count=paid_count,
+        late_count=late_count,
+        total_pending_amount=total_pending_amount,
+        total_collected_amount=total_collected_amount,
+    )
+
+
+@router.get("/invoices/verification-queue", response_model=AdminInvoiceListResponse)
+async def get_verification_queue(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0,
+):
+    """
+    Get invoices pending payment verification.
+
+    Requires admin role.
+
+    Returns invoices where payment proof has been uploaded and is awaiting verification.
+    """
+    # Validate admin access
+    _ = user
+
+    # Get invoices in verification queue
+    result = await session.execute(
+        select(WeeklyInvoice).where(
+            WeeklyInvoice.status == InvoiceStatus.VERIFICATION_IN_PROGRESS
+        ).order_by(WeeklyInvoice.payment_proof_uploaded_at.asc())
+        .offset(offset)
+        .limit(limit)
+    )
+    invoices = result.scalars().all()
+
+    # Get statistics
+    all_result = await session.execute(select(WeeklyInvoice))
+    all_invoices = all_result.scalars().all()
+
+    pending_count = len([i for i in all_invoices if i.status == InvoiceStatus.PENDING])
+    verification_in_progress_count = len([i for i in all_invoices if i.status == InvoiceStatus.VERIFICATION_IN_PROGRESS])
+    paid_count = len([i for i in all_invoices if i.status == InvoiceStatus.PAID])
+    late_count = len([i for i in all_invoices if i.status == InvoiceStatus.LATE])
+    total_pending_amount = float(sum(
+        i.total_amount for i in all_invoices
+        if i.status in [InvoiceStatus.PENDING, InvoiceStatus.DUE, InvoiceStatus.LATE, InvoiceStatus.VERIFICATION_IN_PROGRESS]
+    ))
+    total_collected_amount = float(sum(
+        i.total_amount for i in all_invoices
+        if i.status == InvoiceStatus.PAID
+    ))
+
+    # Fetch related data
+    invoice_responses = []
+    for inv in invoices:
+        customer = await session.get(CustomerProfile, inv.customer_profile_id)
+        customer_name = customer.full_name if customer else None
+        customer_email = customer.email if customer else None
+
+        lease = await session.get(Lease, inv.lease_id)
+        vehicle_info = f"{lease.vehicle_year} {lease.vehicle_make} {lease.vehicle_model}" if lease else None
+        weekly_payment = float(lease.weekly_payment) if lease else None
+
+        invoice_responses.append(AdminInvoiceResponse(
+            id=inv.id,
+            lease_id=inv.lease_id,
+            customer_profile_id=inv.customer_profile_id,
+            customer_name=customer_name,
+            customer_email=customer_email,
+            invoice_number=inv.invoice_number,
+            week_number=inv.week_number,
+            amount=float(inv.amount),
+            late_fee=float(inv.late_fee),
+            total_amount=float(inv.total_amount),
+            period_start=inv.period_start,
+            period_end=inv.period_end,
+            due_date=inv.due_date,
+            status=inv.status.value,
+            payment_method=inv.payment_method,
+            payment_proof_uploaded_at=inv.payment_proof_uploaded_at,
+            has_payment_proof=bool(inv.payment_proof_key),
+            verified_at=inv.verified_at,
+            verified_by_id=inv.verified_by_id,
+            verification_notes=inv.verification_notes,
+            rejection_reason=inv.rejection_reason,
+            is_late=inv.is_late,
+            days_late=inv.days_late,
+            late_fee_applied_at=inv.late_fee_applied_at,
+            notes=inv.notes,
+            admin_notes=inv.admin_notes,
+            created_at=inv.created_at,
+            updated_at=inv.updated_at,
+            paid_at=inv.paid_at,
+            vehicle_info=vehicle_info,
+            weekly_payment=weekly_payment,
+        ))
+
+    return AdminInvoiceListResponse(
+        invoices=invoice_responses,
+        total_count=verification_in_progress_count,
+        pending_count=pending_count,
+        verification_in_progress_count=verification_in_progress_count,
+        paid_count=paid_count,
+        late_count=late_count,
+        total_pending_amount=total_pending_amount,
+        total_collected_amount=total_collected_amount,
+    )
+
+
+@router.get("/invoices/{invoice_id}", response_model=AdminInvoiceResponse)
+async def get_invoice_detail(
+    invoice_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get detailed information about a specific invoice.
+
+    Requires admin role.
+    """
+    # Validate admin access
+    _ = user
+
+    invoice = await session.get(WeeklyInvoice, invoice_id)
+
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+
+    # Get customer profile
+    customer = await session.get(CustomerProfile, invoice.customer_profile_id)
+    customer_name = customer.full_name if customer else None
+    customer_email = customer.email if customer else None
+
+    # Get lease
+    lease = await session.get(Lease, invoice.lease_id)
+    vehicle_info = f"{lease.vehicle_year} {lease.vehicle_make} {lease.vehicle_model}" if lease else None
+    weekly_payment = float(lease.weekly_payment) if lease else None
+
+    return AdminInvoiceResponse(
+        id=invoice.id,
+        lease_id=invoice.lease_id,
+        customer_profile_id=invoice.customer_profile_id,
+        customer_name=customer_name,
+        customer_email=customer_email,
+        invoice_number=invoice.invoice_number,
+        week_number=invoice.week_number,
+        amount=float(invoice.amount),
+        late_fee=float(invoice.late_fee),
+        total_amount=float(invoice.total_amount),
+        period_start=invoice.period_start,
+        period_end=invoice.period_end,
+        due_date=invoice.due_date,
+        status=invoice.status.value,
+        payment_method=invoice.payment_method,
+        payment_proof_uploaded_at=invoice.payment_proof_uploaded_at,
+        has_payment_proof=bool(invoice.payment_proof_key),
+        verified_at=invoice.verified_at,
+        verified_by_id=invoice.verified_by_id,
+        verification_notes=invoice.verification_notes,
+        rejection_reason=invoice.rejection_reason,
+        is_late=invoice.is_late,
+        days_late=invoice.days_late,
+        late_fee_applied_at=invoice.late_fee_applied_at,
+        notes=invoice.notes,
+        admin_notes=invoice.admin_notes,
+        created_at=invoice.created_at,
+        updated_at=invoice.updated_at,
+        paid_at=invoice.paid_at,
+        vehicle_info=vehicle_info,
+        weekly_payment=weekly_payment,
+    )
+
+
+@router.get("/invoices/{invoice_id}/payment-proof")
+async def get_invoice_payment_proof(
+    invoice_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get signed URL for payment proof of a specific invoice.
+
+    Requires admin role.
+
+    Creates an audit log entry for this access.
+    """
+    invoice = await session.get(WeeklyInvoice, invoice_id)
+
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+
+    if not invoice.payment_proof_key:
+        return {
+            "has_proof": False,
+            "message": "No payment proof uploaded for this invoice"
+        }
+
+    # Generate signed URL
+    try:
+        url = storage_service.generate_signed_url(
+            bucket=settings.S3_BUCKET_PAYMENTS,
+            key=invoice.payment_proof_key,
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate signed URL for payment proof: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate access URL"
+        )
+
+    # Log this access for audit
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.PAYMENT_PROOF_VIEW,
+        target_type="payment_proof",
+        target_id=str(invoice.id),
+        target_description=f"Payment proof for invoice {invoice.invoice_number}",
+        after_state={"document_type": "payment_proof", "invoice_id": invoice.id},
+    )
+    await session.commit()
+
+    return {
+        "has_proof": True,
+        "url": url,
+        "uploaded_at": invoice.payment_proof_uploaded_at,
+        "payment_method": invoice.payment_method,
+        "invoice_number": invoice.invoice_number,
+    }
+
+
+@router.post("/invoices/generate", response_model=InvoiceGenerationResponse)
+async def generate_invoices(
+    request: InvoiceGenerationRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Generate weekly invoices for active leases.
+
+    Requires admin role.
+
+    If lease_id is provided, generates invoice only for that lease.
+    Otherwise, generates invoices for all active leases.
+
+    If week_number is not provided, generates for the current week based on each lease's start date.
+    """
+    # Validate admin access
+    _ = user
+
+    try:
+        if request.lease_id:
+            # Generate for specific lease
+            result = await session.execute(
+                select(Lease).where(Lease.id == request.lease_id)
+            )
+            lease = result.scalar_one_or_none()
+
+            if not lease:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Lease not found"
+                )
+
+            invoice = await invoice_service.generate_invoice_for_lease(
+                db=session,
+                lease=lease,
+                week_number=request.week_number,
+            )
+
+            if invoice:
+                await session.commit()
+                return InvoiceGenerationResponse(
+                    success=True,
+                    message=f"Invoice {invoice.invoice_number} generated successfully",
+                    invoices_created=1,
+                    leases_processed=1,
+                )
+            else:
+                return InvoiceGenerationResponse(
+                    success=False,
+                    message="Invoice already exists or lease is not active",
+                    invoices_created=0,
+                    leases_processed=1,
+                )
+        else:
+            # Generate for all active leases
+            invoices_created, leases_processed = await invoice_service.generate_invoices_for_all_active_leases(
+                db=session,
+                week_number=request.week_number,
+            )
+
+            return InvoiceGenerationResponse(
+                success=True,
+                message=f"Generated {invoices_created} invoices for {leases_processed} active leases",
+                invoices_created=invoices_created,
+                leases_processed=leases_processed,
+            )
+
+    except Exception as e:
+        logger.error(f"Invoice generation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Invoice generation failed: {str(e)}"
+        )
+
+
+@router.post("/invoices/{invoice_id}/verify", response_model=PaymentVerificationResponse)
+async def verify_payment(
+    invoice_id: int,
+    request: PaymentVerificationRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Verify or reject a payment proof for an invoice.
+
+    Requires admin role.
+
+    - If approved=true: Marks invoice as paid
+    - If approved=false: Marks invoice as rejected with reason
+    """
+    try:
+        invoice = await invoice_service.verify_payment(
+            db=session,
+            invoice_id=invoice_id,
+            verified_by=user.email,
+            approved=request.approved,
+            notes=request.notes,
+            rejection_reason=request.rejection_reason,
+        )
+
+        # Log the verification action
+        await audit_service.log_action(
+            session=session,
+            user=user,
+            action=AuditAction.PAYMENT_APPROVE if request.approved else AuditAction.PAYMENT_REJECT,
+            target_type="invoice",
+            target_id=str(invoice.id),
+            target_description=f"Invoice {invoice.invoice_number}",
+            after_state={
+                "approved": request.approved,
+                "notes": request.notes,
+                "rejection_reason": request.rejection_reason,
+                "new_status": invoice.status.value,
+            },
+        )
+
+        await session.commit()
+
+        return PaymentVerificationResponse(
+            success=True,
+            message="Payment approved" if request.approved else "Payment rejected",
+            invoice_id=invoice.id,
+            invoice_number=invoice.invoice_number,
+            new_status=invoice.status.value,
+            verified_by=user.email,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Payment verification failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Payment verification failed: {str(e)}"
+        )
+
+
+@router.post("/invoices/process-late-fees")
+async def process_late_fees(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Process late fees for overdue invoices.
+
+    Requires admin role.
+
+    Marks invoices as DUE if their due date has passed, then applies late fees
+    to invoices that are more than 1 day overdue.
+    """
+    # Validate admin access
+    _ = user
+
+    try:
+        # First mark due invoices
+        due_count = await invoice_service.mark_due_invoices(session)
+
+        # Then apply late fees
+        late_count = await invoice_service.apply_late_fees(session)
+
+        return {
+            "success": True,
+            "message": f"Processed late fees: {due_count} invoices marked as due, {late_count} late fees applied",
+            "invoices_marked_due": due_count,
+            "late_fees_applied": late_count,
+        }
+
+    except Exception as e:
+        logger.error(f"Late fee processing failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Late fee processing failed: {str(e)}"
+        )
+
+
+@router.patch("/invoices/{invoice_id}/notes")
+async def update_invoice_notes(
+    invoice_id: int,
+    notes: Optional[str] = None,
+    admin_notes: Optional[str] = None,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update notes on an invoice.
+
+    Requires admin role.
+    """
+    # Validate admin access
+    _ = user
+
+    invoice = await session.get(WeeklyInvoice, invoice_id)
+
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+
+    if notes is not None:
+        invoice.notes = notes
+    if admin_notes is not None:
+        invoice.admin_notes = admin_notes
+
+    invoice.updated_at = datetime.now(timezone.utc)
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": "Invoice notes updated",
+        "invoice_id": invoice.id,
+        "invoice_number": invoice.invoice_number,
+    }

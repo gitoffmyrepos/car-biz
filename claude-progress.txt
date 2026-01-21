@@ -2415,3 +2415,155 @@ Features Implemented:
 ================================================================================
 END SESSION 20
 ================================================================================
+
+================================================================================
+SESSION 21: WEEKLY INVOICE GENERATION
+================================================================================
+
+Date: 2026-01-21
+Status: COMPLETED
+Feature Implemented:
+  - Weekly invoice generation - System generates weekly invoices for active lease contracts on schedule
+
+## Implementation Summary
+
+### New Files Created
+
+#### backend/app/services/invoice.py
+Complete invoice generation service with:
+- InvoiceService class
+- generate_invoice_number(): Creates unique invoice numbers (INV-{lease_id}-W{week}-{date})
+- calculate_week_number(): Determines week based on lease start date
+- calculate_period_dates(): Computes billing period start/end
+- calculate_due_date(): Sets due date at period end
+- generate_invoice_for_lease(): Creates invoice for a single lease
+  - Validates lease is ACTIVE
+  - Creates WeeklyInvoice with PENDING status
+  - Triggers PAYMENT_DUE_REMINDER notification
+- generate_invoices_for_all_active_leases(): Batch generation for all active leases
+- mark_due_invoices(): Marks invoices as DUE when due date arrives
+- apply_late_fees(): Applies $25 late fee after 1 day grace period
+  - Updates status to LATE
+  - Triggers PAYMENT_OVERDUE notification
+- verify_payment(): Approves or rejects payment proofs
+  - Updates invoice status
+  - Triggers PAYMENT_VERIFIED or PAYMENT_REJECTED notification
+- calculate_payment_hash(): SHA-256 hash for duplicate detection
+- check_duplicate_payment_proof(): Prevents reuse of payment proofs
+
+### Backend Changes (app/api/admin.py)
+
+#### New Pydantic Models
+- AdminInvoiceResponse: Full invoice details with customer/vehicle info
+- AdminInvoiceListResponse: Paginated list with statistics
+- InvoiceGenerationRequest: Options for manual generation
+- InvoiceGenerationResponse: Generation results
+- PaymentVerificationRequest: Approval/rejection with notes
+- PaymentVerificationResponse: Verification result
+
+#### New Endpoints
+1. GET /api/admin/invoices
+   - Lists all invoices with pagination
+   - Returns statistics (pending_count, paid_count, late_count, totals)
+   - Includes customer name, email, vehicle info
+
+2. GET /api/admin/invoices/verification-queue
+   - Lists invoices pending payment verification
+   - Ordered by upload time (oldest first)
+
+3. GET /api/admin/invoices/{invoice_id}
+   - Detailed view of single invoice
+
+4. GET /api/admin/invoices/{invoice_id}/payment-proof
+   - Generates signed URL for payment proof access
+   - Creates PAYMENT_PROOF_VIEW audit log
+
+5. POST /api/admin/invoices/generate
+   - Triggers invoice generation
+   - Optional: specific lease_id or week_number
+   - Default: generates for all active leases
+
+6. POST /api/admin/invoices/{invoice_id}/verify
+   - Approves or rejects payment
+   - Creates PAYMENT_APPROVE/PAYMENT_REJECT audit log
+
+7. POST /api/admin/invoices/process-late-fees
+   - Marks due invoices and applies late fees
+   - Returns counts of processed invoices
+
+8. PATCH /api/admin/invoices/{invoice_id}/notes
+   - Updates invoice notes/admin_notes
+
+## API Testing Results
+
+All endpoints tested with dev token authentication:
+
+1. ✅ GET /api/admin/invoices
+   - Returns 4 invoices with full details
+   - Statistics: pending=1, paid=2, late=1
+   - Total pending amount: $574.99
+
+2. ✅ GET /api/admin/invoices/verification-queue
+   - Returns invoices with status=verification_in_progress
+
+3. ✅ GET /api/admin/invoices/1
+   - Returns detailed invoice data
+
+4. ✅ POST /api/admin/invoices/generate
+   - Response: {success: true, invoices_created: 1, leases_processed: 2}
+   - Created invoice INV-00001-W055-20260121
+
+5. ✅ POST /api/admin/invoices/1/verify
+   - Response: {success: true, new_status: "paid"}
+   - Verified by: admin@example.com
+
+6. ✅ POST /api/admin/invoices/process-late-fees
+   - Response: {invoices_marked_due: 0, late_fees_applied: 0}
+
+## Feature Requirements Verified
+
+1. ✅ Create active lease contract - Lease ID 1 exists with ACTIVE status
+2. ✅ Trigger invoice generation - POST /api/admin/invoices/generate endpoint
+3. ✅ Verify WeeklyInvoice record created - Invoice INV-00001-W055-20260121 created
+4. ✅ Verify invoice amount matches lease terms - $299.99 matches weekly_payment
+5. ✅ Verify due date calculated correctly - Due 2026-01-25T23:59:59Z (end of period)
+6. ✅ Verify invoice status is 'Pending' - Status: pending
+7. ✅ Verify customer notified - Notification service creates PAYMENT_DUE_REMINDER
+
+## Bug Fixes During Implementation
+
+1. Fixed CustomerProfile attribute access:
+   - Changed `customer.first_name` + `customer.last_name` to `customer.full_name`
+   - CustomerProfile model only has full_name field
+
+2. Fixed AuditAction enum values:
+   - DOCUMENT_ACCESS → PAYMENT_PROOF_VIEW
+   - PAYMENT_APPROVED → PAYMENT_APPROVE
+   - PAYMENT_REJECTED → PAYMENT_REJECT
+
+3. Fixed audit_service.log_action parameter:
+   - `changes` → `after_state`
+
+## Feature Progress
+- Features Passing: 45/211 (21.3% complete)
+- Feature: "Weekly invoice generation" - PASSED ✓
+
+## Test Results
+- test_results.json updated with feature_id: 45
+- All 7 feature steps verified
+- 4 additional tests passed (verification, late fees, list, queue)
+
+## Next Session Tasks
+1. Feature #46: Admin weekly invoices view (requires frontend page)
+2. Continue with payment processing features
+3. Customer payment proof upload functionality
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 21
+================================================================================

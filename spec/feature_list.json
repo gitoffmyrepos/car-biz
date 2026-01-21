@@ -692,7 +692,7 @@
       "Verify invoice status is 'Pending'",
       "Verify customer notified of new invoice"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
