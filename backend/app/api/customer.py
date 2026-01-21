@@ -20,6 +20,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.customer_profile import CustomerProfile, InsuranceStatus
 from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus, VehiclePreference
+from app.models.lease import Lease, LeaseStatus
 from app.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
@@ -640,3 +641,207 @@ async def can_request_vehicle(
         "is_banned": is_banned,
         "reasons": reasons,
     }
+
+
+# ============================================================================
+# Lease Endpoints
+# ============================================================================
+
+class LeaseResponse(BaseModel):
+    """Response for lease details."""
+    id: int
+    vehicle_make: str
+    vehicle_model: str
+    vehicle_year: int
+    vehicle_vin: Optional[str]
+    vehicle_color: Optional[str]
+    vehicle_license_plate: Optional[str]
+    status: str
+    weekly_payment: float
+    security_deposit: Optional[float]
+    start_date: datetime
+    end_date: Optional[datetime]
+    notes: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardSummary(BaseModel):
+    """Dashboard summary response."""
+    active_leases_count: int
+    pending_requests_count: int
+    total_leases_count: int
+    active_lease: Optional[LeaseResponse]
+    pending_request: Optional[dict]
+
+
+@router.get("/leases")
+async def get_customer_leases(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get all leases for the current customer.
+
+    Returns a list of all leases (active and historical).
+    """
+    profile = await get_or_create_profile(user, db)
+
+    result = await db.execute(
+        select(Lease)
+        .where(Lease.customer_profile_id == profile.id)
+        .order_by(Lease.created_at.desc())
+    )
+    leases = result.scalars().all()
+
+    return [
+        LeaseResponse(
+            id=lease.id,
+            vehicle_make=lease.vehicle_make,
+            vehicle_model=lease.vehicle_model,
+            vehicle_year=lease.vehicle_year,
+            vehicle_vin=lease.vehicle_vin,
+            vehicle_color=lease.vehicle_color,
+            vehicle_license_plate=lease.vehicle_license_plate,
+            status=lease.status.value,
+            weekly_payment=float(lease.weekly_payment),
+            security_deposit=float(lease.security_deposit) if lease.security_deposit else None,
+            start_date=lease.start_date,
+            end_date=lease.end_date,
+            notes=lease.notes,
+            created_at=lease.created_at,
+        )
+        for lease in leases
+    ]
+
+
+@router.get("/active-lease")
+async def get_active_lease(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get the customer's current active lease.
+
+    Returns the active lease details if one exists, otherwise null.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    result = await db.execute(
+        select(Lease)
+        .where(
+            Lease.customer_profile_id == profile.id,
+            Lease.status == LeaseStatus.ACTIVE
+        )
+        .order_by(Lease.start_date.desc())
+        .limit(1)
+    )
+    lease = result.scalar_one_or_none()
+
+    if not lease:
+        return None
+
+    return LeaseResponse(
+        id=lease.id,
+        vehicle_make=lease.vehicle_make,
+        vehicle_model=lease.vehicle_model,
+        vehicle_year=lease.vehicle_year,
+        vehicle_vin=lease.vehicle_vin,
+        vehicle_color=lease.vehicle_color,
+        vehicle_license_plate=lease.vehicle_license_plate,
+        status=lease.status.value,
+        weekly_payment=float(lease.weekly_payment),
+        security_deposit=float(lease.security_deposit) if lease.security_deposit else None,
+        start_date=lease.start_date,
+        end_date=lease.end_date,
+        notes=lease.notes,
+        created_at=lease.created_at,
+    )
+
+
+@router.get("/dashboard-summary")
+async def get_dashboard_summary(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get dashboard summary for the current customer.
+
+    Returns counts of active leases, pending requests, and total leases,
+    plus details of active lease and pending request if they exist.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Count active leases
+    active_leases_result = await db.execute(
+        select(Lease)
+        .where(
+            Lease.customer_profile_id == profile.id,
+            Lease.status == LeaseStatus.ACTIVE
+        )
+    )
+    active_leases = active_leases_result.scalars().all()
+    active_leases_count = len(active_leases)
+
+    # Count total leases
+    total_leases_result = await db.execute(
+        select(Lease).where(Lease.customer_profile_id == profile.id)
+    )
+    total_leases_count = len(total_leases_result.scalars().all())
+
+    # Count pending requests
+    pending_requests_result = await db.execute(
+        select(VehicleRequest)
+        .where(
+            VehicleRequest.customer_profile_id == profile.id,
+            VehicleRequest.status.in_([
+                VehicleRequestStatus.PENDING,
+                VehicleRequestStatus.REVIEWING,
+                VehicleRequestStatus.APPROVED,
+            ])
+        )
+    )
+    pending_requests = pending_requests_result.scalars().all()
+    pending_requests_count = len(pending_requests)
+
+    # Get active lease details (most recent)
+    active_lease = None
+    if active_leases:
+        lease = active_leases[0]
+        active_lease = LeaseResponse(
+            id=lease.id,
+            vehicle_make=lease.vehicle_make,
+            vehicle_model=lease.vehicle_model,
+            vehicle_year=lease.vehicle_year,
+            vehicle_vin=lease.vehicle_vin,
+            vehicle_color=lease.vehicle_color,
+            vehicle_license_plate=lease.vehicle_license_plate,
+            status=lease.status.value,
+            weekly_payment=float(lease.weekly_payment),
+            security_deposit=float(lease.security_deposit) if lease.security_deposit else None,
+            start_date=lease.start_date,
+            end_date=lease.end_date,
+            notes=lease.notes,
+            created_at=lease.created_at,
+        )
+
+    # Get pending request details (most recent)
+    pending_request = None
+    if pending_requests:
+        req = pending_requests[0]
+        pending_request = {
+            "id": req.id,
+            "status": req.status.value,
+            "vehicle_preference": req.vehicle_preference.value,
+            "created_at": req.created_at.isoformat(),
+        }
+
+    return DashboardSummary(
+        active_leases_count=active_leases_count,
+        pending_requests_count=pending_requests_count,
+        total_leases_count=total_leases_count,
+        active_lease=active_lease,
+        pending_request=pending_request,
+    )

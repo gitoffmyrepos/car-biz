@@ -434,7 +434,7 @@
       "Verify weekly payment amount visible",
       "Take screenshot of assigned vehicle view"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

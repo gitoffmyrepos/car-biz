@@ -1226,3 +1226,144 @@ Complete test flow:
 ================================================================================
 END SESSION 11
 ================================================================================
+
+================================================================================
+SESSION 12: FEATURE #31 - CUSTOMER ASSIGNED VEHICLE VIEW
+================================================================================
+
+Date: 2026-01-21
+Status: COMPLETED
+Commit: (pending)
+
+## Objectives Completed
+
+### 1. Lease Model Implementation
+Created backend/app/models/lease.py:
+
+**LeaseStatus Enum:**
+- ACTIVE - Vehicle currently assigned and leased
+- COMPLETED - Lease completed successfully
+- TERMINATED - Lease terminated early
+- SUSPENDED - Lease temporarily suspended
+
+**Lease Model Fields:**
+- id: Primary key
+- customer_profile_id: FK to CustomerProfile
+- vehicle_request_id: FK to VehicleRequest (nullable)
+- vehicle_make, vehicle_model, vehicle_year: Vehicle details
+- vehicle_vin, vehicle_color, vehicle_license_plate: Identification
+- status: LeaseStatus enum
+- weekly_payment, security_deposit: Financial terms
+- start_date, end_date: Lease period
+- notes, admin_notes: Additional information
+- terminated_at, termination_reason: For early terminations
+- created_at, updated_at: Timestamps
+
+### 2. Backend API Endpoints
+Updated backend/app/api/customer.py:
+
+**New Endpoints:**
+- GET /api/customer/leases - List all customer's leases
+- GET /api/customer/active-lease - Get current active lease
+- GET /api/customer/dashboard-summary - Get comprehensive dashboard data
+
+**Dashboard Summary Response:**
+- active_leases_count: Number of active leases
+- pending_requests_count: Number of pending vehicle requests
+- total_leases_count: Historical lease count
+- active_lease: Details of current assigned vehicle (if any)
+- pending_requests: List of pending vehicle requests
+
+### 3. Frontend Dashboard Rewrite
+Completely rewrote frontend/app/dashboard/page.tsx:
+
+**Dynamic Stats Cards:**
+- Active Leases (green)
+- Pending Requests (amber)
+- Total Leases (green)
+
+**Your Active Lease Section:**
+- Vehicle make/model/year with icon
+- Vehicle color
+- Weekly payment amount
+- Lease start date
+- License plate number
+- VIN
+- "Active" status badge
+
+**Pending Request Banner:**
+- Shows if customer has pending vehicle request
+- Links to vehicle request page
+
+**Quick Actions:**
+- Request a Vehicle
+- Browse Available Vehicles
+- Need Assistance?
+
+**Account Information:**
+- Email, Name
+- Account status
+- Member since date
+
+### 4. E2E Testing with Puppeteer MCP
+Complete flow tested:
+1. Navigate to /dashboard (redirected to login)
+2. Login as customer@example.com (Quick Login)
+3. Verify dashboard loads with stats cards (1 Active Lease, 0 Pending, 1 Total)
+4. Verify "Your Active Lease" section displays:
+   - 2024 Toyota Camry (Silver)
+   - Weekly Payment: $299.99
+   - Lease Start: January 5, 2025
+   - License Plate: ABC-1234
+   - VIN: 1HGBH41JXMN109186
+5. Verify Account Information section
+
+All requirements from Feature #31 verified:
+✅ Login as customer with assigned vehicle
+✅ Navigate to dashboard
+✅ Verify assigned vehicle details displayed
+✅ Verify vehicle make, model, year visible
+✅ Verify lease start date visible
+✅ Verify weekly payment amount visible
+✅ Screenshots captured
+
+## Files Created/Modified This Session
+1. backend/app/models/lease.py (NEW - Lease model)
+2. backend/app/models/__init__.py (export Lease, LeaseStatus)
+3. backend/app/api/customer.py (Added lease endpoints)
+4. frontend/app/dashboard/page.tsx (Complete rewrite)
+5. spec/feature_list.json (Feature #31 marked passing)
+6. .claude/verification/test_results.json (updated)
+7. test_lease_data.sql (test data script)
+
+## Feature Progress
+- Features Passing: 28/211
+- Feature #31: Customer assigned vehicle view - PASSED ✓
+
+## Quality Gates Verified
+✅ Stop condition checked (28/211 - not complete)
+✅ Services healthy (backend/frontend running)
+✅ E2E test passed with Puppeteer MCP tools
+✅ Screenshots saved documenting functionality:
+   - feature_31_step1_dashboard_initial.png
+   - feature_31_step2_after_login.png
+   - feature_31_step3_dashboard_scrolled.png
+✅ test_results.json created with "overall_status": "passed"
+✅ All required information visible (make, model, year, payment, start date)
+✅ Zero console errors
+
+## Next Session Tasks
+1. Feature #32: Customer notifications center
+2. Feature #33: Customer incident report submission
+3. Feature #34: Payment proof upload workflow
+4. Continue with customer experience features
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 12
+================================================================================

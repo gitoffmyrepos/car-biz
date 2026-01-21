@@ -20,6 +20,10 @@ from app.models.vehicle_request import (
     VehicleRequestStatus,
     VehiclePreference,
 )
+from app.models.lease import (
+    Lease,
+    LeaseStatus,
+)
 
 __all__ = [
     "Inquiry",
@@ -34,4 +38,6 @@ __all__ = [
     "VehicleRequest",
     "VehicleRequestStatus",
     "VehiclePreference",
+    "Lease",
+    "LeaseStatus",
 ]
