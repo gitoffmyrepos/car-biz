@@ -7,6 +7,10 @@ from app.models.inquiry import (
     Timeframe,
     VehicleType,
 )
+from app.models.customer_profile import (
+    CustomerProfile,
+    InsuranceStatus,
+)
 
 __all__ = [
     "Inquiry",
@@ -14,4 +18,6 @@ __all__ = [
     "PreferredContactMethod",
     "Timeframe",
     "VehicleType",
+    "CustomerProfile",
+    "InsuranceStatus",
 ]
