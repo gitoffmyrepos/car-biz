@@ -39,6 +39,11 @@ from app.models.weekly_invoice import (
     WeeklyInvoice,
     InvoiceStatus,
 )
+from app.models.vehicle import (
+    Vehicle,
+    VehicleStatus,
+    VehicleCondition,
+)
 
 __all__ = [
     "Inquiry",
@@ -64,4 +69,7 @@ __all__ = [
     "IncidentStatus",
     "WeeklyInvoice",
     "InvoiceStatus",
+    "Vehicle",
+    "VehicleStatus",
+    "VehicleCondition",
 ]

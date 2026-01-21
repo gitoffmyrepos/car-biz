@@ -1,0 +1,115 @@
+{
+  "feature_id": 41,
+  "feature_description": "Vehicle availability status",
+  "test_status": "passed",
+  "tested_at": "2025-01-20T12:00:00Z",
+  "test_steps": [
+    {
+      "step": 1,
+      "action": "Navigate to login page",
+      "screenshot": "feature41_step1_login_page.png",
+      "status": "passed"
+    },
+    {
+      "step": 2,
+      "action": "Login as admin user",
+      "screenshot": "feature41_step2_after_admin_click.png",
+      "status": "passed"
+    },
+    {
+      "step": 3,
+      "action": "Navigate to Vehicles admin page",
+      "screenshot": "feature41_step3_vehicles_page.png",
+      "status": "passed"
+    },
+    {
+      "step": 4,
+      "action": "Open Add Vehicle modal",
+      "screenshot": "feature41_step4_add_vehicle_modal.png",
+      "status": "passed"
+    },
+    {
+      "step": 5,
+      "action": "Fill vehicle form with test data",
+      "screenshot": "feature41_step5_filled_form.png",
+      "status": "passed"
+    },
+    {
+      "step": 6,
+      "action": "Create vehicle - 2026 Toyota Camry with status 'available'",
+      "screenshot": "feature41_step6_vehicle_created.png",
+      "status": "passed"
+    },
+    {
+      "step": 7,
+      "action": "Open Edit modal to view current status",
+      "screenshot": "feature41_step7_edit_modal.png",
+      "status": "passed"
+    },
+    {
+      "step": 8,
+      "action": "Change status from 'available' to 'maintenance'",
+      "screenshot": "feature41_step8_status_changed_to_maintenance.png",
+      "status": "passed"
+    },
+    {
+      "step": 9,
+      "action": "Save and verify status updated in admin table",
+      "screenshot": "feature41_step9_maintenance_saved.png",
+      "status": "passed"
+    },
+    {
+      "step": 10,
+      "action": "Navigate to public fleet page",
+      "screenshot": "feature41_step10_fleet_page.png",
+      "status": "passed"
+    },
+    {
+      "step": 11,
+      "action": "Verify fleet page shows 'In Maintenance' status and 'Join Waitlist' button",
+      "screenshot": "feature41_step11_fleet_maintenance_status.png",
+      "status": "passed"
+    },
+    {
+      "step": 12,
+      "action": "Change status back to 'available' in admin",
+      "screenshot": "feature41_step12_status_back_to_available.png",
+      "status": "passed"
+    },
+    {
+      "step": 13,
+      "action": "Verify fleet page stats show '1 Available Now'",
+      "screenshot": "feature41_step13_fleet_available_status.png",
+      "status": "passed"
+    },
+    {
+      "step": 14,
+      "action": "Verify fleet page shows 'Available' badge and 'Inquire About This Vehicle' button",
+      "screenshot": "feature41_step14_fleet_vehicle_available.png",
+      "status": "passed"
+    }
+  ],
+  "verified_requirements": [
+    "Admin can view current availability status",
+    "Admin can change status (Available/Leased/Maintenance/Unavailable)",
+    "Status change persists to database",
+    "Customer-facing fleet page reflects availability in real-time",
+    "Available vehicles show 'Inquire About This Vehicle' button",
+    "Non-available vehicles show 'Join Waitlist' button"
+  ],
+  "implementation_details": {
+    "backend_changes": [
+      "Created /backend/app/api/public.py with public fleet endpoints",
+      "Added GET /api/public/fleet endpoint for fetching public vehicles",
+      "Added GET /api/public/fleet/categories endpoint for category stats",
+      "Added GET /api/public/fleet/{vehicle_id} for single vehicle",
+      "Registered public router in /backend/app/api/__init__.py"
+    ],
+    "frontend_changes": [
+      "Updated /frontend/app/fleet/page.tsx to fetch real data from API",
+      "Added dynamic stats display (Total Vehicles, Available Now)",
+      "Added status badges with color coding",
+      "Added conditional CTA buttons based on availability"
+    ]
+  }
+}

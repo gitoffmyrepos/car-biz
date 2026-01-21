@@ -1,10 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-// Vehicle categories for the fleet preview
-const vehicleCategories = [
+// Types for API response
+interface FleetVehicle {
+  id: number;
+  make: string;
+  model: string;
+  year: number;
+  color: string | null;
+  body_type: string | null;
+  status: string;
+  condition: string;
+}
+
+interface FleetCategory {
+  category: string;
+  display_name: string;
+  count: number;
+  available_count: number;
+}
+
+// Static vehicle categories as fallback when no real vehicles exist
+const staticVehicleCategories = [
   {
     id: 'sedan',
     name: 'Luxury Sedans',
@@ -106,8 +125,67 @@ function VehiclePlaceholder({ category }: { category: string }) {
   );
 }
 
+// Get status color classes
+function getStatusColor(status: string): { bg: string; text: string } {
+  const statusColors: Record<string, { bg: string; text: string }> = {
+    available: { bg: 'bg-green-100', text: 'text-green-700' },
+    leased: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    maintenance: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+    unavailable: { bg: 'bg-red-100', text: 'text-red-700' },
+    pending_inspection: { bg: 'bg-orange-100', text: 'text-orange-700' },
+  };
+  return statusColors[status] || { bg: 'bg-gray-100', text: 'text-gray-700' };
+}
+
+// Format status text for display
+function formatStatus(status: string): string {
+  if (status === 'available') return 'Available';
+  if (status === 'leased') return 'Currently Leased';
+  if (status === 'maintenance') return 'In Maintenance';
+  if (status === 'unavailable') return 'Unavailable';
+  if (status === 'pending_inspection') return 'Pending Inspection';
+  return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
 export default function FleetPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
+  const [categories, setCategories] = useState<FleetCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasRealData, setHasRealData] = useState(false);
+
+  useEffect(() => {
+    const fetchFleetData = async () => {
+      try {
+        const [vehiclesRes, categoriesRes] = await Promise.all([
+          fetch('http://localhost:8100/api/public/fleet'),
+          fetch('http://localhost:8100/api/public/fleet/categories')
+        ]);
+
+        if (vehiclesRes.ok && categoriesRes.ok) {
+          const vehiclesData = await vehiclesRes.json();
+          const categoriesData = await categoriesRes.json();
+
+          setVehicles(vehiclesData);
+          setCategories(categoriesData);
+          setHasRealData(vehiclesData.length > 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch fleet data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFleetData();
+  }, []);
+
+  // Calculate total stats from real data or use defaults
+  const totalVehicles = hasRealData ? vehicles.length : 50;
+  const totalCategories = hasRealData ? categories.length : 6;
+  const availableVehicles = hasRealData
+    ? vehicles.filter(v => v.status === 'available').length
+    : totalVehicles;
 
   return (
     <main className="min-h-screen">
@@ -170,13 +248,17 @@ export default function FleetPage() {
         <div className="container-luxury">
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
             <div>
-              <div className="text-3xl font-bold text-luxury-charcoal">50+</div>
-              <div className="text-sm text-muted">Vehicles Available</div>
+              <div className="text-3xl font-bold text-luxury-charcoal">
+                {loading ? '...' : hasRealData ? totalVehicles : '50+'}
+              </div>
+              <div className="text-sm text-muted">Total Vehicles</div>
             </div>
             <div className="hidden md:block w-px h-12 bg-gold-300"></div>
             <div>
-              <div className="text-3xl font-bold text-luxury-charcoal">6</div>
-              <div className="text-sm text-muted">Vehicle Categories</div>
+              <div className="text-3xl font-bold text-luxury-charcoal">
+                {loading ? '...' : hasRealData ? availableVehicles : totalCategories}
+              </div>
+              <div className="text-sm text-muted">{hasRealData ? 'Available Now' : 'Vehicle Categories'}</div>
             </div>
             <div className="hidden md:block w-px h-12 bg-gold-300"></div>
             <div>
@@ -192,71 +274,143 @@ export default function FleetPage() {
         </div>
       </section>
 
-      {/* Vehicle Categories Grid */}
-      <section className="section bg-white">
-        <div className="container-luxury">
-          <div className="text-center mb-12">
-            <h2 className="heading-section text-luxury-charcoal mb-4">Vehicle Categories</h2>
-            <p className="text-xl text-muted max-w-2xl mx-auto">
-              Browse our selection of professionally maintained vehicles ready for weekly lease.
-            </p>
-          </div>
+      {/* Real Vehicles Section - Only shown when real data exists */}
+      {hasRealData && vehicles.length > 0 && (
+        <section className="section bg-white">
+          <div className="container-luxury">
+            <div className="text-center mb-12">
+              <h2 className="heading-section text-luxury-charcoal mb-4">Our Fleet</h2>
+              <p className="text-xl text-muted max-w-2xl mx-auto">
+                Browse our current selection of premium vehicles available for weekly lease.
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {vehicleCategories.map((category) => (
-              <div
-                key={category.id}
-                className="card card-hover overflow-hidden group cursor-pointer"
-                onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
-              >
-                {/* Vehicle Image Placeholder */}
-                <VehiclePlaceholder category={category.id} />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {vehicles.map((vehicle) => (
+                <div
+                  key={vehicle.id}
+                  className="card card-hover overflow-hidden group"
+                >
+                  {/* Vehicle Image Placeholder */}
+                  <VehiclePlaceholder category={vehicle.body_type || 'sedan'} />
 
-                {/* Content */}
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold text-luxury-charcoal group-hover:text-gold-600 transition-colors">
-                      {category.name}
-                    </h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      category.availability === 'Available'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {category.availability}
-                    </span>
-                  </div>
-
-                  <p className="text-muted mb-4">
-                    {category.description}
-                  </p>
-
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {category.features.map((feature, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md"
-                      >
-                        {feature}
+                  {/* Content */}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-xl font-bold text-luxury-charcoal group-hover:text-gold-600 transition-colors">
+                        {vehicle.year} {vehicle.make} {vehicle.model}
+                      </h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        getStatusColor(vehicle.status).bg
+                      } ${getStatusColor(vehicle.status).text}`}>
+                        {formatStatus(vehicle.status)}
                       </span>
-                    ))}
-                  </div>
+                    </div>
 
-                  {/* Action Button */}
-                  <Link
-                    href="/contact"
-                    className="btn btn-outline w-full text-center block"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Inquire About This Category
-                  </Link>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {vehicle.color && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+                          {vehicle.color}
+                        </span>
+                      )}
+                      {vehicle.body_type && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md capitalize">
+                          {vehicle.body_type}
+                        </span>
+                      )}
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md capitalize">
+                        {vehicle.condition.replace('_', ' ')}
+                      </span>
+                    </div>
+
+                    {/* Action Button */}
+                    <Link
+                      href="/contact"
+                      className={`btn w-full text-center block ${
+                        vehicle.status === 'available'
+                          ? 'btn-primary'
+                          : 'btn-outline opacity-75'
+                      }`}
+                    >
+                      {vehicle.status === 'available'
+                        ? 'Inquire About This Vehicle'
+                        : 'Join Waitlist'}
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* Vehicle Categories Grid - Fallback when no real data */}
+      {!hasRealData && (
+        <section className="section bg-white">
+          <div className="container-luxury">
+            <div className="text-center mb-12">
+              <h2 className="heading-section text-luxury-charcoal mb-4">Vehicle Categories</h2>
+              <p className="text-xl text-muted max-w-2xl mx-auto">
+                Browse our selection of professionally maintained vehicles ready for weekly lease.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {staticVehicleCategories.map((category) => (
+                <div
+                  key={category.id}
+                  className="card card-hover overflow-hidden group cursor-pointer"
+                  onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
+                >
+                  {/* Vehicle Image Placeholder */}
+                  <VehiclePlaceholder category={category.id} />
+
+                  {/* Content */}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-xl font-bold text-luxury-charcoal group-hover:text-gold-600 transition-colors">
+                        {category.name}
+                      </h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        category.availability === 'Available'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {category.availability}
+                      </span>
+                    </div>
+
+                    <p className="text-muted mb-4">
+                      {category.description}
+                    </p>
+
+                    {/* Features */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {category.features.map((feature, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Action Button */}
+                    <Link
+                      href="/contact"
+                      className="btn btn-outline w-full text-center block"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Inquire About This Category
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Quality Assurance Section */}
       <section className="section bg-luxury-cream">

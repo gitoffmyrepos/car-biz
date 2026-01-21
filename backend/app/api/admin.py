@@ -8,6 +8,7 @@ Admin-only API endpoints with RBAC protection.
 import logging
 from typing import Any, Optional
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -27,6 +28,7 @@ from app.models.audit_log import AuditLog, AuditAction
 from app.models.lease import Lease, LeaseStatus
 from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus
+from app.models.vehicle import Vehicle, VehicleStatus, VehicleCondition
 from app.services.storage import storage_service
 from app.services.audit import audit_service
 
@@ -768,4 +770,468 @@ async def get_audit_log_detail(
         "success": log.success,
         "error_message": log.error_message,
         "timestamp": log.timestamp.isoformat(),
+    }
+
+
+# =============================================================================
+# Vehicle Management (CRUD)
+# =============================================================================
+
+class VehicleCreateRequest(BaseModel):
+    """Request to create a new vehicle."""
+    vin: str
+    make: str
+    model: str
+    year: int
+    color: Optional[str] = None
+    body_type: Optional[str] = None
+    license_plate: Optional[str] = None
+    engine: Optional[str] = None
+    transmission: Optional[str] = None
+    mileage: Optional[int] = None
+    weekly_rate: float = 150.00
+    security_deposit: Optional[float] = None
+    status: str = "available"
+    condition: str = "good"
+    acquisition_source: Optional[str] = None
+    acquisition_cost: Optional[float] = None
+    repair_cost: Optional[float] = None
+    notes: Optional[str] = None
+    show_on_fleet_page: bool = True
+
+
+class VehicleUpdateRequest(BaseModel):
+    """Request to update a vehicle."""
+    make: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = None
+    color: Optional[str] = None
+    body_type: Optional[str] = None
+    license_plate: Optional[str] = None
+    engine: Optional[str] = None
+    transmission: Optional[str] = None
+    mileage: Optional[int] = None
+    weekly_rate: Optional[float] = None
+    security_deposit: Optional[float] = None
+    status: Optional[str] = None
+    condition: Optional[str] = None
+    notes: Optional[str] = None
+    admin_notes: Optional[str] = None
+    show_on_fleet_page: Optional[bool] = None
+
+
+class VehicleResponse(BaseModel):
+    """Vehicle response for API."""
+    id: int
+    vin: str
+    make: str
+    model: str
+    year: int
+    color: Optional[str]
+    body_type: Optional[str]
+    license_plate: Optional[str]
+    engine: Optional[str]
+    transmission: Optional[str]
+    mileage: Optional[int]
+    weekly_rate: float
+    security_deposit: Optional[float]
+    status: str
+    condition: str
+    acquisition_source: Optional[str]
+    acquisition_cost: Optional[float]
+    repair_cost: Optional[float]
+    current_lease_id: Optional[int]
+    current_tracker_id: Optional[int]
+    notes: Optional[str]
+    admin_notes: Optional[str]
+    is_active: bool
+    show_on_fleet_page: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/vehicles", response_model=list[VehicleResponse])
+async def list_vehicles(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List all vehicles in the fleet.
+
+    Requires admin or ops role.
+    Optionally filter by status: available, leased, maintenance, unavailable, pending_inspection
+    """
+    query = select(Vehicle).where(Vehicle.is_active == True).order_by(Vehicle.created_at.desc())
+
+    if status_filter:
+        try:
+            status_enum = VehicleStatus(status_filter)
+            query = query.where(Vehicle.status == status_enum)
+        except ValueError:
+            valid_statuses = [s.value for s in VehicleStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    vehicles = result.scalars().all()
+
+    return [
+        VehicleResponse(
+            id=v.id,
+            vin=v.vin,
+            make=v.make,
+            model=v.model,
+            year=v.year,
+            color=v.color,
+            body_type=v.body_type,
+            license_plate=v.license_plate,
+            engine=v.engine,
+            transmission=v.transmission,
+            mileage=v.mileage,
+            weekly_rate=float(v.weekly_rate) if v.weekly_rate else 0.0,
+            security_deposit=float(v.security_deposit) if v.security_deposit else None,
+            status=v.status.value,
+            condition=v.condition.value,
+            acquisition_source=v.acquisition_source,
+            acquisition_cost=float(v.acquisition_cost) if v.acquisition_cost else None,
+            repair_cost=float(v.repair_cost) if v.repair_cost else None,
+            current_lease_id=v.current_lease_id,
+            current_tracker_id=v.current_tracker_id,
+            notes=v.notes,
+            admin_notes=v.admin_notes,
+            is_active=v.is_active,
+            show_on_fleet_page=v.show_on_fleet_page,
+            created_at=v.created_at,
+            updated_at=v.updated_at,
+        )
+        for v in vehicles
+    ]
+
+
+@router.get("/vehicles/{vehicle_id}", response_model=VehicleResponse)
+async def get_vehicle(
+    vehicle_id: int,
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific vehicle by ID.
+
+    Requires admin or ops role.
+    """
+    result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    return VehicleResponse(
+        id=vehicle.id,
+        vin=vehicle.vin,
+        make=vehicle.make,
+        model=vehicle.model,
+        year=vehicle.year,
+        color=vehicle.color,
+        body_type=vehicle.body_type,
+        license_plate=vehicle.license_plate,
+        engine=vehicle.engine,
+        transmission=vehicle.transmission,
+        mileage=vehicle.mileage,
+        weekly_rate=float(vehicle.weekly_rate) if vehicle.weekly_rate else 0.0,
+        security_deposit=float(vehicle.security_deposit) if vehicle.security_deposit else None,
+        status=vehicle.status.value,
+        condition=vehicle.condition.value,
+        acquisition_source=vehicle.acquisition_source,
+        acquisition_cost=float(vehicle.acquisition_cost) if vehicle.acquisition_cost else None,
+        repair_cost=float(vehicle.repair_cost) if vehicle.repair_cost else None,
+        current_lease_id=vehicle.current_lease_id,
+        current_tracker_id=vehicle.current_tracker_id,
+        notes=vehicle.notes,
+        admin_notes=vehicle.admin_notes,
+        is_active=vehicle.is_active,
+        show_on_fleet_page=vehicle.show_on_fleet_page,
+        created_at=vehicle.created_at,
+        updated_at=vehicle.updated_at,
+    )
+
+
+@router.post("/vehicles", response_model=VehicleResponse, status_code=status.HTTP_201_CREATED)
+async def create_vehicle(
+    request: VehicleCreateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Create a new vehicle.
+
+    Requires admin role.
+    """
+    # Check VIN uniqueness
+    existing = await session.execute(
+        select(Vehicle).where(Vehicle.vin == request.vin)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Vehicle with VIN '{request.vin}' already exists"
+        )
+
+    # Validate status
+    try:
+        status_enum = VehicleStatus(request.status)
+    except ValueError:
+        valid_statuses = [s.value for s in VehicleStatus]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        )
+
+    # Validate condition
+    try:
+        condition_enum = VehicleCondition(request.condition)
+    except ValueError:
+        valid_conditions = [c.value for c in VehicleCondition]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid condition. Must be one of: {', '.join(valid_conditions)}"
+        )
+
+    # Create vehicle
+    vehicle = Vehicle(
+        vin=request.vin,
+        make=request.make,
+        model=request.model,
+        year=request.year,
+        color=request.color,
+        body_type=request.body_type,
+        license_plate=request.license_plate,
+        engine=request.engine,
+        transmission=request.transmission,
+        mileage=request.mileage,
+        weekly_rate=request.weekly_rate,
+        security_deposit=request.security_deposit,
+        status=status_enum,
+        condition=condition_enum,
+        acquisition_source=request.acquisition_source,
+        acquisition_cost=request.acquisition_cost,
+        repair_cost=request.repair_cost,
+        notes=request.notes,
+        show_on_fleet_page=request.show_on_fleet_page,
+    )
+
+    session.add(vehicle)
+    await session.flush()
+    await session.refresh(vehicle)
+
+    logger.info(f"Admin {user.email} created vehicle {vehicle.id} (VIN: {vehicle.vin})")
+
+    return VehicleResponse(
+        id=vehicle.id,
+        vin=vehicle.vin,
+        make=vehicle.make,
+        model=vehicle.model,
+        year=vehicle.year,
+        color=vehicle.color,
+        body_type=vehicle.body_type,
+        license_plate=vehicle.license_plate,
+        engine=vehicle.engine,
+        transmission=vehicle.transmission,
+        mileage=vehicle.mileage,
+        weekly_rate=float(vehicle.weekly_rate) if vehicle.weekly_rate else 0.0,
+        security_deposit=float(vehicle.security_deposit) if vehicle.security_deposit else None,
+        status=vehicle.status.value,
+        condition=vehicle.condition.value,
+        acquisition_source=vehicle.acquisition_source,
+        acquisition_cost=float(vehicle.acquisition_cost) if vehicle.acquisition_cost else None,
+        repair_cost=float(vehicle.repair_cost) if vehicle.repair_cost else None,
+        current_lease_id=vehicle.current_lease_id,
+        current_tracker_id=vehicle.current_tracker_id,
+        notes=vehicle.notes,
+        admin_notes=vehicle.admin_notes,
+        is_active=vehicle.is_active,
+        show_on_fleet_page=vehicle.show_on_fleet_page,
+        created_at=vehicle.created_at,
+        updated_at=vehicle.updated_at,
+    )
+
+
+@router.put("/vehicles/{vehicle_id}", response_model=VehicleResponse)
+async def update_vehicle(
+    vehicle_id: int,
+    request: VehicleUpdateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update an existing vehicle.
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    # Update fields if provided
+    if request.make is not None:
+        vehicle.make = request.make
+    if request.model is not None:
+        vehicle.model = request.model
+    if request.year is not None:
+        vehicle.year = request.year
+    if request.color is not None:
+        vehicle.color = request.color
+    if request.body_type is not None:
+        vehicle.body_type = request.body_type
+    if request.license_plate is not None:
+        vehicle.license_plate = request.license_plate
+    if request.engine is not None:
+        vehicle.engine = request.engine
+    if request.transmission is not None:
+        vehicle.transmission = request.transmission
+    if request.mileage is not None:
+        vehicle.mileage = request.mileage
+    if request.weekly_rate is not None:
+        vehicle.weekly_rate = Decimal(str(request.weekly_rate))
+    if request.security_deposit is not None:
+        vehicle.security_deposit = Decimal(str(request.security_deposit))
+    if request.notes is not None:
+        vehicle.notes = request.notes
+    if request.admin_notes is not None:
+        vehicle.admin_notes = request.admin_notes
+    if request.show_on_fleet_page is not None:
+        vehicle.show_on_fleet_page = request.show_on_fleet_page
+
+    # Validate and update status
+    if request.status is not None:
+        try:
+            status_enum = VehicleStatus(request.status)
+            vehicle.status = status_enum
+        except ValueError:
+            valid_statuses = [s.value for s in VehicleStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+
+    # Validate and update condition
+    if request.condition is not None:
+        try:
+            condition_enum = VehicleCondition(request.condition)
+            vehicle.condition = condition_enum
+        except ValueError:
+            valid_conditions = [c.value for c in VehicleCondition]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid condition. Must be one of: {', '.join(valid_conditions)}"
+            )
+
+    vehicle.updated_at = datetime.now(timezone.utc)
+
+    await session.flush()
+    await session.refresh(vehicle)
+
+    logger.info(f"Admin {user.email} updated vehicle {vehicle.id} (VIN: {vehicle.vin})")
+
+    return VehicleResponse(
+        id=vehicle.id,
+        vin=vehicle.vin,
+        make=vehicle.make,
+        model=vehicle.model,
+        year=vehicle.year,
+        color=vehicle.color,
+        body_type=vehicle.body_type,
+        license_plate=vehicle.license_plate,
+        engine=vehicle.engine,
+        transmission=vehicle.transmission,
+        mileage=vehicle.mileage,
+        weekly_rate=float(vehicle.weekly_rate) if vehicle.weekly_rate else 0.0,
+        security_deposit=float(vehicle.security_deposit) if vehicle.security_deposit else None,
+        status=vehicle.status.value,
+        condition=vehicle.condition.value,
+        acquisition_source=vehicle.acquisition_source,
+        acquisition_cost=float(vehicle.acquisition_cost) if vehicle.acquisition_cost else None,
+        repair_cost=float(vehicle.repair_cost) if vehicle.repair_cost else None,
+        current_lease_id=vehicle.current_lease_id,
+        current_tracker_id=vehicle.current_tracker_id,
+        notes=vehicle.notes,
+        admin_notes=vehicle.admin_notes,
+        is_active=vehicle.is_active,
+        show_on_fleet_page=vehicle.show_on_fleet_page,
+        created_at=vehicle.created_at,
+        updated_at=vehicle.updated_at,
+    )
+
+
+@router.delete("/vehicles/{vehicle_id}")
+async def delete_vehicle(
+    vehicle_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Delete a vehicle (soft delete by setting is_active=False).
+
+    Requires admin role.
+    Cannot delete vehicles with active leases.
+    """
+    result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    # Check for active leases
+    if vehicle.current_lease_id:
+        lease_result = await session.execute(
+            select(Lease).where(
+                Lease.id == vehicle.current_lease_id,
+                Lease.status == LeaseStatus.ACTIVE
+            )
+        )
+        active_lease = lease_result.scalar_one_or_none()
+        if active_lease:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete vehicle with active lease"
+            )
+
+    # Soft delete
+    vehicle.is_active = False
+    vehicle.updated_at = datetime.now(timezone.utc)
+
+    logger.info(f"Admin {user.email} deleted (soft) vehicle {vehicle.id} (VIN: {vehicle.vin})")
+
+    return {
+        "success": True,
+        "message": f"Vehicle {vehicle.vin} has been deleted",
+        "vehicle_id": vehicle.id,
+        "deleted_by": user.email,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }

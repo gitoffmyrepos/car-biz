@@ -571,7 +571,7 @@
       "Verify customer profile, insurance status, lease status visible",
       "Take screenshot of customer management"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -588,7 +588,7 @@
       "Delete vehicle (if no active lease)",
       "Take screenshot of vehicle management"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -603,7 +603,7 @@
       "Verify customer-facing fleet page reflects availability",
       "Take screenshot of availability management"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
