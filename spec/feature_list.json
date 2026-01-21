@@ -11,7 +11,7 @@
       "Verify page loads within 3 seconds (Lighthouse 90+)",
       "Take screenshot documenting home page functionality"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

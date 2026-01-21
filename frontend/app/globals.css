@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', system-ui, sans-serif;
+    --font-playfair: 'Playfair Display', serif;
+  }
+
+  body {
+    @apply bg-luxury-pearl text-luxury-charcoal;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-gold text-white hover:opacity-90 focus:ring-gold-500;
+  }
+
+  .btn-secondary {
+    @apply bg-luxury-charcoal text-white hover:bg-luxury-slate focus:ring-luxury-charcoal;
+  }
+
+  .btn-outline {
+    @apply border-2 border-luxury-charcoal text-luxury-charcoal hover:bg-luxury-charcoal hover:text-white focus:ring-luxury-charcoal;
+  }
+
+  .container-luxury {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section {
+    @apply py-16 md:py-24;
+  }
+
+  .heading-display {
+    @apply font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .heading-section {
+    @apply font-display text-3xl md:text-4xl font-bold;
+  }
+
+  .text-muted {
+    @apply text-gray-600;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6 md:p-8;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-gold;
+  }
+}
