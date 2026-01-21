@@ -1,0 +1,2765 @@
+[
+  {
+    "category": "functional",
+    "description": "Home page - Public marketing landing page with professional, modern, luxurious aesthetic showcasing the weekly vehicle leasing service, hero section, value propositions, and call-to-action buttons",
+    "steps": [
+      "Navigate to / (home page) in browser",
+      "Verify hero section displays with professional branding",
+      "Verify value propositions are visible",
+      "Verify call-to-action buttons (Get Started, Learn More) are present",
+      "Verify mobile-responsive layout",
+      "Verify page loads within 3 seconds (Lighthouse 90+)",
+      "Take screenshot documenting home page functionality"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "How It Works page - Public page explaining the weekly leasing process with step-by-step visual guide, payment model explanation ($150/week example), and service benefits",
+    "steps": [
+      "Navigate to /how-it-works page in browser",
+      "Verify step-by-step process is displayed",
+      "Verify payment model explanation is visible",
+      "Verify service benefits are listed",
+      "Verify responsive design on mobile",
+      "Take screenshot documenting How It Works page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Fleet Preview page - Public page showing available vehicle categories/types without sensitive pricing or customer data, with professional vehicle imagery",
+    "steps": [
+      "Navigate to /fleet page in browser",
+      "Verify vehicle categories are displayed",
+      "Verify no sensitive customer/pricing data is exposed",
+      "Verify professional vehicle imagery loads",
+      "Verify responsive grid layout",
+      "Take screenshot documenting Fleet Preview page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Requirements page - Public page displaying customer eligibility requirements for leasing (age, insurance, identification requirements)",
+    "steps": [
+      "Navigate to /requirements page in browser",
+      "Verify eligibility requirements list is displayed",
+      "Verify insurance requirements section",
+      "Verify identification requirements section",
+      "Verify clear formatting and readability",
+      "Take screenshot documenting Requirements page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "FAQ page - Public frequently asked questions page with expandable/collapsible answers covering common questions about the leasing service",
+    "steps": [
+      "Navigate to /faq page in browser",
+      "Verify FAQ questions are listed",
+      "Click on a question to expand answer",
+      "Verify answer content displays",
+      "Click again to collapse answer",
+      "Verify accordion/toggle functionality works",
+      "Take screenshot documenting FAQ page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Contact/Inquiry page - Public contact form with fields for name, phone/email, desired vehicle, timeframe, and notes with form validation",
+    "steps": [
+      "Navigate to /contact page in browser",
+      "Verify contact form is displayed",
+      "Verify name field is present and required",
+      "Verify email/phone field is present and required",
+      "Verify desired vehicle field is present",
+      "Verify timeframe field is present",
+      "Verify notes textarea is present",
+      "Take screenshot documenting Contact page form"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Terms of Service page - Public legal page with complete terms and conditions for the leasing service",
+    "steps": [
+      "Navigate to /terms page in browser",
+      "Verify terms content is displayed",
+      "Verify page is scrollable for full content",
+      "Verify text is readable and properly formatted",
+      "Take screenshot documenting Terms page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Privacy Policy page - Public legal page with privacy policy explaining data collection and usage practices",
+    "steps": [
+      "Navigate to /privacy page in browser",
+      "Verify privacy policy content is displayed",
+      "Verify data collection sections are present",
+      "Verify contact information for privacy inquiries",
+      "Take screenshot documenting Privacy page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "GPS/Telematics Disclosure page - Public legal page disclosing the existence and purpose of vehicle tracking as required by compliance",
+    "steps": [
+      "Navigate to /gps-disclosure page in browser",
+      "Verify GPS tracking disclosure content",
+      "Verify purpose of tracking is explained",
+      "Verify customer consent requirements are listed",
+      "Take screenshot documenting GPS Disclosure page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Inquiry form submission - Customer can submit inquiry form and system stores inquiry record in database",
+    "steps": [
+      "Navigate to /contact page in browser",
+      "Fill name field with 'John Doe'",
+      "Fill email field with 'john@example.com'",
+      "Fill phone field with '555-123-4567'",
+      "Select desired vehicle type",
+      "Fill timeframe field",
+      "Fill notes field with additional details",
+      "Click Submit button",
+      "Verify success message appears",
+      "Take screenshot of submission confirmation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Inquiry auto-response email - System sends automatic email acknowledgement via Resend when inquiry is submitted",
+    "steps": [
+      "Submit inquiry form with valid email",
+      "Verify Resend API is called",
+      "Verify auto-response email content includes acknowledgement",
+      "Verify email subject is appropriate",
+      "Verify from address matches RESEND_FROM_EMAIL config"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin inquiry dashboard - Admin can view list of submitted inquiries with customer details and timestamps",
+    "steps": [
+      "Login as admin user",
+      "Navigate to admin dashboard",
+      "Click on Inquiries section",
+      "Verify list of inquiries is displayed",
+      "Verify inquiry details (name, email, phone, vehicle, timeframe, notes) are visible",
+      "Verify timestamps are displayed",
+      "Take screenshot of admin inquiry list"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Keycloak OIDC integration - Authentication via existing Keycloak instance using OIDC protocol",
+    "steps": [
+      "Navigate to /login page",
+      "Click 'Sign In' button",
+      "Verify redirect to Keycloak login page",
+      "Enter valid credentials",
+      "Submit login form",
+      "Verify redirect back to application",
+      "Verify user session is established",
+      "Take screenshot of authenticated state"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer signup flow - New users can register through Keycloak and customer role is assigned",
+    "steps": [
+      "Navigate to /signup page",
+      "Click 'Create Account' link",
+      "Verify redirect to Keycloak registration",
+      "Fill registration form with name, email, password",
+      "Submit registration",
+      "Verify customer role is assigned in Keycloak",
+      "Verify redirect to customer dashboard",
+      "Take screenshot of successful registration"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "JWT token validation - Backend validates JWT tokens from Keycloak on protected endpoints",
+    "steps": [
+      "Obtain valid JWT token from Keycloak",
+      "Make API request with Authorization header",
+      "Verify request succeeds with valid token",
+      "Make request with invalid/expired token",
+      "Verify 401 Unauthorized response",
+      "Verify token claims are properly parsed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "RBAC enforcement - Role-based access control enforces admin/ops/customer permissions on all routes",
+    "steps": [
+      "Login as customer user",
+      "Attempt to access admin endpoint",
+      "Verify 403 Forbidden response",
+      "Login as admin user",
+      "Access admin endpoint successfully",
+      "Verify ops role has appropriate access",
+      "Take screenshot documenting RBAC enforcement"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin MFA requirement - Admin users require multi-factor authentication configured in Keycloak",
+    "steps": [
+      "Login as admin user",
+      "Verify MFA prompt appears (TOTP/authenticator)",
+      "Enter valid MFA code",
+      "Verify successful admin login",
+      "Verify MFA is not required for customer role"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Logout functionality - Users can securely logout and session is invalidated",
+    "steps": [
+      "Login as authenticated user",
+      "Click logout button",
+      "Verify redirect to home/login page",
+      "Attempt to access protected route",
+      "Verify redirect to login (session invalid)",
+      "Verify Keycloak session is ended",
+      "Take screenshot of logout flow"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer dashboard - Authenticated customers see personalized dashboard with summary of their account status",
+    "steps": [
+      "Login as customer user",
+      "Navigate to /dashboard",
+      "Verify personalized greeting with user name",
+      "Verify account status summary is displayed",
+      "Verify navigation to other customer sections",
+      "Verify responsive layout",
+      "Take screenshot of customer dashboard"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer profile page - Customers can view and update their profile information",
+    "steps": [
+      "Login as customer user",
+      "Navigate to /profile page",
+      "Verify profile form displays current information",
+      "Update phone number field",
+      "Click Save button",
+      "Verify success message",
+      "Refresh page and verify changes persisted",
+      "Take screenshot of profile page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer insurance upload - Customers can upload driver insurance documentation securely",
+    "steps": [
+      "Login as customer user",
+      "Navigate to profile/verification section",
+      "Click upload insurance document button",
+      "Select valid insurance document file (PDF/image)",
+      "Verify upload progress indicator",
+      "Verify upload success message",
+      "Verify document status shows 'Pending Verification'",
+      "Take screenshot of insurance upload"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance file validation - System validates insurance uploads (file type, size, magic bytes)",
+    "steps": [
+      "Attempt to upload non-image/non-PDF file",
+      "Verify rejection with appropriate error message",
+      "Attempt to upload file exceeding size limit",
+      "Verify rejection with size limit error",
+      "Upload valid file type with correct size",
+      "Verify acceptance and processing"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance storage in MinIO - Insurance documents stored in private MinIO bucket (not PostgreSQL)",
+    "steps": [
+      "Upload insurance document",
+      "Verify file is stored in S3_BUCKET_INSURANCE bucket",
+      "Verify only metadata (object_key, checksum, status) in PostgreSQL",
+      "Verify raw file is NOT stored in database",
+      "Verify bucket has private access controls"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance metadata encryption - Sensitive insurance metadata encrypted using Vault Transit",
+    "steps": [
+      "Upload insurance document",
+      "Verify object_key stored in PostgreSQL is encrypted",
+      "Verify Vault Transit API was called for encryption",
+      "Decrypt metadata using Vault Transit",
+      "Verify original object_key is recovered"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer insurance status view - Customers see insurance verification status without accessing the actual document",
+    "steps": [
+      "Login as customer with uploaded insurance",
+      "Navigate to profile/verification section",
+      "Verify insurance status is displayed (Pending/Approved/Rejected/Expired)",
+      "Verify upload timestamp is shown",
+      "Verify expiration date if collected",
+      "Verify customer cannot download original document",
+      "Take screenshot of insurance status view"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin insurance verification - Admin can view insurance documents and approve/reject verification",
+    "steps": [
+      "Login as admin user",
+      "Navigate to customer management section",
+      "Select customer with pending insurance verification",
+      "Click view insurance document",
+      "Verify signed URL allows temporary access",
+      "Click Approve or Reject button",
+      "Enter verification notes",
+      "Verify status updated in customer record",
+      "Take screenshot of admin verification workflow"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance access audit logging - Every insurance document access is logged in audit trail",
+    "steps": [
+      "Login as admin user",
+      "Access customer's insurance document",
+      "Verify AuditLog entry created",
+      "Verify audit log contains: actor_id, role, timestamp, action, target entity",
+      "Verify break-glass reason is recorded if applicable",
+      "Navigate to audit log viewer",
+      "Take screenshot of insurance access audit entry"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance signed URL access - Insurance documents accessed only via short-lived MinIO signed URLs",
+    "steps": [
+      "Generate signed URL for insurance document",
+      "Verify URL has short TTL (matches S3_SIGNED_URL_TTL_SECONDS)",
+      "Access document via signed URL",
+      "Wait for URL to expire",
+      "Attempt access after expiration",
+      "Verify 403/expired error"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance break-glass access - Admin must provide reason for accessing insurance documents",
+    "steps": [
+      "Login as admin user",
+      "Navigate to insurance document access",
+      "Verify break-glass prompt appears",
+      "Enter reason for access",
+      "Verify reason is recorded in audit log",
+      "Verify time-limited signed URL is provided",
+      "Take screenshot of break-glass workflow"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer vehicle request - Approved customers can request a vehicle for leasing",
+    "steps": [
+      "Login as customer with Approved insurance status",
+      "Navigate to vehicle request section",
+      "Click 'Request Vehicle' button",
+      "Select vehicle preferences if available",
+      "Submit vehicle request",
+      "Verify request confirmation message",
+      "Verify request record created in system",
+      "Take screenshot of vehicle request submission"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vehicle request restriction - Only approved customers can request vehicles",
+    "steps": [
+      "Login as customer with Pending insurance status",
+      "Navigate to vehicle request section",
+      "Verify 'Request Vehicle' is disabled or hidden",
+      "Verify message explaining approval requirement",
+      "Take screenshot showing restriction for non-approved customer"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer assigned vehicle view - Customers see their assigned vehicle details after admin assignment",
+    "steps": [
+      "Login as customer with assigned vehicle",
+      "Navigate to dashboard or vehicle section",
+      "Verify assigned vehicle details are displayed",
+      "Verify vehicle make, model, year visible",
+      "Verify lease start date visible",
+      "Verify weekly payment amount visible",
+      "Take screenshot of assigned vehicle view"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer notifications center - Customers see in-app notifications for important events",
+    "steps": [
+      "Login as customer user",
+      "Navigate to notifications section",
+      "Verify notification list is displayed",
+      "Verify notification types (payment, verification, reminders)",
+      "Click on a notification",
+      "Verify notification detail view",
+      "Verify unread/read status indicator",
+      "Take screenshot of notifications center"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer incident report submission - Customers can submit incident reports with photos and details",
+    "steps": [
+      "Login as customer with active lease",
+      "Navigate to incident report section",
+      "Click 'Report Incident' button",
+      "Fill incident type/category",
+      "Fill incident description",
+      "Upload incident photos",
+      "Submit incident report",
+      "Verify success confirmation",
+      "Take screenshot of incident submission"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Incident photo storage - Incident photos stored in MinIO private bucket with signed URL access",
+    "steps": [
+      "Submit incident report with photos",
+      "Verify photos stored in S3_BUCKET_INCIDENTS bucket",
+      "Verify photos accessible only via signed URLs",
+      "Verify signed URLs have appropriate TTL",
+      "Verify direct bucket access is denied"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer weekly invoices view - Customers see list of their weekly invoices with status",
+    "steps": [
+      "Login as customer with active lease",
+      "Navigate to payments/invoices section",
+      "Verify list of weekly invoices displayed",
+      "Verify invoice amount, due date, status visible",
+      "Verify paid/unpaid status indicators",
+      "Click on invoice for detail view",
+      "Take screenshot of invoices list"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer payment proof upload - Customers can upload payment proof screenshot for verification",
+    "steps": [
+      "Login as customer with pending invoice",
+      "Navigate to invoice detail",
+      "Click 'Upload Payment Proof' button",
+      "Select payment screenshot file",
+      "Verify upload progress",
+      "Verify upload success message",
+      "Verify invoice status changes to 'Verification in Progress'",
+      "Take screenshot of payment proof upload"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment proof storage - Payment screenshots stored in MinIO private bucket",
+    "steps": [
+      "Upload payment proof screenshot",
+      "Verify file stored in S3_BUCKET_PAYMENTS bucket",
+      "Verify only metadata stored in PostgreSQL",
+      "Verify bucket has private access controls",
+      "Verify content hash is stored for duplicate detection"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment verification pending notification - System sends 48-hour verification notice via Resend email",
+    "steps": [
+      "Upload payment proof screenshot",
+      "Verify Resend API called with verification email",
+      "Verify email content mentions 48-hour verification window",
+      "Verify in-app notification created",
+      "Take screenshot of verification pending status"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment duplicate detection - System detects and flags duplicate payment proof uploads",
+    "steps": [
+      "Upload payment proof screenshot",
+      "Note the content hash stored",
+      "Attempt to upload same screenshot again",
+      "Verify duplicate detection flags the upload",
+      "Verify admin is notified of potential fraud",
+      "Verify original upload is not affected"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin dashboard overview - Admin dashboard shows key metrics and summary statistics",
+    "steps": [
+      "Login as admin user",
+      "Navigate to admin dashboard",
+      "Verify key metrics displayed (active leases, pending payments, etc.)",
+      "Verify recent activity section",
+      "Verify quick action buttons",
+      "Verify responsive layout",
+      "Take screenshot of admin dashboard"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin customer management - Admin can view and manage customer list",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Customers section",
+      "Verify customer list is displayed",
+      "Verify search/filter functionality",
+      "Click on customer to view details",
+      "Verify customer profile, insurance status, lease status visible",
+      "Take screenshot of customer management"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin vehicle CRUD - Admin can create, read, update, and delete vehicles",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Vehicles section",
+      "Click 'Add Vehicle' button",
+      "Fill vehicle details (make, model, year, VIN)",
+      "Save vehicle",
+      "Verify vehicle appears in list",
+      "Edit vehicle details",
+      "Verify changes saved",
+      "Delete vehicle (if no active lease)",
+      "Take screenshot of vehicle management"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vehicle availability status - Admin can set and update vehicle availability states",
+    "steps": [
+      "Login as admin user",
+      "Navigate to vehicle detail",
+      "View current availability status",
+      "Change status (Available/Leased/Maintenance/Unavailable)",
+      "Save status change",
+      "Verify status update persisted",
+      "Verify customer-facing fleet page reflects availability",
+      "Take screenshot of availability management"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vehicle condition report - Admin can create and view vehicle condition reports",
+    "steps": [
+      "Login as admin user",
+      "Navigate to vehicle detail",
+      "Click 'Add Condition Report' button",
+      "Fill condition details (mileage, damage notes, photos)",
+      "Upload condition photos",
+      "Save condition report",
+      "Verify report appears in vehicle history",
+      "Take screenshot of condition report"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin vehicle assignment - Admin assigns available vehicles to approved customers creating LeaseContract",
+    "steps": [
+      "Login as admin user",
+      "Navigate to customer with pending vehicle request",
+      "Click 'Assign Vehicle' button",
+      "Select available vehicle from list",
+      "Enter lease terms (weekly amount, start date)",
+      "Confirm assignment",
+      "Verify LeaseContract record created",
+      "Verify vehicle status changed to 'Leased'",
+      "Verify customer notified of assignment",
+      "Take screenshot of vehicle assignment"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin tracker device management - Admin can manage GPS tracker inventory",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Trackers section",
+      "Click 'Add Tracker' button",
+      "Enter tracker details (ID, model, serial number)",
+      "Save tracker",
+      "Verify tracker appears in inventory list",
+      "View tracker details",
+      "Take screenshot of tracker management"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tracker vehicle assignment - Admin assigns tracker devices to vehicles",
+    "steps": [
+      "Login as admin user",
+      "Navigate to tracker detail or vehicle detail",
+      "Click 'Assign to Vehicle' button",
+      "Select target vehicle",
+      "Confirm assignment",
+      "Verify tracker-vehicle association created",
+      "Verify vehicle shows assigned tracker",
+      "Take screenshot of tracker assignment"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tracker assignment audit - Tracker assignments are recorded in audit log",
+    "steps": [
+      "Assign tracker to vehicle",
+      "Navigate to audit log",
+      "Search for tracker assignment entry",
+      "Verify audit log contains: actor_id, timestamp, before/after states",
+      "Verify target entity (tracker and vehicle IDs) recorded",
+      "Take screenshot of tracker audit entry"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Weekly invoice generation - System generates weekly invoices for active lease contracts on schedule",
+    "steps": [
+      "Create active lease contract",
+      "Trigger invoice generation (scheduled or manual)",
+      "Verify WeeklyInvoice record created",
+      "Verify invoice amount matches lease terms",
+      "Verify due date calculated correctly",
+      "Verify invoice status is 'Pending'",
+      "Verify customer notified of new invoice"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin weekly invoices view - Admin can view all weekly invoices with filters",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Weekly Invoices section",
+      "Verify list of invoices displayed",
+      "Filter by status (Pending/Paid/Overdue)",
+      "Filter by customer",
+      "Filter by date range",
+      "Click invoice for detail view",
+      "Take screenshot of invoice management"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin payment verification - Admin can approve or reject payment proof submissions",
+    "steps": [
+      "Login as admin user",
+      "Navigate to payment verification queue",
+      "View pending payment proof submission",
+      "Click to view payment screenshot via signed URL",
+      "Click 'Approve' button",
+      "Verify invoice status updates to 'Paid'",
+      "Verify customer notified of approval",
+      "Verify ledger updated",
+      "Take screenshot of payment approval"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment rejection workflow - Admin can reject payment with reason",
+    "steps": [
+      "Login as admin user",
+      "Navigate to payment verification queue",
+      "View pending payment proof",
+      "Click 'Reject' button",
+      "Enter rejection reason",
+      "Confirm rejection",
+      "Verify invoice status remains unpaid",
+      "Verify customer notified with reason",
+      "Take screenshot of payment rejection"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment verification audit - Payment approvals/rejections logged in audit trail",
+    "steps": [
+      "Approve or reject a payment",
+      "Navigate to audit log",
+      "Search for payment verification entry",
+      "Verify audit log contains: actor_id, action, before/after status",
+      "Verify reason field recorded for rejection",
+      "Verify request_id for traceability",
+      "Take screenshot of payment audit entry"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin maintenance scheduling - Admin can create maintenance schedules for vehicles",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Maintenance section",
+      "Click 'Schedule Maintenance' button",
+      "Select vehicle",
+      "Enter maintenance date and type",
+      "Enter maintenance notes",
+      "Save schedule",
+      "Verify MaintenanceSchedule record created",
+      "Take screenshot of maintenance scheduling"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Monthly service tracking - Admin can record completed monthly service events",
+    "steps": [
+      "Login as admin user",
+      "Navigate to maintenance schedule",
+      "Click 'Mark Complete' on scheduled maintenance",
+      "Enter service completion notes",
+      "Enter service cost if applicable",
+      "Save completion",
+      "Verify schedule marked as complete",
+      "Take screenshot of service completion"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Due date reminder notifications - System sends due date reminders to customers via email and in-app",
+    "steps": [
+      "Create invoice with due date approaching (e.g., 2 days)",
+      "Trigger reminder notification job",
+      "Verify Resend email sent with due date reminder",
+      "Verify in-app notification created",
+      "Verify reminder content includes due date and amount",
+      "Take screenshot of reminder notification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Late payment detection - Day 1 after due date marks invoice as Late and applies late fee",
+    "steps": [
+      "Create invoice with past due date",
+      "Trigger late payment detection job",
+      "Verify invoice status changed to 'Late'",
+      "Verify late fee applied to invoice",
+      "Verify customer notified of late status",
+      "Verify DelinquencyCase created"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Delinquency case creation - Late payments automatically create DelinquencyCase for tracking",
+    "steps": [
+      "Trigger late payment for unpaid invoice",
+      "Verify DelinquencyCase record created",
+      "Verify case linked to customer and invoice",
+      "Verify case status is 'Open'",
+      "Verify escalation timeline initialized",
+      "Navigate to delinquency queue in admin",
+      "Verify case appears in queue"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin delinquency queue - Admin can view and manage delinquency cases",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Delinquency & Recovery section",
+      "Verify delinquency queue displayed",
+      "Filter by status (Open/Escalated/Resolved)",
+      "Click on case for detail view",
+      "View customer history and payment attempts",
+      "Take screenshot of delinquency queue"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Day 2 escalation notice - System sends escalation notice on Day 2 of delinquency",
+    "steps": [
+      "Create delinquency case at Day 1 status",
+      "Trigger Day 2 escalation job",
+      "Verify escalation notice sent via email",
+      "Verify DelinquencyCase status updated to 'Escalated'",
+      "Verify customer notified of escalation",
+      "Verify audit log entry created"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Recovery workflow compliance gate - Admin must complete compliance authorization before tow/recovery",
+    "steps": [
+      "Login as admin user",
+      "Navigate to delinquency case at Day 3",
+      "Click 'Initiate Recovery' button",
+      "Verify compliance gate form appears",
+      "Check compliance authorization checkbox",
+      "Enter reason for recovery",
+      "Enter contract version reference",
+      "Enter supporting notes",
+      "Submit compliance authorization",
+      "Verify RecoveryAuthorization event logged",
+      "Take screenshot of compliance gate"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Recovery action creation - Admin creates RecoveryAction after compliance authorization",
+    "steps": [
+      "Complete compliance gate authorization",
+      "Verify RecoveryAction record created",
+      "Verify action status is 'Tow Requested'",
+      "Enter tow vendor details (manual entry)",
+      "Save tow vendor information",
+      "Verify action updated with vendor details",
+      "Take screenshot of recovery action"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Lease termination on recovery - System terminates lease when recovery initiated",
+    "steps": [
+      "Initiate recovery action",
+      "Verify LeaseContract status changed to 'Terminated'",
+      "Verify termination reason recorded",
+      "Verify vehicle status changed to appropriate state",
+      "Verify customer access restricted",
+      "Verify termination email sent to customer"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Permanent ban on recovery - System creates BanRecord and permanently bans customer",
+    "steps": [
+      "Complete recovery action initiation",
+      "Verify BanRecord created for customer",
+      "Verify ban is marked as permanent",
+      "Verify ban reason references recovery action",
+      "Verify customer cannot request new vehicles",
+      "Verify customer cannot create new leases",
+      "Verify ban notification sent to customer"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Banned customer restrictions - Banned customers have restricted access to platform",
+    "steps": [
+      "Login as banned customer",
+      "Verify dashboard shows banned status",
+      "Attempt to request vehicle",
+      "Verify request is blocked with ban message",
+      "Verify historical invoices still viewable (if configured)",
+      "Verify new lease creation blocked",
+      "Take screenshot of banned customer view"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Recovery workflow disable option - Recovery workflow can be disabled via configuration",
+    "steps": [
+      "Set configuration to disable recovery workflow",
+      "Login as admin user",
+      "Navigate to delinquency case",
+      "Verify 'Initiate Recovery' option is hidden or disabled",
+      "Verify message explaining recovery is disabled",
+      "Re-enable recovery in configuration",
+      "Verify recovery option reappears"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Recovery audit logging - All recovery actions logged immutably in audit trail",
+    "steps": [
+      "Initiate recovery action",
+      "Navigate to audit log",
+      "Search for recovery-related entries",
+      "Verify immutable RecoveryAuthorization event",
+      "Verify compliance gate details recorded",
+      "Verify actor_id, role, timestamp, reason logged",
+      "Verify before/after states captured",
+      "Take screenshot of recovery audit trail"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin incident triage - Admin can view and manage customer incident reports",
+    "steps": [
+      "Login as admin user",
+      "Navigate to incident reports section",
+      "Verify list of incident reports",
+      "Click on incident for detail view",
+      "View incident photos via signed URLs",
+      "Add admin notes to incident",
+      "Update incident status",
+      "Take screenshot of incident triage"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin audit log viewer - Admin can search and view comprehensive audit logs",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Audit Logs section",
+      "Verify audit log list displayed",
+      "Search by actor/user",
+      "Filter by action type",
+      "Filter by date range",
+      "View audit entry details",
+      "Verify sensitive data is redacted in logs",
+      "Take screenshot of audit log viewer"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin settings page - Admin can configure system settings",
+    "steps": [
+      "Login as admin user",
+      "Navigate to Settings section",
+      "Verify configuration options displayed",
+      "Update a configurable setting",
+      "Save settings",
+      "Verify settings persisted",
+      "Take screenshot of admin settings"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Email notifications via Resend - All notification emails sent through Resend API",
+    "steps": [
+      "Trigger notification event (e.g., payment approval)",
+      "Verify Resend API called",
+      "Verify email delivered with correct content",
+      "Verify from address matches configuration",
+      "Verify email subject is appropriate",
+      "Verify email HTML template rendered correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Background job email processing - Email notifications processed via background jobs",
+    "steps": [
+      "Trigger notification event",
+      "Verify background job queued",
+      "Verify job processed within 60 seconds",
+      "Verify email sent successfully",
+      "Verify job completion logged"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Signup welcome email - New customers receive welcome email after registration",
+    "steps": [
+      "Complete customer signup",
+      "Verify welcome email sent via Resend",
+      "Verify email content includes welcome message",
+      "Verify email includes next steps",
+      "Verify email from address correct"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment approval email - Customer receives email when payment is approved",
+    "steps": [
+      "Admin approves customer payment",
+      "Verify 'Payment confirmed' email sent",
+      "Verify email includes payment details",
+      "Verify email includes receipt/confirmation number",
+      "Verify in-app notification also created"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment rejection email - Customer receives email when payment is rejected with reason",
+    "steps": [
+      "Admin rejects customer payment",
+      "Verify 'Action needed' email sent",
+      "Verify email includes rejection reason",
+      "Verify email includes next steps",
+      "Verify in-app notification created"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Late notice email - Customer receives late payment notice with fee information",
+    "steps": [
+      "Invoice becomes late (Day 1 past due)",
+      "Verify late notice email sent",
+      "Verify email includes late fee amount",
+      "Verify email includes payment instructions",
+      "Verify email warns of escalation consequences"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Escalation notice email - Customer receives Day 2 escalation warning",
+    "steps": [
+      "Delinquency reaches Day 2",
+      "Verify escalation email sent",
+      "Verify email warns of imminent recovery",
+      "Verify email includes contact information",
+      "Verify email includes amount owed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Termination/ban notice email - Customer receives termination notice after recovery action",
+    "steps": [
+      "Recovery action initiated",
+      "Verify termination email sent",
+      "Verify email explains lease termination",
+      "Verify email mentions permanent ban",
+      "Verify email includes legal/contact information"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer GPS consent - Customer must consent to GPS tracking during signup/lease",
+    "steps": [
+      "Login as customer during lease signing",
+      "Verify GPS tracking consent checkbox/form",
+      "Verify link to GPS disclosure page",
+      "Check consent checkbox",
+      "Submit consent",
+      "Verify consent recorded in system",
+      "Take screenshot of GPS consent"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "Vault integration - Application retrieves secrets from Vault KV v2",
+    "steps": [
+      "Configure Vault connection (VAULT_ADDR, auth method)",
+      "Retrieve secret from KV path",
+      "Verify secret value returned correctly",
+      "Verify no secrets hardcoded in code or config files",
+      "Verify Vault token renewal works"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "Vault Transit encryption - Sensitive metadata encrypted via Vault Transit engine",
+    "steps": [
+      "Configure Vault Transit key (VAULT_TRANSIT_KEY_NAME)",
+      "Encrypt test data using Transit API",
+      "Verify ciphertext returned",
+      "Decrypt ciphertext using Transit API",
+      "Verify original plaintext recovered",
+      "Verify key rotation supported"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "Rate limiting - Authentication and sensitive endpoints have rate limits",
+    "steps": [
+      "Configure rate limits",
+      "Make requests within limit",
+      "Verify requests succeed",
+      "Exceed rate limit with rapid requests",
+      "Verify 429 Too Many Requests response",
+      "Verify Redis-backed rate limiter working"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "Input validation - All API inputs validated with Pydantic models",
+    "steps": [
+      "Send request with valid input",
+      "Verify request accepted",
+      "Send request with invalid input type",
+      "Verify 422 Validation Error response",
+      "Send request with missing required field",
+      "Verify appropriate error message",
+      "Send request with malicious input",
+      "Verify input sanitized/rejected"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "CORS configuration - Proper CORS headers prevent unauthorized cross-origin access",
+    "steps": [
+      "Make request from allowed origin",
+      "Verify CORS headers present",
+      "Make request from disallowed origin",
+      "Verify request blocked by CORS",
+      "Verify credentials handling configured correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "Secure headers - API responses include security headers",
+    "steps": [
+      "Make API request",
+      "Verify HSTS header in production",
+      "Verify X-Frame-Options header",
+      "Verify X-Content-Type-Options header",
+      "Verify CSP header if applicable",
+      "Verify no sensitive data in headers"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "IDOR prevention - Ownership checks prevent unauthorized resource access",
+    "steps": [
+      "Login as Customer A",
+      "Access Customer A's own resource",
+      "Verify access granted",
+      "Attempt to access Customer B's resource",
+      "Verify 403 Forbidden response",
+      "Verify no data leaked in error response"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "SQL injection prevention - Parameterized queries prevent SQL injection",
+    "steps": [
+      "Send request with SQL injection payload",
+      "Verify payload does not execute",
+      "Verify error response does not leak database info",
+      "Verify ORM uses parameterized queries"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "XSS prevention - User input properly escaped in responses",
+    "steps": [
+      "Submit data containing script tags",
+      "View data in frontend",
+      "Verify script tags are escaped/sanitized",
+      "Verify no JavaScript execution",
+      "Verify API returns properly encoded data"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "File upload security - Uploads validated for type, size, and content",
+    "steps": [
+      "Upload valid file within size limit",
+      "Verify upload accepted",
+      "Attempt upload exceeding size limit",
+      "Verify rejection with size error",
+      "Attempt upload of disallowed file type",
+      "Verify rejection with type error",
+      "Attempt upload with spoofed content-type",
+      "Verify magic bytes validation catches mismatch"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "Sensitive data logging prevention - Logs do not contain sensitive data",
+    "steps": [
+      "Trigger actions that would log sensitive data",
+      "Examine application logs",
+      "Verify no raw document data logged",
+      "Verify no passwords logged",
+      "Verify no PII logged in plain text",
+      "Verify sensitive fields redacted"
+    ],
+    "passes": false
+  },
+  {
+    "category": "security",
+    "description": "Structured JSON logging - Application produces structured JSON logs with correlation IDs",
+    "steps": [
+      "Make API request",
+      "Examine log output",
+      "Verify JSON format",
+      "Verify correlation/request ID present",
+      "Verify timestamp in ISO format",
+      "Verify log level present"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "PostgreSQL database setup - Database schema with all core entities created",
+    "steps": [
+      "Run Alembic migrations",
+      "Verify all tables created",
+      "Verify User table exists",
+      "Verify CustomerProfile table exists",
+      "Verify Vehicle table exists",
+      "Verify LeaseContract table exists",
+      "Verify WeeklyInvoice table exists",
+      "Verify AuditLog table exists",
+      "Verify proper foreign key relationships"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Alembic migrations - Database migrations properly versioned and executable",
+    "steps": [
+      "Run alembic upgrade head",
+      "Verify migrations complete without error",
+      "Run alembic downgrade -1",
+      "Verify rollback works",
+      "Verify migration history tracked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Redis cache integration - Application uses Redis for caching and rate limiting",
+    "steps": [
+      "Verify Redis connection established",
+      "Store test value in Redis",
+      "Retrieve test value from Redis",
+      "Verify rate limit counters use Redis",
+      "Verify cache TTL respected"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "MinIO connection - Application connects to existing MinIO instance",
+    "steps": [
+      "Configure MinIO connection (S3_ENDPOINT, credentials)",
+      "Verify connection to MinIO established",
+      "List buckets",
+      "Verify required buckets exist (payments, insurance, incidents)",
+      "Upload test file to bucket",
+      "Verify file uploaded successfully"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "API health check endpoint - Backend provides health check endpoint for K8s probes",
+    "steps": [
+      "Call GET /health endpoint",
+      "Verify 200 OK response",
+      "Verify response includes status: healthy",
+      "Verify database connectivity check",
+      "Verify Redis connectivity check"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "API OpenAPI documentation - Backend provides OpenAPI/Swagger documentation",
+    "steps": [
+      "Navigate to /docs endpoint",
+      "Verify Swagger UI loads",
+      "Verify all endpoints documented",
+      "Verify request/response schemas documented",
+      "Navigate to /openapi.json",
+      "Verify valid OpenAPI JSON returned"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Modern luxurious aesthetic - Frontend design reflects professional, rich, glam aesthetic",
+    "steps": [
+      "Navigate to home page",
+      "Verify modern typography",
+      "Verify luxurious color scheme",
+      "Verify high-quality imagery",
+      "Verify professional layout",
+      "Verify consistent branding across pages",
+      "Take screenshot documenting aesthetic"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Mobile-first responsive design - All pages render correctly on mobile devices",
+    "steps": [
+      "Open home page on mobile viewport (375px)",
+      "Verify layout adapts to mobile",
+      "Verify navigation is mobile-friendly (hamburger menu)",
+      "Verify buttons/forms are touch-friendly",
+      "Test tablet viewport (768px)",
+      "Verify tablet layout appropriate",
+      "Take screenshots at multiple breakpoints"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Accessible UI - Keyboard navigation and proper contrast",
+    "steps": [
+      "Navigate site using only keyboard (Tab, Enter)",
+      "Verify all interactive elements focusable",
+      "Verify focus indicators visible",
+      "Check color contrast with accessibility tool",
+      "Verify contrast ratio meets WCAG guidelines",
+      "Verify form labels associated with inputs",
+      "Take screenshot of accessibility check"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Fast page loads - Public pages load quickly (Lighthouse 90+)",
+    "steps": [
+      "Run Lighthouse performance audit on home page",
+      "Verify performance score 90+",
+      "Verify LCP under 2.5 seconds",
+      "Verify FID under 100ms",
+      "Verify CLS under 0.1",
+      "Verify images optimized (Next.js Image)",
+      "Take screenshot of Lighthouse report"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "SEO optimization - Public pages have proper metadata for SEO",
+    "steps": [
+      "View page source of home page",
+      "Verify title tag present and descriptive",
+      "Verify meta description present",
+      "Verify Open Graph tags present",
+      "Navigate to /sitemap.xml",
+      "Verify sitemap contains public pages",
+      "Navigate to /robots.txt",
+      "Verify robots.txt properly configured"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Canonical URLs - Pages have canonical URL tags",
+    "steps": [
+      "View page source",
+      "Verify canonical link tag present",
+      "Verify canonical URL is correct",
+      "Verify no duplicate canonical tags"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Tailwind CSS styling - Consistent styling using Tailwind CSS",
+    "steps": [
+      "Inspect element styles",
+      "Verify Tailwind classes applied",
+      "Verify consistent spacing/padding",
+      "Verify consistent color usage",
+      "Verify no conflicting custom styles"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Docker Compose local development - Development environment runs via Docker Compose",
+    "steps": [
+      "Run docker-compose up",
+      "Verify frontend container starts",
+      "Verify backend container starts",
+      "Verify postgres container starts",
+      "Verify redis container starts",
+      "Verify all services healthy",
+      "Access frontend at localhost",
+      "Access backend API at localhost/api"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend Docker image build - Frontend builds to Docker image successfully",
+    "steps": [
+      "Run docker build for frontend",
+      "Verify build completes without errors",
+      "Verify image created with correct tag",
+      "Run container from built image",
+      "Verify application accessible in container"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Backend Docker image build - Backend builds to Docker image successfully",
+    "steps": [
+      "Run docker build for backend",
+      "Verify build completes without errors",
+      "Verify image created with correct tag",
+      "Run container from built image",
+      "Verify health check passes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Nexus registry push - Images push to existing Nexus container registry",
+    "steps": [
+      "Tag image for Nexus registry",
+      "Login to Nexus registry",
+      "Push frontend image to Nexus",
+      "Push backend image to Nexus",
+      "Verify images appear in Nexus UI",
+      "Verify image naming follows FX convention"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Image tagging convention - Images tagged following FX pattern (version-commit, latest-env)",
+    "steps": [
+      "Build image with version tag",
+      "Verify tag format: VERSION-COMMIT",
+      "Build image with latest tag",
+      "Verify tag format: latest-ENV",
+      "Verify branch-based tagging works"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes manifests - K8s deployment manifests created for production",
+    "steps": [
+      "Verify k8s/manifests directory exists",
+      "Verify Deployment manifest for frontend",
+      "Verify Deployment manifest for backend",
+      "Verify Service manifests",
+      "Verify Ingress manifest with TLS",
+      "Verify ConfigMap for non-sensitive config",
+      "Validate manifests with kubectl --dry-run"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes health probes - Deployments include liveness and readiness probes",
+    "steps": [
+      "Examine frontend Deployment manifest",
+      "Verify livenessProbe configured",
+      "Verify readinessProbe configured",
+      "Examine backend Deployment manifest",
+      "Verify probes point to health endpoints",
+      "Verify probe timing appropriate"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes resource limits - Deployments specify resource requests and limits",
+    "steps": [
+      "Examine Deployment manifests",
+      "Verify resources.requests.cpu defined",
+      "Verify resources.requests.memory defined",
+      "Verify resources.limits.cpu defined",
+      "Verify resources.limits.memory defined",
+      "Verify limits are reasonable for workload"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes NetworkPolicies - Network policies isolate application components",
+    "steps": [
+      "Verify NetworkPolicy manifests exist",
+      "Verify default deny ingress policy",
+      "Verify frontend can reach backend",
+      "Verify backend can reach databases",
+      "Verify external access properly controlled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes Ingress TLS - Ingress configured with TLS termination",
+    "steps": [
+      "Examine Ingress manifest",
+      "Verify TLS section present",
+      "Verify certificate secret referenced",
+      "Verify host matching configured",
+      "Verify HTTP to HTTPS redirect"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes non-root containers - Containers run as non-root user",
+    "steps": [
+      "Examine Deployment securityContext",
+      "Verify runAsNonRoot: true",
+      "Verify runAsUser specified",
+      "Verify readOnlyRootFilesystem where feasible",
+      "Verify no privileged containers"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes secrets from Vault - Secrets sourced from Vault (not hardcoded)",
+    "steps": [
+      "Verify no Secret manifests with sensitive data",
+      "Verify Vault agent or external secrets configured",
+      "Verify secrets injected at runtime",
+      "Verify application receives secrets correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Kubernetes image pull from Nexus - Deployments pull images from Nexus registry",
+    "steps": [
+      "Examine Deployment image references",
+      "Verify images reference Nexus registry host",
+      "Verify imagePullSecrets configured",
+      "Verify image names match FX convention"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Jenkinsfile pipeline - CI/CD pipeline following FX patterns",
+    "steps": [
+      "Verify Jenkinsfile exists",
+      "Verify stage naming follows FX convention",
+      "Verify environment detection (dev/qa/prod)",
+      "Verify Docker build stage",
+      "Verify Nexus push stage",
+      "Verify test stage",
+      "Verify ArgoCD integration if applicable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vault secrets manager script - CLI script for managing Vault secrets",
+    "steps": [
+      "Verify vault-secrets-manager.sh exists",
+      "Run init command",
+      "Run put command to store secret",
+      "Run list command",
+      "Run validate command",
+      "Verify script is idempotent",
+      "Verify script follows FX patterns"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Environment variable configuration - All env-specific values via variables",
+    "steps": [
+      "Verify .env.example file exists",
+      "Verify all required backend variables documented",
+      "Verify all required frontend variables documented",
+      "Verify no hardcoded secrets in code",
+      "Verify variable naming follows FX convention"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "init.sh development setup - Script initializes development environment",
+    "steps": [
+      "Run init.sh script",
+      "Verify dependencies installed",
+      "Verify services started",
+      "Verify helpful output printed",
+      "Verify access instructions provided"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Backend API p95 latency - Common endpoints respond within 200ms p95",
+    "steps": [
+      "Run load test on common endpoints",
+      "Measure p95 response time",
+      "Verify p95 < 200ms for GET endpoints",
+      "Verify p95 reasonable for POST endpoints",
+      "Document performance baseline"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Background job timeliness - Email notifications sent within 60 seconds",
+    "steps": [
+      "Trigger event that sends email",
+      "Measure time until email sent",
+      "Verify email sent within 60 seconds",
+      "Verify job completion logged"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "API metrics collection - Backend exposes metrics for latency and error rates",
+    "steps": [
+      "Make API requests",
+      "Check metrics endpoint or logs",
+      "Verify latency metrics recorded",
+      "Verify error rate metrics recorded",
+      "Verify metrics format compatible with Prometheus"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Upload metrics - System tracks upload counts and failures",
+    "steps": [
+      "Upload files successfully",
+      "Verify upload count metric incremented",
+      "Upload file that fails validation",
+      "Verify failure metric incremented",
+      "Check metrics endpoint"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Delinquency metrics - System tracks past-due counts and case statistics",
+    "steps": [
+      "Create delinquency cases",
+      "Check metrics for past-due counts",
+      "Verify delinquency case count metric",
+      "Verify escalation count metric",
+      "Document baseline metrics"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Payment verification throughput metrics - Track payment verification processing",
+    "steps": [
+      "Process payment verifications",
+      "Check throughput metrics",
+      "Verify approvals counted",
+      "Verify rejections counted",
+      "Verify average processing time tracked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "AuditLog entity - Audit log captures all required fields",
+    "steps": [
+      "Trigger auditable action",
+      "Query AuditLog table",
+      "Verify actor_id field populated",
+      "Verify role field populated",
+      "Verify timestamp field populated",
+      "Verify request_id field populated",
+      "Verify before/after fields populated",
+      "Verify reason field if applicable",
+      "Verify target entity fields populated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Invoice update audit - Invoice changes logged in audit trail",
+    "steps": [
+      "Update invoice record",
+      "Check audit log for entry",
+      "Verify before/after states captured",
+      "Verify actor and timestamp logged"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vehicle assignment audit - Vehicle assignments logged in audit trail",
+    "steps": [
+      "Assign vehicle to customer",
+      "Check audit log for entry",
+      "Verify assignment details captured",
+      "Verify before/after states logged"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Delinquency escalation audit - Escalations logged in audit trail",
+    "steps": [
+      "Escalate delinquency case",
+      "Check audit log for entry",
+      "Verify escalation reason captured",
+      "Verify status change logged"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User entity model - User table with required fields",
+    "steps": [
+      "Examine User model schema",
+      "Verify id field (primary key)",
+      "Verify email field (unique)",
+      "Verify keycloak_id field",
+      "Verify created_at timestamp",
+      "Verify updated_at timestamp",
+      "Verify role references"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "CustomerProfile entity model - CustomerProfile with verification fields",
+    "steps": [
+      "Examine CustomerProfile model",
+      "Verify user_id foreign key",
+      "Verify insurance_status field",
+      "Verify verification_date field",
+      "Verify profile fields (phone, address, etc.)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vehicle entity model - Vehicle table with required fields",
+    "steps": [
+      "Examine Vehicle model schema",
+      "Verify id field",
+      "Verify make, model, year fields",
+      "Verify VIN field",
+      "Verify availability_status field",
+      "Verify tracker_id foreign key optional",
+      "Verify timestamps"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "VehicleConditionReport entity model - Condition reports linked to vehicles",
+    "steps": [
+      "Examine VehicleConditionReport model",
+      "Verify vehicle_id foreign key",
+      "Verify mileage field",
+      "Verify condition_notes field",
+      "Verify report_date field",
+      "Verify photo_urls field"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "TrackerDevice entity model - Tracker inventory tracking",
+    "steps": [
+      "Examine TrackerDevice model",
+      "Verify id field",
+      "Verify device_identifier field",
+      "Verify model/serial fields",
+      "Verify last_checkin field",
+      "Verify assignment status"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "LeaseContract entity model - Lease contract linking customer and vehicle",
+    "steps": [
+      "Examine LeaseContract model",
+      "Verify customer_id foreign key",
+      "Verify vehicle_id foreign key",
+      "Verify start_date field",
+      "Verify weekly_amount field",
+      "Verify status field (Active/Terminated)",
+      "Verify termination_reason field"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "WeeklyInvoice entity model - Invoice tracking with statuses",
+    "steps": [
+      "Examine WeeklyInvoice model",
+      "Verify lease_id foreign key",
+      "Verify amount field",
+      "Verify due_date field",
+      "Verify status field (Pending/Paid/Late/Overdue)",
+      "Verify late_fee field",
+      "Verify payment_proof_id optional"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "PaymentProofUpload entity model - Payment proof tracking",
+    "steps": [
+      "Examine PaymentProofUpload model",
+      "Verify invoice_id foreign key",
+      "Verify object_key field (encrypted)",
+      "Verify content_hash field",
+      "Verify upload_timestamp field",
+      "Verify verification_status field"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "PaymentVerification entity model - Admin verification records",
+    "steps": [
+      "Examine PaymentVerification model",
+      "Verify upload_id foreign key",
+      "Verify verifier_id foreign key",
+      "Verify status field (Approved/Rejected)",
+      "Verify notes field",
+      "Verify verified_at timestamp"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "MaintenanceSchedule entity model - Service scheduling",
+    "steps": [
+      "Examine MaintenanceSchedule model",
+      "Verify vehicle_id foreign key",
+      "Verify scheduled_date field",
+      "Verify maintenance_type field",
+      "Verify completed field",
+      "Verify completion_notes field"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "IncidentReport entity model - Customer incident tracking",
+    "steps": [
+      "Examine IncidentReport model",
+      "Verify customer_id foreign key",
+      "Verify vehicle_id foreign key",
+      "Verify incident_type field",
+      "Verify description field",
+      "Verify photo_urls field",
+      "Verify status field"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "DriverInsuranceDocument entity model - Insurance metadata only",
+    "steps": [
+      "Examine DriverInsuranceDocument model",
+      "Verify customer_id foreign key",
+      "Verify object_key field (encrypted)",
+      "Verify checksum field",
+      "Verify status field",
+      "Verify expiration_date field",
+      "Verify NO raw file content in model"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "DelinquencyCase entity model - Late payment case tracking",
+    "steps": [
+      "Examine DelinquencyCase model",
+      "Verify customer_id foreign key",
+      "Verify invoice_id foreign key",
+      "Verify status field (Open/Escalated/Resolved/Recovered)",
+      "Verify escalation_level field",
+      "Verify created_at timestamp"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "RecoveryAction entity model - Tow/recovery tracking",
+    "steps": [
+      "Examine RecoveryAction model",
+      "Verify case_id foreign key",
+      "Verify action_type field",
+      "Verify tow_vendor_details field",
+      "Verify compliance_authorized field",
+      "Verify authorization_reason field",
+      "Verify authorization_timestamp field"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "BanRecord entity model - Permanent ban tracking",
+    "steps": [
+      "Examine BanRecord model",
+      "Verify customer_id foreign key",
+      "Verify ban_reason field",
+      "Verify recovery_action_id foreign key",
+      "Verify is_permanent field",
+      "Verify banned_at timestamp"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Notification entity model - In-app notifications",
+    "steps": [
+      "Examine Notification model",
+      "Verify user_id foreign key",
+      "Verify notification_type field",
+      "Verify title field",
+      "Verify message field",
+      "Verify is_read field",
+      "Verify created_at timestamp"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Inquiry entity model - Contact form submissions",
+    "steps": [
+      "Examine Inquiry model",
+      "Verify name field",
+      "Verify email field",
+      "Verify phone field",
+      "Verify desired_vehicle field",
+      "Verify timeframe field",
+      "Verify notes field",
+      "Verify created_at timestamp"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance retention policy - Configurable retention and deletion",
+    "steps": [
+      "Configure retention policy",
+      "Verify old documents flagged for deletion",
+      "Admin initiates secure delete",
+      "Verify MinIO object deleted",
+      "Verify database record updated",
+      "Verify audit trail for deletion"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Insurance document no-cache headers - Response headers prevent caching",
+    "steps": [
+      "Request insurance document via signed URL",
+      "Examine response headers",
+      "Verify Cache-Control: no-store",
+      "Verify Pragma: no-cache",
+      "Verify no public caching enabled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer historical access - Banned customers can view history if configured",
+    "steps": [
+      "Configure banned customer historical access",
+      "Login as banned customer",
+      "Navigate to invoices/receipts section",
+      "Verify historical invoices viewable",
+      "Verify no new actions allowed",
+      "Take screenshot of read-only access"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "API endpoint authentication - All protected endpoints require valid JWT",
+    "steps": [
+      "Call protected endpoint without token",
+      "Verify 401 Unauthorized response",
+      "Call endpoint with invalid token",
+      "Verify 401 Unauthorized response",
+      "Call endpoint with valid token",
+      "Verify successful response"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer API endpoints - REST endpoints for customer operations",
+    "steps": [
+      "Verify GET /api/customer/profile endpoint",
+      "Verify PUT /api/customer/profile endpoint",
+      "Verify GET /api/customer/invoices endpoint",
+      "Verify POST /api/customer/payment-proof endpoint",
+      "Verify GET /api/customer/notifications endpoint",
+      "Verify POST /api/customer/incident endpoint"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin API endpoints - REST endpoints for admin operations",
+    "steps": [
+      "Verify GET /api/admin/customers endpoint",
+      "Verify GET /api/admin/vehicles endpoint",
+      "Verify POST /api/admin/vehicles endpoint",
+      "Verify GET /api/admin/invoices endpoint",
+      "Verify POST /api/admin/payment-verification endpoint",
+      "Verify GET /api/admin/delinquency endpoint",
+      "Verify GET /api/admin/audit-logs endpoint"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vehicle API CRUD - Complete CRUD operations for vehicles",
+    "steps": [
+      "POST /api/admin/vehicles - create vehicle",
+      "GET /api/admin/vehicles/{id} - read vehicle",
+      "PUT /api/admin/vehicles/{id} - update vehicle",
+      "DELETE /api/admin/vehicles/{id} - delete vehicle",
+      "GET /api/admin/vehicles - list vehicles",
+      "Verify all operations return appropriate status codes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer API CRUD - CRUD operations for customer management",
+    "steps": [
+      "GET /api/admin/customers - list customers",
+      "GET /api/admin/customers/{id} - get customer details",
+      "PUT /api/admin/customers/{id} - update customer",
+      "Verify insurance verification endpoints",
+      "Verify ban status endpoints"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Invoice API operations - Invoice management endpoints",
+    "steps": [
+      "GET /api/admin/invoices - list all invoices",
+      "GET /api/admin/invoices/{id} - get invoice detail",
+      "PUT /api/admin/invoices/{id} - update invoice",
+      "POST /api/admin/invoices/generate - trigger generation",
+      "Verify filtering by status, customer, date"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tracker API CRUD - Tracker device management",
+    "steps": [
+      "POST /api/admin/trackers - create tracker",
+      "GET /api/admin/trackers - list trackers",
+      "GET /api/admin/trackers/{id} - get tracker",
+      "PUT /api/admin/trackers/{id} - update tracker",
+      "POST /api/admin/trackers/{id}/assign - assign to vehicle"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Delinquency API operations - Delinquency case management",
+    "steps": [
+      "GET /api/admin/delinquency - list cases",
+      "GET /api/admin/delinquency/{id} - get case detail",
+      "POST /api/admin/delinquency/{id}/escalate - escalate case",
+      "POST /api/admin/delinquency/{id}/recovery - initiate recovery",
+      "Verify compliance gate enforcement on recovery"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Maintenance API operations - Maintenance scheduling",
+    "steps": [
+      "POST /api/admin/maintenance - create schedule",
+      "GET /api/admin/maintenance - list schedules",
+      "PUT /api/admin/maintenance/{id} - update schedule",
+      "POST /api/admin/maintenance/{id}/complete - mark complete"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Notification API operations - Notification management",
+    "steps": [
+      "GET /api/notifications - list user notifications",
+      "PUT /api/notifications/{id}/read - mark as read",
+      "GET /api/notifications/unread-count - get unread count"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Inquiry API operations - Inquiry form handling",
+    "steps": [
+      "POST /api/inquiries - submit inquiry (public)",
+      "GET /api/admin/inquiries - list inquiries (admin)",
+      "GET /api/admin/inquiries/{id} - get inquiry detail"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "File upload API - Secure file upload endpoints",
+    "steps": [
+      "POST /api/upload/insurance - upload insurance doc",
+      "POST /api/upload/payment-proof - upload payment proof",
+      "POST /api/upload/incident-photo - upload incident photo",
+      "Verify file validation on all endpoints",
+      "Verify signed URL returned for download"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Signed URL generation API - Generate MinIO signed URLs",
+    "steps": [
+      "Request signed URL for insurance document",
+      "Verify URL has correct TTL",
+      "Request signed URL for payment proof",
+      "Verify admin-only access enforced",
+      "Verify audit logging on URL generation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Pydantic validation schemas - Request/response validation",
+    "steps": [
+      "Examine schemas for User operations",
+      "Examine schemas for Vehicle operations",
+      "Examine schemas for Invoice operations",
+      "Verify proper type hints",
+      "Verify validation rules applied",
+      "Verify response models defined"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Error response format - Consistent API error responses",
+    "steps": [
+      "Trigger validation error",
+      "Verify error response format",
+      "Trigger authentication error",
+      "Verify consistent format",
+      "Trigger not found error",
+      "Verify HTTP status codes correct"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Next.js App Router structure - Frontend uses App Router conventions",
+    "steps": [
+      "Verify app/ directory structure",
+      "Verify page.tsx files for routes",
+      "Verify layout.tsx files",
+      "Verify loading.tsx for loading states",
+      "Verify error.tsx for error handling",
+      "Verify proper client/server component usage"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Next.js server actions - Form mutations use server actions",
+    "steps": [
+      "Examine form submission code",
+      "Verify server actions defined",
+      "Verify proper validation",
+      "Verify error handling",
+      "Test form submission"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Next.js image optimization - Images use Next.js Image component",
+    "steps": [
+      "Examine image usage in components",
+      "Verify next/image component used",
+      "Verify proper width/height or fill",
+      "Verify lazy loading enabled",
+      "Verify image formats optimized"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend session handling - Secure session management",
+    "steps": [
+      "Login as user",
+      "Verify session cookie set",
+      "Verify session is HTTP-only",
+      "Verify session is secure in production",
+      "Verify session expiration handled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend protected routes - Auth-required pages redirect to login",
+    "steps": [
+      "Access /dashboard without login",
+      "Verify redirect to login page",
+      "Login successfully",
+      "Verify redirect back to dashboard",
+      "Access admin page as customer",
+      "Verify access denied"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend error boundaries - Graceful error handling in UI",
+    "steps": [
+      "Trigger error in component",
+      "Verify error boundary catches error",
+      "Verify user-friendly error message displayed",
+      "Verify error does not crash entire app"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend loading states - Loading indicators during data fetch",
+    "steps": [
+      "Navigate to page with data loading",
+      "Verify loading indicator appears",
+      "Verify loading indicator disappears when loaded",
+      "Verify skeleton states or spinners used",
+      "Take screenshot of loading state"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend form validation - Client-side form validation",
+    "steps": [
+      "Navigate to form page",
+      "Submit empty form",
+      "Verify validation errors displayed",
+      "Enter invalid email format",
+      "Verify email validation error",
+      "Enter valid data",
+      "Verify form submits successfully"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend toast notifications - User feedback via toast messages",
+    "steps": [
+      "Perform action (e.g., save profile)",
+      "Verify success toast appears",
+      "Verify toast auto-dismisses",
+      "Trigger error",
+      "Verify error toast appears",
+      "Take screenshot of toast notification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend navigation - Consistent navigation across pages",
+    "steps": [
+      "Verify main navigation visible",
+      "Click navigation links",
+      "Verify correct page loads",
+      "Verify active state on current page",
+      "Verify mobile navigation (hamburger menu)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend footer - Consistent footer with links and legal",
+    "steps": [
+      "Scroll to page footer",
+      "Verify footer visible",
+      "Verify Terms link present",
+      "Verify Privacy link present",
+      "Verify GPS Disclosure link present",
+      "Verify contact information present"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin sidebar navigation - Admin panel sidebar with all sections",
+    "steps": [
+      "Login as admin",
+      "Verify sidebar visible",
+      "Verify Dashboard link",
+      "Verify Customers link",
+      "Verify Vehicles link",
+      "Verify Invoices link",
+      "Verify Delinquency link",
+      "Verify Audit Logs link",
+      "Verify Settings link"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Customer sidebar/navigation - Customer panel navigation",
+    "steps": [
+      "Login as customer",
+      "Verify navigation visible",
+      "Verify Dashboard link",
+      "Verify Profile link",
+      "Verify Payments link",
+      "Verify Notifications link",
+      "Verify Incident Report link if applicable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Data tables pagination - Lists support pagination",
+    "steps": [
+      "Navigate to list with many items",
+      "Verify pagination controls visible",
+      "Click next page",
+      "Verify new items displayed",
+      "Verify page indicator updates",
+      "Select different page size if available"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Data tables sorting - Lists support column sorting",
+    "steps": [
+      "Navigate to data table",
+      "Click column header to sort",
+      "Verify data sorted ascending",
+      "Click again to sort descending",
+      "Verify sort indicator visible"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Data tables filtering - Lists support filtering",
+    "steps": [
+      "Navigate to data table",
+      "Enter search/filter term",
+      "Verify filtered results displayed",
+      "Clear filter",
+      "Verify all results return",
+      "Test multiple filter criteria if available"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Modal dialogs - Confirmation and form modals",
+    "steps": [
+      "Trigger action requiring confirmation",
+      "Verify modal dialog appears",
+      "Verify modal overlay present",
+      "Click cancel",
+      "Verify modal closes",
+      "Trigger again and confirm",
+      "Verify action proceeds"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "File upload UI component - Upload interface with progress",
+    "steps": [
+      "Navigate to upload section",
+      "Verify dropzone or file input visible",
+      "Select file to upload",
+      "Verify progress indicator during upload",
+      "Verify success message on completion",
+      "Verify file preview if applicable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Date picker component - Date selection for forms",
+    "steps": [
+      "Navigate to form with date field",
+      "Click date input",
+      "Verify date picker opens",
+      "Select date",
+      "Verify date populated in field",
+      "Verify date format correct"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Status badges - Visual status indicators",
+    "steps": [
+      "Navigate to list with status column",
+      "Verify status badges colored appropriately",
+      "Verify Pending status styling",
+      "Verify Approved/Paid status styling",
+      "Verify Rejected/Late status styling"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User avatar display - User profile image or initials",
+    "steps": [
+      "Login as user",
+      "Verify avatar/initials in navigation",
+      "Navigate to profile",
+      "Verify larger avatar display",
+      "Verify initials fallback if no image"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend dark mode - Optional dark mode support",
+    "steps": [
+      "Check for dark mode toggle if implemented",
+      "Toggle dark mode",
+      "Verify colors change appropriately",
+      "Verify readability maintained",
+      "Toggle back to light mode"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Print-friendly invoice - Invoices can be printed",
+    "steps": [
+      "Navigate to invoice detail",
+      "Click print or use browser print",
+      "Verify print-friendly layout",
+      "Verify unnecessary UI elements hidden",
+      "Verify invoice details legible"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Empty states - Friendly messages when no data",
+    "steps": [
+      "Navigate to list with no items",
+      "Verify empty state message displayed",
+      "Verify call to action if appropriate",
+      "Verify visual design consistent"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "404 page - Custom not found page",
+    "steps": [
+      "Navigate to non-existent URL",
+      "Verify custom 404 page displayed",
+      "Verify navigation back to home available",
+      "Verify consistent branding"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "500 error page - Custom server error page",
+    "steps": [
+      "Trigger server error if possible",
+      "Verify custom error page displayed",
+      "Verify error does not expose details",
+      "Verify helpful message shown"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Breadcrumb navigation - Breadcrumbs on detail pages",
+    "steps": [
+      "Navigate to nested page (e.g., customer detail)",
+      "Verify breadcrumb trail visible",
+      "Click breadcrumb link",
+      "Verify navigation works",
+      "Verify current page highlighted"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Real-time notifications - Live notification updates",
+    "steps": [
+      "Login as customer",
+      "Trigger notification event from admin",
+      "Verify notification appears without refresh",
+      "Verify notification badge updates",
+      "Click notification to view"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "README documentation - Project README with setup instructions",
+    "steps": [
+      "Verify README.md exists",
+      "Verify project overview section",
+      "Verify setup/installation instructions",
+      "Verify environment variable documentation",
+      "Verify development workflow documented"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "API documentation - Backend API fully documented",
+    "steps": [
+      "Access /docs Swagger UI",
+      "Verify all endpoints documented",
+      "Verify request bodies documented",
+      "Verify response schemas documented",
+      "Verify authentication documented"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "FX pattern compatibility - Application follows FX directory conventions",
+    "steps": [
+      "Compare env variable naming with FX",
+      "Compare Vault path structure with FX",
+      "Compare Docker tagging with FX",
+      "Compare Jenkinsfile stages with FX",
+      "Verify compatibility documented"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Async SQLAlchemy - Database operations use async SQLAlchemy",
+    "steps": [
+      "Examine database code",
+      "Verify async session used",
+      "Verify await on database calls",
+      "Verify connection pooling configured",
+      "Verify proper session management"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "FastAPI dependency injection - Services injected via Depends",
+    "steps": [
+      "Examine route handlers",
+      "Verify Depends() used for services",
+      "Verify database session injection",
+      "Verify current user injection",
+      "Verify clean separation of concerns"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Environment-based configuration - Config varies by environment",
+    "steps": [
+      "Examine configuration loading",
+      "Verify APP_ENV respected",
+      "Verify dev/staging/prod differences",
+      "Verify local overrides work",
+      "Verify no hardcoded environment values"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "TypeScript strict mode - Frontend uses TypeScript strict mode",
+    "steps": [
+      "Examine tsconfig.json",
+      "Verify strict: true",
+      "Verify no any types in critical code",
+      "Verify proper type definitions",
+      "Run tsc --noEmit without errors"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "ESLint configuration - Frontend code passes ESLint",
+    "steps": [
+      "Examine .eslintrc configuration",
+      "Run npm run lint",
+      "Verify no errors",
+      "Verify no warnings or minimal",
+      "Verify Next.js recommended rules"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Python linting - Backend code passes linting",
+    "steps": [
+      "Run ruff or flake8 on backend code",
+      "Verify no errors",
+      "Verify code style consistent",
+      "Verify imports organized"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Git repository setup - Clean git repository with .gitignore",
+    "steps": [
+      "Verify .gitignore exists",
+      "Verify node_modules ignored",
+      "Verify __pycache__ ignored",
+      "Verify .env files ignored",
+      "Verify no secrets committed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Unit tests backend - Backend has unit test coverage",
+    "steps": [
+      "Run pytest on backend",
+      "Verify tests pass",
+      "Verify critical functions tested",
+      "Verify validation logic tested",
+      "Check coverage if available"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Unit tests frontend - Frontend has unit test coverage",
+    "steps": [
+      "Run npm test on frontend",
+      "Verify tests pass",
+      "Verify components tested",
+      "Verify hooks tested",
+      "Check coverage if available"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Integration tests - API integration tests exist",
+    "steps": [
+      "Run integration test suite",
+      "Verify API endpoints tested",
+      "Verify authentication flow tested",
+      "Verify critical workflows tested"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "E2E test suite - End-to-end tests for critical flows",
+    "steps": [
+      "Run E2E test suite",
+      "Verify login flow tested",
+      "Verify payment flow tested",
+      "Verify admin workflow tested",
+      "Verify screenshots captured"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Local development hot reload - Code changes reflect immediately",
+    "steps": [
+      "Start development environment",
+      "Make frontend code change",
+      "Verify change appears without restart",
+      "Make backend code change",
+      "Verify backend reloads automatically"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Database seeding - Seed data for development testing",
+    "steps": [
+      "Run database seed script",
+      "Verify test users created",
+      "Verify test vehicles created",
+      "Verify test data appropriate",
+      "Verify seed is idempotent"
+    ],
+    "passes": false
+  }
+]
