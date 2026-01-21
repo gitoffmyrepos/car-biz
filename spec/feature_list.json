@@ -352,7 +352,7 @@
       "Verify status updated in customer record",
       "Take screenshot of admin verification workflow"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
