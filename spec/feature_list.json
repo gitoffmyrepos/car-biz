@@ -910,7 +910,7 @@
       "Verify customer cannot create new leases",
       "Verify ban notification sent to customer"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1971,7 +1971,7 @@
       "Verify is_permanent field",
       "Verify banned_at timestamp"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

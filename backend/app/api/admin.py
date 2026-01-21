@@ -45,6 +45,16 @@ from app.models.recovery_action import (
     RecoveryAction,
     RecoveryStatus,
 )
+from app.models.ban_record import (
+    BanRecord,
+    BanReason,
+    BanStatus,
+)
+from app.models.notification import (
+    Notification,
+    NotificationType,
+    NotificationPriority,
+)
 from app.models.incident_report import (
     IncidentReport,
     IncidentType,
@@ -5089,6 +5099,77 @@ async def authorize_recovery(
             except Exception as e:
                 logger.error(f"Failed to send termination email/notification: {str(e)}")
 
+    # === PERMANENT BAN ON RECOVERY (Feature #64) ===
+
+    # 1. Create BanRecord for permanent ban
+    ban_created = False
+    ban_email_sent = False
+    ban_notification_created = False
+    ban_number = None
+
+    if customer:
+        # Generate ban number
+        ban_timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        ban_number = f"BAN-{customer.id:06d}-{ban_timestamp}"
+
+        # Calculate total amount owed for ban record
+        total_owed = float(case.amount_owed or 0) + float(case.late_fees_accumulated or 0)
+
+        # Create BanRecord
+        ban_record = BanRecord(
+            customer_profile_id=customer.id,
+            ban_number=ban_number,
+            reason=BanReason.RECOVERY_ACTION,
+            reason_details=f"Permanently banned due to vehicle recovery action. Case: {case.case_number}. Recovery: {action_number}. Reason: {data.reason.strip()}",
+            is_permanent=True,
+            status=BanStatus.ACTIVE,
+            delinquency_case_id=case.id,
+            recovery_action_id=recovery_action.id,
+            lease_id=case.lease_id,
+            issued_by=user.sub,
+            issued_by_email=user.email,
+            admin_notes=f"Auto-generated ban from recovery authorization. Outstanding balance: ${total_owed:.2f}",
+        )
+        session.add(ban_record)
+        ban_created = True
+
+        # 2. Mark customer as banned in their profile
+        customer.is_banned = True
+        customer.ban_reason = f"Permanent ban due to vehicle recovery. Case: {case.case_number}. Ban: {ban_number}"
+
+        # 3. Send ban notification email
+        try:
+            ban_email_result = await email_service.send_ban_notice(
+                to_email=customer.email,
+                customer_name=customer.full_name or "Valued Customer",
+                ban_number=ban_number,
+                ban_reason=f"Vehicle recovery initiated due to non-payment",
+                case_number=case.case_number,
+                amount_owed=total_owed,
+            )
+            ban_email_sent = ban_email_result.get("success", False)
+
+            # 4. Create in-app notification for ban
+            ban_notification = Notification(
+                customer_profile_id=customer.id,
+                notification_type=NotificationType.ACCOUNT_BANNED,
+                title="Account Permanently Banned",
+                message=f"Your account has been permanently banned due to vehicle recovery. Ban Reference: {ban_number}. You cannot request new vehicles or create leases. Contact legal@fxweeklylease.com for appeals.",
+                priority=NotificationPriority.URGENT,
+                related_entity_type="ban_record",
+                related_entity_id=ban_record.id,
+                action_url="/dashboard",
+                action_label="View Account Status",
+            )
+            session.add(ban_notification)
+            ban_notification_created = True
+
+            # Mark ban record as customer notified
+            ban_record.notify_customer()
+
+        except Exception as e:
+            logger.error(f"Failed to send ban notice email/notification: {str(e)}")
+
     await session.commit()
     await session.refresh(recovery_action)
 
@@ -5117,6 +5198,10 @@ async def authorize_recovery(
             "vehicle_status_changed": vehicle_status_changed,
             "email_sent": email_sent,
             "notification_created": notification_created,
+            "ban_created": ban_created,
+            "ban_number": ban_number,
+            "ban_email_sent": ban_email_sent,
+            "ban_notification_created": ban_notification_created,
         },
     )
 
@@ -5145,6 +5230,13 @@ async def authorize_recovery(
             "vehicle_status_changed": vehicle_status_changed,
             "email_sent": email_sent,
             "notification_created": notification_created,
+        },
+        "permanent_ban": {
+            "ban_created": ban_created,
+            "ban_number": ban_number,
+            "customer_banned": customer.is_banned if customer else False,
+            "ban_email_sent": ban_email_sent,
+            "ban_notification_created": ban_notification_created,
         },
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

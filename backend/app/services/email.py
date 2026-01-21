@@ -1558,5 +1558,274 @@ For urgent matters: legal@fxweeklylease.com
             }
 
 
+    async def send_ban_notice(
+        self,
+        to_email: str,
+        customer_name: str,
+        ban_number: str,
+        ban_reason: str,
+        case_number: str | None = None,
+        amount_owed: float | None = None,
+    ) -> dict:
+        """
+        Send permanent ban notice email to customer.
+
+        Args:
+            to_email: Customer's email address
+            customer_name: Customer's full name
+            ban_number: The ban record reference number
+            ban_reason: Reason for the ban
+            case_number: Optional delinquency case number
+            amount_owed: Optional outstanding balance
+
+        Returns:
+            dict with success status and message/error
+        """
+        if not self.enabled:
+            logger.info(f"Email service disabled - would have sent ban notice to {to_email}")
+            return {
+                "success": True,
+                "message": "Email service disabled - email not sent",
+                "simulated": True
+            }
+
+        subject = "IMPORTANT: Account Permanently Banned - FX Weekly Lease"
+
+        # Amount section if there's outstanding balance
+        amount_section = ""
+        amount_text = ""
+        if amount_owed and amount_owed > 0:
+            amount_section = f"""
+                <div style="background: #FDF0F0; padding: 15px; border-left: 4px solid #DC2626; margin: 20px 0; border-radius: 4px;">
+                    <p style="margin: 0; color: #DC2626; font-weight: 600; font-size: 16px;">
+                        Outstanding Balance: ${amount_owed:.2f}
+                    </p>
+                    <p style="margin: 10px 0 0; color: #7F1D1D; font-size: 14px;">
+                        This amount remains your responsibility and may be sent to collections if not resolved.
+                    </p>
+                </div>
+            """
+            amount_text = f"Outstanding Balance: ${amount_owed:.2f}\n"
+
+        # Case number section if applicable
+        case_section = ""
+        case_text = ""
+        if case_number:
+            case_section = f"""
+                <p style="margin: 10px 0; color: #4A4A4A;">
+                    <strong>Case Reference:</strong> {case_number}
+                </p>
+            """
+            case_text = f"Case Reference: {case_number}\n"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #1A1A1A;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #7F1D1D, #991B1B);
+                    color: #FFFFFF;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 22px;
+                    font-weight: 600;
+                }}
+                .warning-icon {{
+                    font-size: 48px;
+                    margin-bottom: 15px;
+                }}
+                .content {{
+                    background: #F8F5F0;
+                    padding: 30px;
+                    border: 1px solid #E5E5E5;
+                }}
+                .highlight {{
+                    color: #DC2626;
+                    font-weight: 600;
+                }}
+                .reference {{
+                    background: #FFFFFF;
+                    padding: 15px;
+                    border-left: 4px solid #DC2626;
+                    margin: 20px 0;
+                    border-radius: 4px;
+                }}
+                .cta-button {{
+                    display: inline-block;
+                    background: #1A1A1A;
+                    color: #C5A572;
+                    padding: 12px 24px;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    margin-top: 20px;
+                }}
+                .footer {{
+                    background: #2D2D2D;
+                    color: #9CA3AF;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .restrictions {{
+                    background: #FEF2F2;
+                    border: 1px solid #FECACA;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                }}
+                .restrictions li {{
+                    margin: 10px 0;
+                    color: #7F1D1D;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="warning-icon">&#9888;</div>
+                <h1>Account Permanently Banned</h1>
+            </div>
+
+            <div class="content">
+                <p>Dear <span class="highlight">{customer_name}</span>,</p>
+
+                <p>
+                    We regret to inform you that your FX Weekly Lease account has been
+                    <strong class="highlight">permanently banned</strong> effective immediately.
+                </p>
+
+                <div class="reference">
+                    <p style="margin: 0; color: #4A4A4A;">
+                        <strong>Ban Reference:</strong> {ban_number}
+                    </p>
+                    {case_section}
+                    <p style="margin: 10px 0 0; color: #4A4A4A;">
+                        <strong>Reason:</strong> {ban_reason}
+                    </p>
+                </div>
+
+                {amount_section}
+
+                <div class="restrictions">
+                    <h3 style="margin-top: 0; color: #7F1D1D;">Account Restrictions</h3>
+                    <p>As a result of this ban, you are <strong>permanently prohibited</strong> from:</p>
+                    <ul>
+                        <li>Requesting or leasing any vehicles from FX Weekly Lease</li>
+                        <li>Creating new lease agreements with our company</li>
+                        <li>Submitting new inquiries or applications</li>
+                        <li>Accessing vehicle-related services</li>
+                    </ul>
+                </div>
+
+                <p style="color: #4A4A4A;">
+                    <strong>Note:</strong> You may still access your account to view:
+                </p>
+                <ul style="color: #6B7280;">
+                    <li>Historical invoices and payment records</li>
+                    <li>Past notifications and correspondence</li>
+                    <li>Your profile information (read-only)</li>
+                </ul>
+
+                <p style="background: #FFF7ED; padding: 15px; border-radius: 6px; border-left: 4px solid #F59E0B;">
+                    <strong style="color: #92400E;">Questions or Concerns?</strong><br>
+                    If you believe this action was taken in error, you may submit a formal appeal
+                    within 30 days by contacting our legal department. All ban decisions are
+                    logged and subject to review.
+                </p>
+
+                <a href="mailto:legal@fxweeklylease.com" class="cta-button">
+                    Contact Legal Department
+                </a>
+            </div>
+
+            <div class="footer">
+                <p style="margin: 0;">
+                    FX Weekly Lease - Premium Weekly Vehicle Leasing<br>
+                    This email was sent regarding ban reference {ban_number}<br>
+                    © 2026 FX Weekly Lease. All rights reserved.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+IMPORTANT: Account Permanently Banned - FX Weekly Lease
+
+Ban Reference: {ban_number}
+{case_text}
+Dear {customer_name},
+
+We regret to inform you that your FX Weekly Lease account has been PERMANENTLY BANNED effective immediately.
+
+REASON FOR BAN:
+{ban_reason}
+
+{amount_text}
+ACCOUNT RESTRICTIONS:
+As a result of this ban, you are permanently prohibited from:
+- Requesting or leasing any vehicles from FX Weekly Lease
+- Creating new lease agreements with our company
+- Submitting new inquiries or applications
+- Accessing vehicle-related services
+
+WHAT YOU CAN STILL ACCESS:
+- Historical invoices and payment records
+- Past notifications and correspondence
+- Your profile information (read-only)
+
+QUESTIONS OR CONCERNS:
+If you believe this action was taken in error, you may submit a formal appeal within 30 days by contacting our legal department at legal@fxweeklylease.com.
+
+All ban decisions are logged and subject to review.
+
+---
+FX Weekly Lease - Premium Weekly Vehicle Leasing
+For urgent matters: legal@fxweeklylease.com
+© 2026 FX Weekly Lease. All rights reserved.
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+
+            response = resend.Emails.send(params)
+
+            logger.info(f"Ban notice email sent to {to_email} for ban {ban_number}")
+
+            return {
+                "success": True,
+                "message": "Email sent successfully",
+                "email_id": response.get("id"),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send ban notice email to {to_email}: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
+
 # Singleton instance
 email_service = EmailService()

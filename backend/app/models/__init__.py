@@ -73,6 +73,11 @@ from app.models.system_settings import (
     SettingCategory,
     DEFAULT_SETTINGS,
 )
+from app.models.ban_record import (
+    BanRecord,
+    BanReason,
+    BanStatus,
+)
 
 __all__ = [
     "Inquiry",
@@ -118,4 +123,7 @@ __all__ = [
     "SystemSettings",
     "SettingCategory",
     "DEFAULT_SETTINGS",
+    "BanRecord",
+    "BanReason",
+    "BanStatus",
 ]

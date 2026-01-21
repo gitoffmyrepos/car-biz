@@ -53,6 +53,9 @@ class NotificationType(str, PyEnum):
     DELINQUENCY_ESCALATION = "delinquency_escalation"
     RECOVERY_NOTICE = "recovery_notice"
 
+    # Ban related
+    ACCOUNT_BANNED = "account_banned"
+
     # General
     GENERAL_INFO = "general_info"
     SYSTEM_MAINTENANCE = "system_maintenance"

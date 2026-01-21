@@ -3242,3 +3242,94 @@ All 6 steps of Feature #63 verified:
 ================================================================================
 END SESSION 29
 ================================================================================
+
+================================================================================
+SESSION 30 - Feature #64: Permanent ban on recovery
+================================================================================
+Date: 2026-01-21
+
+## Feature Description
+Permanent ban on recovery - System creates BanRecord and permanently bans customer
+
+## Implementation Summary
+
+### 1. BanRecord Model (backend/app/models/ban_record.py)
+Created new SQLAlchemy model for tracking customer bans:
+- BanReason enum: RECOVERY_ACTION, FRAUD, POLICY_VIOLATION, NON_PAYMENT, ABUSE, OTHER
+- BanStatus enum: ACTIVE, LIFTED, EXPIRED
+- Fields: customer_profile_id, ban_number, reason, reason_details, is_permanent, status
+- Related entities: delinquency_case_id, recovery_action_id, lease_id
+- Admin tracking: issued_by, issued_by_email
+- Customer notification tracking: customer_notified, customer_notified_at
+- Lift tracking: lifted_at, lifted_by, lifted_reason
+- Methods: notify_customer(), lift_ban()
+
+### 2. ACCOUNT_BANNED Notification Type (backend/app/models/notification.py)
+Added new notification type for ban alerts:
+- NotificationType.ACCOUNT_BANNED = "account_banned"
+- Added to PostgreSQL enum: ALTER TYPE notificationtype ADD VALUE 'ACCOUNT_BANNED'
+
+### 3. Ban Notice Email (backend/app/services/email.py)
+Added send_ban_notice method with professional HTML/text email templates:
+- Explains permanent ban due to vehicle recovery
+- Includes ban reference number and case number
+- Lists outstanding balance if applicable
+- Provides contact information for appeals/legal inquiries
+- Clear explanation of account restrictions
+
+### 4. Updated authorize_recovery Endpoint (backend/app/api/admin.py)
+Extended the recovery authorization flow to:
+- Create BanRecord with RECOVERY_ACTION reason
+- Generate unique ban number (BAN-{customer_id}-{timestamp})
+- Set customer.is_banned = True with ban_reason
+- Send ban notification email via Resend
+- Create in-app ACCOUNT_BANNED notification with URGENT priority
+- Mark ban_record.customer_notified = True
+- Include permanent_ban section in API response
+
+## API Testing Results
+
+### Test Scenario Created
+1. Generated invoice for active lease (INV-00002-W001-20260121)
+2. Created delinquency case (DC-20260121104138-438)
+3. Escalated case to level_4
+4. Authorized recovery with compliance gate
+
+### API Response
+- success: true
+- permanent_ban.ban_created: true
+- permanent_ban.ban_number: BAN-000002-20260121104246
+- permanent_ban.customer_banned: true
+- permanent_ban.ban_email_sent: true
+- permanent_ban.ban_notification_created: true
+
+### Database Verification
+1. ban_records table:
+   - id: 3, ban_number: BAN-000002-20260121104246
+   - reason: RECOVERY_ACTION, is_permanent: true, status: ACTIVE
+
+2. customer_profiles table (id=2):
+   - is_banned: true
+   - ban_reason: "Permanent ban due to vehicle recovery..."
+
+3. notifications table:
+   - notification_type: ACCOUNT_BANNED
+   - title: "Account Permanently Banned"
+   - priority: URGENT
+
+## Files Modified
+1. backend/app/models/ban_record.py (NEW - BanRecord model)
+2. backend/app/models/__init__.py (added BanRecord exports)
+3. backend/app/models/notification.py (added ACCOUNT_BANNED type)
+4. backend/app/services/email.py (added send_ban_notice method)
+5. backend/app/api/admin.py (extended authorize_recovery with ban creation)
+6. spec/feature_list.json (Feature #64 and BanRecord entity marked as passing)
+
+## Progress Update
+- Features Passing: 67/211 (was 65/211)
+- Feature #64: Permanent ban on recovery - PASSED
+- BanRecord entity model - PASSED
+
+================================================================================
+END SESSION 30
+================================================================================
