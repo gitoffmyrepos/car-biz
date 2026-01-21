@@ -6,7 +6,7 @@ Customer profile management endpoints.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -23,6 +23,7 @@ from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus, Veh
 from app.models.lease import Lease, LeaseStatus
 from app.models.notification import Notification
 from app.models.incident_report import IncidentReport, IncidentType, IncidentSeverity, IncidentStatus
+from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
@@ -1544,4 +1545,407 @@ async def can_report_incident(
         "has_active_lease": has_active_lease,
         "active_lease_id": active_lease.id if active_lease else None,
         "reasons": reasons,
+    }
+
+
+# ============================================================================
+# Weekly Invoice Endpoints
+# ============================================================================
+
+
+class InvoiceResponse(BaseModel):
+    """Response model for a weekly invoice."""
+    id: int
+    invoice_number: str
+    week_number: int
+    amount: float
+    late_fee: float
+    total_amount: float
+    period_start: datetime
+    period_end: datetime
+    due_date: datetime
+    status: str
+    payment_method: Optional[str]
+    payment_proof_uploaded_at: Optional[datetime]
+    verified_at: Optional[datetime]
+    rejection_reason: Optional[str]
+    is_late: bool
+    days_late: int
+    notes: Optional[str]
+    created_at: datetime
+    paid_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class InvoiceListResponse(BaseModel):
+    """Response for invoice list."""
+    invoices: List[InvoiceResponse]
+    total_count: int
+    pending_count: int
+    paid_count: int
+    total_due: float
+
+
+class PaymentProofUploadResponse(BaseModel):
+    """Response for payment proof upload."""
+    success: bool
+    message: str
+    invoice_id: int
+    invoice_number: str
+    status: str
+    proof_uploaded_at: Optional[datetime]
+
+
+@router.get("/invoices", response_model=InvoiceListResponse)
+async def get_invoices(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """
+    Get all weekly invoices for the current customer.
+
+    Returns a paginated list of invoices with summary statistics.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Build base query
+    query = select(WeeklyInvoice).where(
+        WeeklyInvoice.customer_profile_id == profile.id
+    )
+
+    # Apply status filter if provided
+    if status_filter:
+        try:
+            status_enum = InvoiceStatus(status_filter.lower())
+            query = query.where(WeeklyInvoice.status == status_enum)
+        except ValueError:
+            pass  # Ignore invalid status filter
+
+    # Get total count (without filter for statistics)
+    all_invoices_result = await db.execute(
+        select(WeeklyInvoice).where(
+            WeeklyInvoice.customer_profile_id == profile.id
+        )
+    )
+    all_invoices = all_invoices_result.scalars().all()
+    total_count = len(all_invoices)
+
+    # Calculate statistics
+    pending_count = len([i for i in all_invoices if i.status in [
+        InvoiceStatus.PENDING, InvoiceStatus.DUE, InvoiceStatus.LATE,
+        InvoiceStatus.VERIFICATION_IN_PROGRESS, InvoiceStatus.REJECTED
+    ]])
+    paid_count = len([i for i in all_invoices if i.status == InvoiceStatus.PAID])
+    total_due = float(sum(
+        i.total_amount for i in all_invoices
+        if i.status in [InvoiceStatus.DUE, InvoiceStatus.LATE, InvoiceStatus.REJECTED]
+    ))
+
+    # Get paginated results
+    result = await db.execute(
+        query.order_by(WeeklyInvoice.due_date.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    invoices = result.scalars().all()
+
+    return InvoiceListResponse(
+        invoices=[
+            InvoiceResponse(
+                id=inv.id,
+                invoice_number=inv.invoice_number,
+                week_number=inv.week_number,
+                amount=float(inv.amount),
+                late_fee=float(inv.late_fee),
+                total_amount=float(inv.total_amount),
+                period_start=inv.period_start,
+                period_end=inv.period_end,
+                due_date=inv.due_date,
+                status=inv.status.value,
+                payment_method=inv.payment_method,
+                payment_proof_uploaded_at=inv.payment_proof_uploaded_at,
+                verified_at=inv.verified_at,
+                rejection_reason=inv.rejection_reason,
+                is_late=inv.is_late,
+                days_late=inv.days_late,
+                notes=inv.notes,
+                created_at=inv.created_at,
+                paid_at=inv.paid_at,
+            )
+            for inv in invoices
+        ],
+        total_count=total_count,
+        pending_count=pending_count,
+        paid_count=paid_count,
+        total_due=total_due,
+    )
+
+
+@router.get("/invoices/{invoice_id}", response_model=InvoiceResponse)
+async def get_invoice(
+    invoice_id: int,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific invoice by ID.
+
+    Returns 404 if not found or not owned by current user.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    result = await db.execute(
+        select(WeeklyInvoice).where(
+            WeeklyInvoice.id == invoice_id,
+            WeeklyInvoice.customer_profile_id == profile.id
+        )
+    )
+    invoice = result.scalar_one_or_none()
+
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    return InvoiceResponse(
+        id=invoice.id,
+        invoice_number=invoice.invoice_number,
+        week_number=invoice.week_number,
+        amount=float(invoice.amount),
+        late_fee=float(invoice.late_fee),
+        total_amount=float(invoice.total_amount),
+        period_start=invoice.period_start,
+        period_end=invoice.period_end,
+        due_date=invoice.due_date,
+        status=invoice.status.value,
+        payment_method=invoice.payment_method,
+        payment_proof_uploaded_at=invoice.payment_proof_uploaded_at,
+        verified_at=invoice.verified_at,
+        rejection_reason=invoice.rejection_reason,
+        is_late=invoice.is_late,
+        days_late=invoice.days_late,
+        notes=invoice.notes,
+        created_at=invoice.created_at,
+        paid_at=invoice.paid_at,
+    )
+
+
+@router.get("/invoices/{invoice_id}/payment-proof")
+async def get_payment_proof(
+    invoice_id: int,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get signed URL for payment proof document.
+
+    Returns the signed URL for viewing the payment proof if one exists.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    result = await db.execute(
+        select(WeeklyInvoice).where(
+            WeeklyInvoice.id == invoice_id,
+            WeeklyInvoice.customer_profile_id == profile.id
+        )
+    )
+    invoice = result.scalar_one_or_none()
+
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    if not invoice.payment_proof_key:
+        return {
+            "has_proof": False,
+            "message": "No payment proof uploaded for this invoice"
+        }
+
+    # Generate signed URL
+    url = storage_service.generate_signed_url(
+        bucket=settings.S3_BUCKET_PAYMENTS,
+        key=invoice.payment_proof_key,
+    )
+
+    return {
+        "has_proof": True,
+        "url": url,
+        "uploaded_at": invoice.payment_proof_uploaded_at,
+        "payment_method": invoice.payment_method,
+    }
+
+
+@router.post("/invoices/{invoice_id}/upload-proof", response_model=PaymentProofUploadResponse)
+async def upload_payment_proof(
+    invoice_id: int,
+    file: UploadFile = File(...),
+    payment_method: str = "zelle",
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Upload payment proof for an invoice.
+
+    - Validates file type (images only)
+    - Validates file size (max 10MB)
+    - Stores file in MinIO/local storage
+    - Updates invoice status to verification_in_progress
+    - Computes hash for duplicate detection
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Get invoice
+    result = await db.execute(
+        select(WeeklyInvoice).where(
+            WeeklyInvoice.id == invoice_id,
+            WeeklyInvoice.customer_profile_id == profile.id
+        )
+    )
+    invoice = result.scalar_one_or_none()
+
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    # Check if invoice can have proof uploaded
+    allowed_statuses = [
+        InvoiceStatus.DUE,
+        InvoiceStatus.LATE,
+        InvoiceStatus.REJECTED,  # Allow re-upload after rejection
+    ]
+    if invoice.status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot upload payment proof for invoice in {invoice.status.value} status. "
+                   f"Allowed statuses: {[s.value for s in allowed_statuses]}"
+        )
+
+    # Read file content
+    file_content = await file.read()
+    original_filename = file.filename or "payment_proof"
+
+    # Allowed image types for payment proof
+    allowed_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }
+
+    # Validate file
+    is_valid, error_message, mime_type = storage_service.validate_file(
+        file_content, original_filename, allowed_types=allowed_types
+    )
+
+    if not is_valid or mime_type is None:
+        raise HTTPException(status_code=400, detail=error_message or "Invalid file type. Only images allowed.")
+
+    # Compute file hash for duplicate detection
+    file_hash = storage_service.compute_file_hash(file_content)
+    logger.info(f"Payment proof hash for invoice {invoice.invoice_number}: {file_hash[:16]}...")
+
+    # Generate storage key
+    storage_key = storage_service.generate_storage_key(
+        user_id=user.sub,
+        document_type=f"payment/{invoice.invoice_number}",
+        original_filename=original_filename,
+        mime_type=mime_type,
+    )
+
+    # Delete old payment proof if exists
+    if invoice.payment_proof_key:
+        await storage_service.delete_file(
+            bucket=settings.S3_BUCKET_PAYMENTS,
+            key=invoice.payment_proof_key
+        )
+
+    # Upload to storage
+    success = await storage_service.upload_file(
+        file_content=file_content,
+        bucket=settings.S3_BUCKET_PAYMENTS,
+        key=storage_key,
+        content_type=mime_type,
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload payment proof. Please try again."
+        )
+
+    # Update invoice
+    invoice.payment_proof_key = storage_key
+    invoice.payment_proof_hash = file_hash
+    invoice.payment_proof_uploaded_at = datetime.now(timezone.utc)
+    invoice.payment_method = payment_method
+    invoice.status = InvoiceStatus.VERIFICATION_IN_PROGRESS
+    invoice.rejection_reason = None  # Clear any previous rejection reason
+
+    await db.flush()
+    await db.refresh(invoice)
+
+    logger.info(
+        f"Payment proof uploaded for invoice {invoice.invoice_number} by {user.email}"
+    )
+
+    return PaymentProofUploadResponse(
+        success=True,
+        message="Payment proof uploaded successfully. Verification in progress (48 hours).",
+        invoice_id=invoice.id,
+        invoice_number=invoice.invoice_number,
+        status=invoice.status.value,
+        proof_uploaded_at=invoice.payment_proof_uploaded_at,
+    )
+
+
+@router.get("/invoices/summary/stats")
+async def get_invoice_summary(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get invoice summary statistics for the customer.
+
+    Returns counts and totals for different invoice statuses.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Get all invoices
+    result = await db.execute(
+        select(WeeklyInvoice).where(
+            WeeklyInvoice.customer_profile_id == profile.id
+        )
+    )
+    invoices = result.scalars().all()
+
+    # Calculate statistics
+    total_count = len(invoices)
+    pending_count = len([i for i in invoices if i.status in [
+        InvoiceStatus.PENDING, InvoiceStatus.DUE
+    ]])
+    verification_count = len([i for i in invoices if i.status == InvoiceStatus.VERIFICATION_IN_PROGRESS])
+    paid_count = len([i for i in invoices if i.status == InvoiceStatus.PAID])
+    late_count = len([i for i in invoices if i.status == InvoiceStatus.LATE])
+    rejected_count = len([i for i in invoices if i.status == InvoiceStatus.REJECTED])
+
+    total_paid = float(sum(i.total_amount for i in invoices if i.status == InvoiceStatus.PAID))
+    total_due = float(sum(
+        i.total_amount for i in invoices
+        if i.status in [InvoiceStatus.DUE, InvoiceStatus.LATE, InvoiceStatus.REJECTED]
+    ))
+    total_pending_verification = float(sum(
+        i.total_amount for i in invoices
+        if i.status == InvoiceStatus.VERIFICATION_IN_PROGRESS
+    ))
+
+    return {
+        "total_invoices": total_count,
+        "pending_count": pending_count,
+        "verification_count": verification_count,
+        "paid_count": paid_count,
+        "late_count": late_count,
+        "rejected_count": rejected_count,
+        "total_paid": total_paid,
+        "total_due": total_due,
+        "total_pending_verification": total_pending_verification,
     }

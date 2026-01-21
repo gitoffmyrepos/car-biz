@@ -506,7 +506,7 @@
       "Verify invoice status changes to 'Verification in Progress'",
       "Take screenshot of payment proof upload"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

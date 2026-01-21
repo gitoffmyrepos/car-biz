@@ -35,6 +35,10 @@ from app.models.incident_report import (
     IncidentSeverity,
     IncidentStatus,
 )
+from app.models.weekly_invoice import (
+    WeeklyInvoice,
+    InvoiceStatus,
+)
 
 __all__ = [
     "Inquiry",
@@ -58,4 +62,6 @@ __all__ = [
     "IncidentType",
     "IncidentSeverity",
     "IncidentStatus",
+    "WeeklyInvoice",
+    "InvoiceStatus",
 ]
