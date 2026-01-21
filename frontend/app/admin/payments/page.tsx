@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from 'react';
 
+interface PaymentProof {
+  has_proof: boolean;
+  url?: string;
+  uploaded_at?: string;
+  payment_method?: string;
+  invoice_number?: string;
+  message?: string;
+}
+
 interface Invoice {
   id: number;
   lease_id: number;
@@ -76,6 +85,15 @@ export default function AdminPaymentsPage() {
   const [toDate, setToDate] = useState<string>('');
   const [customerSearch, setCustomerSearch] = useState<string>('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [paymentProof, setPaymentProof] = useState<PaymentProof | null>(null);
+  const [loadingProof, setLoadingProof] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvalType, setApprovalType] = useState<'approve' | 'reject'>('approve');
+  const [verificationNotes, setVerificationNotes] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [submittingVerification, setSubmittingVerification] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState<string | null>(null);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     total_count: 0,
     pending_count: 0,
@@ -198,6 +216,106 @@ export default function AdminPaymentsPage() {
     setFromDate('');
     setToDate('');
     setCustomerSearch('');
+  };
+
+  const fetchPaymentProof = async (invoiceId: number) => {
+    setLoadingProof(true);
+    setPaymentProof(null);
+    try {
+      const token = localStorage.getItem('fx_weekly_lease_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/invoices/${invoiceId}/payment-proof`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch payment proof');
+      }
+
+      const data: PaymentProof = await response.json();
+      setPaymentProof(data);
+    } catch (err) {
+      console.error('Error fetching payment proof:', err);
+      setPaymentProof({ has_proof: false, message: 'Error loading payment proof' });
+    } finally {
+      setLoadingProof(false);
+    }
+  };
+
+  const handleVerifyPayment = async () => {
+    if (!selectedInvoice) return;
+
+    if (approvalType === 'reject' && !rejectionReason.trim()) {
+      setVerificationError('Rejection reason is required');
+      return;
+    }
+
+    setSubmittingVerification(true);
+    setVerificationError(null);
+    setVerificationSuccess(null);
+
+    try {
+      const token = localStorage.getItem('fx_weekly_lease_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/invoices/${selectedInvoice.id}/verify`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            approved: approvalType === 'approve',
+            notes: verificationNotes.trim() || null,
+            rejection_reason: approvalType === 'reject' ? rejectionReason.trim() : null,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to verify payment');
+      }
+
+      const data = await response.json();
+      setVerificationSuccess(data.message);
+
+      // Close modals and refresh
+      setTimeout(() => {
+        setShowApprovalModal(false);
+        setSelectedInvoice(null);
+        setVerificationNotes('');
+        setRejectionReason('');
+        setVerificationSuccess(null);
+        setPaymentProof(null);
+        fetchInvoices();
+      }, 1500);
+    } catch (err) {
+      setVerificationError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setSubmittingVerification(false);
+    }
+  };
+
+  const openApprovalModal = (type: 'approve' | 'reject') => {
+    setApprovalType(type);
+    setShowApprovalModal(true);
+    setVerificationNotes('');
+    setRejectionReason('');
+    setVerificationError(null);
+    setVerificationSuccess(null);
   };
 
   return (
@@ -667,13 +785,262 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
 
+            {/* Payment Proof Section */}
+            {selectedInvoice.has_payment_proof && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-3">Payment Proof</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {!paymentProof && !loadingProof && (
+                    <button
+                      onClick={() => fetchPaymentProof(selectedInvoice.id)}
+                      className="btn btn-secondary"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      View Payment Proof
+                    </button>
+                  )}
+                  {loadingProof && (
+                    <div className="flex items-center space-x-2">
+                      <svg className="animate-spin w-5 h-5 text-gold-600" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span className="text-gray-500">Loading payment proof...</span>
+                    </div>
+                  )}
+                  {paymentProof && !paymentProof.has_proof && (
+                    <p className="text-gray-500">{paymentProof.message || 'No payment proof available'}</p>
+                  )}
+                  {paymentProof && paymentProof.has_proof && paymentProof.url && (
+                    <div className="space-y-3">
+                      <a
+                        href={paymentProof.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary inline-flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Open Payment Proof (New Tab)
+                      </a>
+                      <p className="text-xs text-gray-500">
+                        Payment method: {paymentProof.payment_method || 'Not specified'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                {/* Verification Actions - Only show for invoices with payment proof and pending/verification status */}
+                {selectedInvoice.has_payment_proof &&
+                 (selectedInvoice.status === 'verification_in_progress' || selectedInvoice.status === 'pending') && (
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => openApprovalModal('approve')}
+                      className="btn bg-green-600 text-white hover:bg-green-700 flex items-center"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Approve Payment
+                    </button>
+                    <button
+                      onClick={() => openApprovalModal('reject')}
+                      className="btn bg-red-600 text-white hover:bg-red-700 flex items-center"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Reject Payment
+                    </button>
+                  </div>
+                )}
+
+                {/* Show status message for already processed invoices */}
+                {selectedInvoice.status === 'paid' && (
+                  <div className="flex items-center text-green-600">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Payment Approved
+                  </div>
+                )}
+                {selectedInvoice.status === 'rejected' && (
+                  <div className="flex items-center text-red-600">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Payment Rejected
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    setSelectedInvoice(null);
+                    setPaymentProof(null);
+                  }}
+                  className="btn btn-secondary ml-auto"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Verification Modal */}
+      {showApprovalModal && selectedInvoice && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-luxury-charcoal">
+                  {approvalType === 'approve' ? 'Approve Payment' : 'Reject Payment'}
+                </h2>
+                <button
+                  onClick={() => setShowApprovalModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Invoice Info Summary */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500">Invoice</p>
+                    <p className="font-medium text-luxury-charcoal">{selectedInvoice.invoice_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Amount</p>
+                    <p className="font-medium text-luxury-charcoal">{formatCurrency(selectedInvoice.total_amount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Customer</p>
+                    <p className="font-medium text-luxury-charcoal">{selectedInvoice.customer_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Period</p>
+                    <p className="font-medium text-luxury-charcoal">Week {selectedInvoice.week_number}</p>
+                  </div>
+                </div>
+              </div>
+
+              {approvalType === 'approve' ? (
+                <div className="space-y-4">
+                  <div className="flex items-center text-green-600 bg-green-50 rounded-lg p-4">
+                    <svg className="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="font-medium">Approve this payment?</p>
+                      <p className="text-sm text-green-600/80">This will mark the invoice as paid and update the ledger.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Verification Notes (Optional)
+                    </label>
+                    <textarea
+                      value={verificationNotes}
+                      onChange={(e) => setVerificationNotes(e.target.value)}
+                      placeholder="Add any notes about the payment verification..."
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center text-red-600 bg-red-50 rounded-lg p-4">
+                    <svg className="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <p className="font-medium">Reject this payment?</p>
+                      <p className="text-sm text-red-600/80">The customer will be notified and will need to resubmit payment proof.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Rejection Reason <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Explain why the payment is being rejected..."
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent resize-none"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This reason will be visible to the customer.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Additional Notes (Optional)
+                    </label>
+                    <textarea
+                      value={verificationNotes}
+                      onChange={(e) => setVerificationNotes(e.target.value)}
+                      placeholder="Internal notes about this rejection..."
+                      rows={2}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Error/Success Messages */}
+              {verificationError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                  {verificationError}
+                </div>
+              )}
+              {verificationSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-green-700 text-sm">
+                  {verificationSuccess}
+                </div>
+              )}
+            </div>
             <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
               <button
-                onClick={() => setSelectedInvoice(null)}
+                onClick={() => setShowApprovalModal(false)}
+                disabled={submittingVerification}
                 className="btn btn-secondary"
               >
-                Close
+                Cancel
+              </button>
+              <button
+                onClick={handleVerifyPayment}
+                disabled={submittingVerification || (approvalType === 'reject' && !rejectionReason.trim())}
+                className={`btn ${approvalType === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white flex items-center`}
+              >
+                {submittingVerification ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {approvalType === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'}
+                  </>
+                )}
               </button>
             </div>
           </div>

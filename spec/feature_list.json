@@ -723,7 +723,7 @@
       "Verify ledger updated",
       "Take screenshot of payment approval"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -753,7 +753,7 @@
       "Verify request_id for traceability",
       "Take screenshot of payment audit entry"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
