@@ -21,6 +21,7 @@ from app.core.database import get_db
 from app.models.customer_profile import CustomerProfile, InsuranceStatus
 from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus, VehiclePreference
 from app.models.lease import Lease, LeaseStatus
+from app.models.notification import Notification
 from app.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
@@ -845,3 +846,269 @@ async def get_dashboard_summary(
         active_lease=active_lease,
         pending_request=pending_request,
     )
+
+
+# ============================================================================
+# Notification Endpoints
+# ============================================================================
+
+
+class NotificationResponse(BaseModel):
+    """Response model for a notification."""
+    id: int
+    notification_type: str
+    title: str
+    message: str
+    priority: str
+    is_read: bool
+    read_at: Optional[datetime]
+    action_url: Optional[str]
+    action_label: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class NotificationListResponse(BaseModel):
+    """Response model for notification list."""
+    notifications: list[NotificationResponse]
+    total_count: int
+    unread_count: int
+
+
+class NotificationSummary(BaseModel):
+    """Summary of notification counts."""
+    total: int
+    unread: int
+
+
+@router.get("/notifications", response_model=NotificationListResponse)
+async def get_notifications(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    unread_only: bool = False,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """
+    Get customer's notifications.
+
+    Returns a paginated list of notifications with unread count.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Build query
+    query = select(Notification).where(
+        Notification.customer_profile_id == profile.id
+    )
+
+    if unread_only:
+        query = query.where(Notification.is_read == False)
+
+    # Get total count
+    count_result = await db.execute(
+        select(Notification)
+        .where(Notification.customer_profile_id == profile.id)
+    )
+    total_count = len(count_result.scalars().all())
+
+    # Get unread count
+    unread_result = await db.execute(
+        select(Notification)
+        .where(
+            Notification.customer_profile_id == profile.id,
+            Notification.is_read == False
+        )
+    )
+    unread_count = len(unread_result.scalars().all())
+
+    # Get paginated results
+    result = await db.execute(
+        query.order_by(Notification.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    notifications = result.scalars().all()
+
+    return NotificationListResponse(
+        notifications=[
+            NotificationResponse(
+                id=n.id,
+                notification_type=n.notification_type.value,
+                title=n.title,
+                message=n.message,
+                priority=n.priority.value,
+                is_read=n.is_read,
+                read_at=n.read_at,
+                action_url=n.action_url,
+                action_label=n.action_label,
+                created_at=n.created_at,
+            )
+            for n in notifications
+        ],
+        total_count=total_count,
+        unread_count=unread_count,
+    )
+
+
+@router.get("/notifications/summary", response_model=NotificationSummary)
+async def get_notifications_summary(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get notification summary (counts only).
+
+    Returns total and unread notification counts.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Get total count
+    count_result = await db.execute(
+        select(Notification)
+        .where(Notification.customer_profile_id == profile.id)
+    )
+    total_count = len(count_result.scalars().all())
+
+    # Get unread count
+    unread_result = await db.execute(
+        select(Notification)
+        .where(
+            Notification.customer_profile_id == profile.id,
+            Notification.is_read == False
+        )
+    )
+    unread_count = len(unread_result.scalars().all())
+
+    return NotificationSummary(total=total_count, unread=unread_count)
+
+
+@router.get("/notifications/{notification_id}", response_model=NotificationResponse)
+async def get_notification(
+    notification_id: int,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific notification by ID.
+
+    Returns 404 if not found or not owned by current user.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    result = await db.execute(
+        select(Notification)
+        .where(
+            Notification.id == notification_id,
+            Notification.customer_profile_id == profile.id
+        )
+    )
+    notification = result.scalar_one_or_none()
+
+    if not notification:
+        raise HTTPException(
+            status_code=404,
+            detail="Notification not found"
+        )
+
+    return NotificationResponse(
+        id=notification.id,
+        notification_type=notification.notification_type.value,
+        title=notification.title,
+        message=notification.message,
+        priority=notification.priority.value,
+        is_read=notification.is_read,
+        read_at=notification.read_at,
+        action_url=notification.action_url,
+        action_label=notification.action_label,
+        created_at=notification.created_at,
+    )
+
+
+@router.post("/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: int,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Mark a notification as read.
+
+    Returns success status and updated notification.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    result = await db.execute(
+        select(Notification)
+        .where(
+            Notification.id == notification_id,
+            Notification.customer_profile_id == profile.id
+        )
+    )
+    notification = result.scalar_one_or_none()
+
+    if not notification:
+        raise HTTPException(
+            status_code=404,
+            detail="Notification not found"
+        )
+
+    if not notification.is_read:
+        notification.mark_as_read()
+        await db.flush()
+        await db.refresh(notification)
+
+    return {
+        "success": True,
+        "message": "Notification marked as read",
+        "notification": NotificationResponse(
+            id=notification.id,
+            notification_type=notification.notification_type.value,
+            title=notification.title,
+            message=notification.message,
+            priority=notification.priority.value,
+            is_read=notification.is_read,
+            read_at=notification.read_at,
+            action_url=notification.action_url,
+            action_label=notification.action_label,
+            created_at=notification.created_at,
+        )
+    }
+
+
+@router.post("/notifications/read-all")
+async def mark_all_notifications_read(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Mark all notifications as read.
+
+    Returns count of notifications marked as read.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Get all unread notifications
+    result = await db.execute(
+        select(Notification)
+        .where(
+            Notification.customer_profile_id == profile.id,
+            Notification.is_read == False
+        )
+    )
+    unread_notifications = result.scalars().all()
+
+    count = 0
+    for notification in unread_notifications:
+        notification.mark_as_read()
+        count += 1
+
+    if count > 0:
+        await db.flush()
+
+    return {
+        "success": True,
+        "message": f"Marked {count} notifications as read",
+        "count": count
+    }

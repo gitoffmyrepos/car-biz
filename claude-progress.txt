@@ -1367,3 +1367,155 @@ All requirements from Feature #31 verified:
 ================================================================================
 END SESSION 12
 ================================================================================
+
+================================================================================
+SESSION 13: FEATURE #32 - CUSTOMER NOTIFICATIONS CENTER
+================================================================================
+
+Date: 2026-01-21
+Status: COMPLETED
+Commit: (pending)
+
+## Objectives Completed
+
+### 1. Notification Model Implementation
+Created backend/app/models/notification.py:
+
+**NotificationType Enum (25+ types):**
+- PAYMENT_DUE_REMINDER, PAYMENT_RECEIVED, PAYMENT_FAILED
+- INSURANCE_APPROVED, INSURANCE_REJECTED, INSURANCE_EXPIRING
+- VEHICLE_ASSIGNED, VEHICLE_RETURNED
+- LEASE_STARTED, LEASE_ENDING_SOON, LEASE_TERMINATED
+- WELCOME, GENERAL_INFO, SYSTEM_MAINTENANCE
+- And more for comprehensive notification coverage
+
+**NotificationPriority Enum:**
+- LOW, NORMAL, HIGH, URGENT
+
+**Notification Model Fields:**
+- id: Primary key
+- customer_profile_id: FK to CustomerProfile
+- notification_type: NotificationType enum
+- title: Notification title
+- message: Full message text
+- priority: NotificationPriority enum
+- is_read: Boolean (default false)
+- read_at: Timestamp when marked as read
+- action_url, action_label: Optional CTA
+- created_at, expires_at: Timestamps
+
+### 2. Backend API Endpoints
+Added to backend/app/api/customer.py:
+
+**New Endpoints:**
+- GET /api/customer/notifications - List notifications (with pagination)
+- GET /api/customer/notifications/summary - Get counts (total, unread)
+- GET /api/customer/notifications/{id} - Get single notification
+- POST /api/customer/notifications/{id}/read - Mark as read
+- POST /api/customer/notifications/read-all - Mark all as read
+
+### 3. Notification Service
+Created backend/app/services/notification.py:
+
+**Helper Methods:**
+- create_notification() - Generic notification creation
+- create_welcome_notification() - For new customers
+- create_insurance_notification() - Insurance status changes
+- create_payment_notification() - Payment reminders
+- create_vehicle_notification() - Vehicle assignments
+
+### 4. Frontend Notifications Page
+Created frontend/app/notifications/page.tsx:
+
+**Features:**
+- Notification list with icons by type
+- Unread count badge in header
+- Filter: All / Unread Only
+- Mark as read (single notification)
+- Mark all as read button
+- Priority badges (High Priority)
+- Action buttons with URLs
+- Empty state for no notifications
+- Mobile-responsive design
+
+### 5. Dashboard Integration
+Updated frontend/app/dashboard/page.tsx:
+- Added "Notifications" link to header navigation
+
+### 6. Database Setup
+Created SQL scripts in scripts/:
+- create_notifications_table.sql (table + indexes)
+- insert_test_notifications.sql (5 test notifications)
+
+### 7. E2E Testing with Puppeteer MCP
+Complete test flow (9 steps):
+1. Navigate to login page
+2. Login as customer using dev mode
+3. Navigate to notifications page via header link
+4. Verify notification list (5 notifications, 3 unread)
+5. Verify notification types (payment, verification, reminders)
+6. Click "Mark as read" on first notification
+7. Click "Mark all as read"
+8. Verify unread/read status indicator
+9. Verify detail view with icons and priority badges
+
+All tests passed with screenshots captured.
+
+## Files Created/Modified This Session
+1. backend/app/models/notification.py (NEW)
+2. backend/app/models/__init__.py (export Notification, NotificationType, NotificationPriority)
+3. backend/app/api/customer.py (Added notification endpoints)
+4. backend/app/services/notification.py (NEW)
+5. backend/app/services/__init__.py (export notification_service)
+6. frontend/app/notifications/page.tsx (NEW)
+7. frontend/app/dashboard/page.tsx (Added notifications link)
+8. scripts/create_notifications_table.sql (NEW)
+9. scripts/insert_test_notifications.sql (NEW)
+10. spec/feature_list.json (Feature #32 marked passing)
+11. .claude/verification/test_results.json (updated)
+
+## Feature Progress
+- Features Passing: 29/211
+- Feature #32: Customer notifications center - PASSED ✓
+
+## Quality Gates Verified
+✅ Stop condition checked (29/211 - not complete)
+✅ Services healthy (backend/frontend running)
+✅ E2E test passed with Puppeteer MCP tools
+✅ Screenshots saved documenting functionality:
+   - step-1-login-page.png
+   - step-2-after-login.png
+   - step-3-notifications-page.png
+   - step-4-scrolled-notifications.png
+   - step-5-before-mark-read.png
+   - step-6-after-mark-read.png
+   - step-7-after-mark-all-read.png
+✅ test_results.json created with "overall_status": "passed"
+✅ All required features verified:
+   - Notification list displayed
+   - Notification types shown
+   - Click notification detail view
+   - Unread/read status indicator
+   - Mark as read functionality
+   - Mark all as read functionality
+✅ Zero console errors
+
+## Next Session Tasks
+1. Feature #33: Customer incident report submission
+2. Feature #34: Payment proof upload workflow
+3. Feature #35: Payment history view
+4. Continue with customer experience features
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+## Customer Portal URLs
+- Notifications: http://localhost:3002/notifications
+- Dashboard: http://localhost:3002/dashboard
+
+================================================================================
+END SESSION 13
+================================================================================

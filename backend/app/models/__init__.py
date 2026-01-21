@@ -24,6 +24,11 @@ from app.models.lease import (
     Lease,
     LeaseStatus,
 )
+from app.models.notification import (
+    Notification,
+    NotificationType,
+    NotificationPriority,
+)
 
 __all__ = [
     "Inquiry",
@@ -40,4 +45,7 @@ __all__ = [
     "VehiclePreference",
     "Lease",
     "LeaseStatus",
+    "Notification",
+    "NotificationType",
+    "NotificationPriority",
 ]

@@ -449,7 +449,7 @@
       "Verify unread/read status indicator",
       "Take screenshot of notifications center"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
