@@ -1,0 +1,65 @@
+{
+  "feature_description": "Insurance break-glass access - Admin must provide reason for accessing insurance documents",
+  "test_date": "2026-01-21",
+  "overall_status": "passed",
+  "e2e_results": [
+    {
+      "step": "Navigate to login page",
+      "status": "passed",
+      "screenshot": "break_glass_step1_login_page.png"
+    },
+    {
+      "step": "Login as admin using Quick Login",
+      "status": "passed",
+      "screenshot": "break_glass_step2_after_login.png"
+    },
+    {
+      "step": "Navigate to Customers page",
+      "status": "passed",
+      "screenshot": "break_glass_step3_customers_page.png"
+    },
+    {
+      "step": "Open customer detail modal",
+      "status": "passed",
+      "screenshot": "break_glass_step4_customer_detail_modal.png"
+    },
+    {
+      "step": "Click View Insurance Document - Break-glass modal appears",
+      "status": "passed",
+      "screenshot": "break_glass_step5_break_glass_modal.png"
+    },
+    {
+      "step": "Fill in reason for access (min 10 characters)",
+      "status": "passed",
+      "screenshot": "break_glass_step6_reason_filled.png"
+    },
+    {
+      "step": "Submit - Access Document button clicked",
+      "status": "passed",
+      "screenshot": "break_glass_step7_access_granted.png"
+    },
+    {
+      "step": "Verify signed URL provided with 5 min expiry and audit confirmation",
+      "status": "passed",
+      "screenshot": "break_glass_step8_document_link.png"
+    },
+    {
+      "step": "Verify audit log shows document access with reason recorded",
+      "status": "passed",
+      "screenshot": "break_glass_step9_audit_logs.png"
+    }
+  ],
+  "console_errors": [],
+  "visual_issues": [],
+  "api_verification": {
+    "audit_log_entry": {
+      "id": 6,
+      "actor_email": "admin@example.com",
+      "action": "insurance_document_view",
+      "target_type": "insurance_document",
+      "reason": "Verifying insurance document for routine compliance audit review - Testing break-glass functionality",
+      "requires_reason": true,
+      "success": true
+    }
+  }
+}

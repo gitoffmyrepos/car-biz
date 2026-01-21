@@ -393,7 +393,7 @@
       "Verify time-limited signed URL is provided",
       "Take screenshot of break-glass workflow"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
