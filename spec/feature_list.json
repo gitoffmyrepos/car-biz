@@ -518,7 +518,7 @@
       "Verify bucket has private access controls",
       "Verify content hash is stored for duplicate detection"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -557,7 +557,7 @@
       "Verify responsive layout",
       "Take screenshot of admin dashboard"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

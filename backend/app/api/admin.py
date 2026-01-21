@@ -24,6 +24,9 @@ from app.core.database import get_db
 from app.models.inquiry import Inquiry, InquiryStatus
 from app.models.customer_profile import CustomerProfile, InsuranceStatus
 from app.models.audit_log import AuditLog, AuditAction
+from app.models.lease import Lease, LeaseStatus
+from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
+from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus
 from app.services.storage import storage_service
 from app.services.audit import audit_service
 
@@ -37,8 +40,12 @@ class DashboardStatsResponse(BaseModel):
     """Admin dashboard statistics."""
     total_inquiries: int
     new_inquiries: int
-    total_vehicles: int
     total_customers: int
+    active_leases: int
+    pending_payments: int
+    pending_vehicle_requests: int
+    pending_verifications: int
+    late_invoices: int
     timestamp: str
 
 
@@ -53,7 +60,7 @@ class AdminActionResponse(BaseModel):
 
 @router.get("/dashboard/stats", response_model=DashboardStatsResponse)
 async def get_dashboard_stats(
-    user: AuthenticatedUser = Depends(require_admin),
+    _user: AuthenticatedUser = Depends(require_admin),
     session: AsyncSession = Depends(get_db),
 ):
     """
@@ -69,11 +76,53 @@ async def get_dashboard_stats(
         select(func.count()).select_from(Inquiry).where(Inquiry.status == InquiryStatus.NEW)
     )
 
+    # Get customer counts
+    total_customers = await session.scalar(
+        select(func.count()).select_from(CustomerProfile)
+    )
+
+    # Get active lease count
+    active_leases = await session.scalar(
+        select(func.count()).select_from(Lease).where(Lease.status == LeaseStatus.ACTIVE)
+    )
+
+    # Get pending payment verification count
+    pending_payments = await session.scalar(
+        select(func.count()).select_from(WeeklyInvoice).where(
+            WeeklyInvoice.status == InvoiceStatus.VERIFICATION_IN_PROGRESS
+        )
+    )
+
+    # Get pending vehicle request count
+    pending_vehicle_requests = await session.scalar(
+        select(func.count()).select_from(VehicleRequest).where(
+            VehicleRequest.status.in_([VehicleRequestStatus.PENDING, VehicleRequestStatus.REVIEWING])
+        )
+    )
+
+    # Get customers pending insurance verification
+    pending_verifications = await session.scalar(
+        select(func.count()).select_from(CustomerProfile).where(
+            CustomerProfile.insurance_status == InsuranceStatus.PENDING
+        )
+    )
+
+    # Get late invoice count
+    late_invoices = await session.scalar(
+        select(func.count()).select_from(WeeklyInvoice).where(
+            WeeklyInvoice.status == InvoiceStatus.LATE
+        )
+    )
+
     return DashboardStatsResponse(
         total_inquiries=total_inquiries or 0,
         new_inquiries=new_inquiries or 0,
-        total_vehicles=0,  # Will be implemented with vehicles table
-        total_customers=0,  # Will be implemented with customers table
+        total_customers=total_customers or 0,
+        active_leases=active_leases or 0,
+        pending_payments=pending_payments or 0,
+        pending_vehicle_requests=pending_vehicle_requests or 0,
+        pending_verifications=pending_verifications or 0,
+        late_invoices=late_invoices or 0,
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
 
