@@ -310,7 +310,7 @@
       "Verify raw file is NOT stored in database",
       "Verify bucket has private access controls"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
