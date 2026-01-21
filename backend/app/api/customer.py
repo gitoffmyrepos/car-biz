@@ -7,7 +7,7 @@ Customer profile management endpoints.
 
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -22,6 +22,7 @@ from app.models.customer_profile import CustomerProfile, InsuranceStatus
 from app.models.vehicle_request import VehicleRequest, VehicleRequestStatus, VehiclePreference
 from app.models.lease import Lease, LeaseStatus
 from app.models.notification import Notification
+from app.models.incident_report import IncidentReport, IncidentType, IncidentSeverity, IncidentStatus
 from app.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
@@ -1111,4 +1112,436 @@ async def mark_all_notifications_read(
         "success": True,
         "message": f"Marked {count} notifications as read",
         "count": count
+    }
+
+
+# ============================================================================
+# Incident Report Endpoints
+# ============================================================================
+
+
+class IncidentReportCreate(BaseModel):
+    """Request body for creating an incident report."""
+    incident_type: str
+    severity: str = "medium"
+    title: str
+    description: str
+    location: Optional[str] = None
+    incident_date: Optional[datetime] = None
+
+
+class IncidentReportResponse(BaseModel):
+    """Response model for incident report."""
+    id: int
+    customer_profile_id: int
+    lease_id: Optional[int]
+    customer_email: str
+    customer_name: Optional[str]
+    incident_type: str
+    severity: str
+    status: str
+    title: str
+    description: str
+    location: Optional[str]
+    incident_date: datetime
+    photo_keys: Optional[List[str]]
+    admin_notes: Optional[str]
+    resolution_notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    reviewed_at: Optional[datetime]
+    resolved_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class IncidentListResponse(BaseModel):
+    """Response for incident list."""
+    incidents: List[IncidentReportResponse]
+    total_count: int
+
+
+@router.post("/incidents", response_model=IncidentReportResponse)
+async def create_incident_report(
+    report_data: IncidentReportCreate,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Submit a new incident report.
+
+    Requirements:
+    - Customer must have an active lease
+    - Incident type and description are required
+    """
+    # Get customer profile
+    profile = await get_or_create_profile(user, db)
+
+    # Check for active lease
+    lease_result = await db.execute(
+        select(Lease)
+        .where(
+            Lease.customer_profile_id == profile.id,
+            Lease.status == LeaseStatus.ACTIVE
+        )
+        .order_by(Lease.start_date.desc())
+        .limit(1)
+    )
+    active_lease = lease_result.scalar_one_or_none()
+
+    if not active_lease:
+        raise HTTPException(
+            status_code=403,
+            detail="You must have an active lease to report an incident. Please contact support if you believe this is an error."
+        )
+
+    # Validate incident type
+    try:
+        incident_type = IncidentType(report_data.incident_type.lower())
+    except ValueError:
+        valid_types = [t.value for t in IncidentType]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid incident type: {report_data.incident_type}. Valid types: {valid_types}"
+        )
+
+    # Validate severity
+    try:
+        severity = IncidentSeverity(report_data.severity.lower())
+    except ValueError:
+        valid_severities = [s.value for s in IncidentSeverity]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid severity: {report_data.severity}. Valid severities: {valid_severities}"
+        )
+
+    # Use provided date or current time
+    incident_date = report_data.incident_date or datetime.now()
+
+    # Create incident report
+    incident = IncidentReport(
+        customer_profile_id=profile.id,
+        lease_id=active_lease.id,
+        customer_email=profile.email,
+        customer_name=profile.full_name,
+        incident_type=incident_type,
+        severity=severity,
+        status=IncidentStatus.SUBMITTED,
+        title=report_data.title,
+        description=report_data.description,
+        location=report_data.location,
+        incident_date=incident_date,
+        photo_keys=[],
+    )
+
+    db.add(incident)
+    await db.flush()
+    await db.refresh(incident)
+
+    logger.info(f"Incident report created for customer {profile.email}: ID={incident.id}, Type={incident_type.value}")
+
+    return IncidentReportResponse(
+        id=incident.id,
+        customer_profile_id=incident.customer_profile_id,
+        lease_id=incident.lease_id,
+        customer_email=incident.customer_email,
+        customer_name=incident.customer_name,
+        incident_type=incident.incident_type.value,
+        severity=incident.severity.value,
+        status=incident.status.value,
+        title=incident.title,
+        description=incident.description,
+        location=incident.location,
+        incident_date=incident.incident_date,
+        photo_keys=incident.photo_keys,
+        admin_notes=incident.admin_notes,
+        resolution_notes=incident.resolution_notes,
+        created_at=incident.created_at,
+        updated_at=incident.updated_at,
+        reviewed_at=incident.reviewed_at,
+        resolved_at=incident.resolved_at,
+    )
+
+
+@router.get("/incidents", response_model=IncidentListResponse)
+async def get_incidents(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0,
+):
+    """
+    Get all incident reports for the current customer.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Get total count
+    count_result = await db.execute(
+        select(IncidentReport)
+        .where(IncidentReport.customer_profile_id == profile.id)
+    )
+    total_count = len(count_result.scalars().all())
+
+    # Get paginated results
+    result = await db.execute(
+        select(IncidentReport)
+        .where(IncidentReport.customer_profile_id == profile.id)
+        .order_by(IncidentReport.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    incidents = result.scalars().all()
+
+    return IncidentListResponse(
+        incidents=[
+            IncidentReportResponse(
+                id=inc.id,
+                customer_profile_id=inc.customer_profile_id,
+                lease_id=inc.lease_id,
+                customer_email=inc.customer_email,
+                customer_name=inc.customer_name,
+                incident_type=inc.incident_type.value,
+                severity=inc.severity.value,
+                status=inc.status.value,
+                title=inc.title,
+                description=inc.description,
+                location=inc.location,
+                incident_date=inc.incident_date,
+                photo_keys=inc.photo_keys,
+                admin_notes=inc.admin_notes,
+                resolution_notes=inc.resolution_notes,
+                created_at=inc.created_at,
+                updated_at=inc.updated_at,
+                reviewed_at=inc.reviewed_at,
+                resolved_at=inc.resolved_at,
+            )
+            for inc in incidents
+        ],
+        total_count=total_count,
+    )
+
+
+@router.get("/incidents/{incident_id}", response_model=IncidentReportResponse)
+async def get_incident(
+    incident_id: int,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get a specific incident report by ID.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    result = await db.execute(
+        select(IncidentReport)
+        .where(
+            IncidentReport.id == incident_id,
+            IncidentReport.customer_profile_id == profile.id
+        )
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident report not found")
+
+    return IncidentReportResponse(
+        id=incident.id,
+        customer_profile_id=incident.customer_profile_id,
+        lease_id=incident.lease_id,
+        customer_email=incident.customer_email,
+        customer_name=incident.customer_name,
+        incident_type=incident.incident_type.value,
+        severity=incident.severity.value,
+        status=incident.status.value,
+        title=incident.title,
+        description=incident.description,
+        location=incident.location,
+        incident_date=incident.incident_date,
+        photo_keys=incident.photo_keys,
+        admin_notes=incident.admin_notes,
+        resolution_notes=incident.resolution_notes,
+        created_at=incident.created_at,
+        updated_at=incident.updated_at,
+        reviewed_at=incident.reviewed_at,
+        resolved_at=incident.resolved_at,
+    )
+
+
+@router.post("/incidents/{incident_id}/photos", response_model=dict)
+async def upload_incident_photo(
+    incident_id: int,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Upload a photo for an incident report.
+
+    - Validates file type (images only)
+    - Validates file size (max 10MB)
+    - Stores file in MinIO/local storage
+    - Updates incident report with photo key
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Get incident report
+    result = await db.execute(
+        select(IncidentReport)
+        .where(
+            IncidentReport.id == incident_id,
+            IncidentReport.customer_profile_id == profile.id
+        )
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident report not found")
+
+    # Only allow photo uploads for submitted/under_review incidents
+    if incident.status not in [IncidentStatus.SUBMITTED, IncidentStatus.UNDER_REVIEW]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot add photos to incident in {incident.status.value} status"
+        )
+
+    # Read file content
+    file_content = await file.read()
+    original_filename = file.filename or "incident_photo"
+
+    # Allowed image types for incident photos
+    allowed_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }
+
+    # Validate file
+    is_valid, error_message, mime_type = storage_service.validate_file(
+        file_content, original_filename, allowed_types=allowed_types
+    )
+
+    if not is_valid or mime_type is None:
+        raise HTTPException(status_code=400, detail=error_message or "Invalid file type. Only images allowed.")
+
+    # Generate storage key
+    storage_key = storage_service.generate_storage_key(
+        user_id=user.sub,
+        document_type=f"incident/{incident_id}",
+        original_filename=original_filename,
+        mime_type=mime_type,
+    )
+
+    # Upload to storage
+    success = await storage_service.upload_file(
+        file_content=file_content,
+        bucket=settings.S3_BUCKET_INCIDENTS,
+        key=storage_key,
+        content_type=mime_type,
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload photo. Please try again."
+        )
+
+    # Update incident with photo key
+    if incident.photo_keys is None:
+        incident.photo_keys = []
+    incident.photo_keys = incident.photo_keys + [storage_key]  # Create new list to trigger update
+    await db.flush()
+    await db.refresh(incident)
+
+    logger.info(f"Incident photo uploaded for incident {incident_id}: {storage_key}")
+
+    return {
+        "success": True,
+        "message": "Photo uploaded successfully",
+        "photo_key": storage_key,
+        "total_photos": len(incident.photo_keys) if incident.photo_keys else 0,
+    }
+
+
+@router.get("/incidents/{incident_id}/photos")
+async def get_incident_photos(
+    incident_id: int,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get signed URLs for all photos in an incident report.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Get incident report
+    result = await db.execute(
+        select(IncidentReport)
+        .where(
+            IncidentReport.id == incident_id,
+            IncidentReport.customer_profile_id == profile.id
+        )
+    )
+    incident = result.scalar_one_or_none()
+
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident report not found")
+
+    # Generate signed URLs for all photos
+    photos = []
+    if incident.photo_keys:
+        for key in incident.photo_keys:
+            url = storage_service.generate_signed_url(
+                bucket=settings.S3_BUCKET_INCIDENTS,
+                key=key,
+            )
+            photos.append({
+                "key": key,
+                "url": url,
+            })
+
+    return {
+        "incident_id": incident_id,
+        "photos": photos,
+        "total": len(photos),
+    }
+
+
+@router.get("/can-report-incident")
+async def can_report_incident(
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Check if the current customer can report an incident.
+
+    Returns eligibility status and reasons.
+    """
+    profile = await get_or_create_profile(user, db)
+
+    # Check for active lease
+    lease_result = await db.execute(
+        select(Lease)
+        .where(
+            Lease.customer_profile_id == profile.id,
+            Lease.status == LeaseStatus.ACTIVE
+        )
+        .limit(1)
+    )
+    active_lease = lease_result.scalar_one_or_none()
+    has_active_lease = active_lease is not None
+
+    # Determine if can report
+    can_report = has_active_lease
+
+    # Build reasons list
+    reasons = []
+    if not has_active_lease:
+        reasons.append("You must have an active lease to report an incident")
+
+    return {
+        "can_report": can_report,
+        "has_active_lease": has_active_lease,
+        "active_lease_id": active_lease.id if active_lease else None,
+        "reasons": reasons,
     }

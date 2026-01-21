@@ -465,7 +465,7 @@
       "Verify success confirmation",
       "Take screenshot of incident submission"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

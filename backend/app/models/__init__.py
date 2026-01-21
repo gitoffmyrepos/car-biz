@@ -29,6 +29,12 @@ from app.models.notification import (
     NotificationType,
     NotificationPriority,
 )
+from app.models.incident_report import (
+    IncidentReport,
+    IncidentType,
+    IncidentSeverity,
+    IncidentStatus,
+)
 
 __all__ = [
     "Inquiry",
@@ -48,4 +54,8 @@ __all__ = [
     "Notification",
     "NotificationType",
     "NotificationPriority",
+    "IncidentReport",
+    "IncidentType",
+    "IncidentSeverity",
+    "IncidentStatus",
 ]

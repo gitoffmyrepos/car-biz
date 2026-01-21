@@ -1519,3 +1519,146 @@ All tests passed with screenshots captured.
 ================================================================================
 END SESSION 13
 ================================================================================
+
+
+================================================================================
+SESSION 14: FEATURE #33 - CUSTOMER INCIDENT REPORT SUBMISSION
+================================================================================
+
+Date: Session 14
+Status: COMPLETED
+Feature: Customer incident report submission - Customers can submit incident reports with photos and details
+
+## Implementation Summary
+
+### 1. Backend Model (incident_report.py)
+Created app/models/incident_report.py with:
+
+**Enums:**
+- IncidentType: accident, breakdown, theft, vandalism, flat_tire, lockout, warning_light, body_damage, other
+- IncidentSeverity: low, medium, high, critical
+- IncidentStatus: submitted, under_review, in_progress, resolved, closed
+
+**Model Fields:**
+- customer_profile_id (FK)
+- lease_id (FK, nullable)
+- customer_email, customer_name (denormalized)
+- incident_type, severity, status
+- title, description, location
+- incident_date
+- photo_keys (JSON array for MinIO storage keys)
+- assigned_to, admin_notes, resolution_notes
+- created_at, updated_at, reviewed_at, resolved_at
+
+### 2. Backend API Endpoints
+Added to app/api/customer.py:
+
+- POST /customer/incidents - Create incident report
+- GET /customer/incidents - List customer's incidents
+- GET /customer/incidents/{id} - Get specific incident
+- POST /customer/incidents/{id}/photos - Upload photo to MinIO
+- GET /customer/incidents/{id}/photos - Get photos with signed URLs
+- GET /customer/can-report-incident - Check if customer can report (has active lease)
+
+### 3. Frontend Page (incidents/page.tsx)
+Created app/incidents/page.tsx:
+
+**Features:**
+- Report New Incident form (modal)
+  - Incident type dropdown
+  - Severity level selection
+  - Title/summary input
+  - Detailed description textarea
+  - Location input (optional)
+  - Photo upload (optional, max 5)
+- Incidents list with:
+  - Status badges (submitted, under_review, etc.)
+  - Severity badges (low/medium/high/critical)
+  - Incident type and location
+  - Description preview
+  - Reported timestamp
+- Eligibility check (requires active lease)
+- Success message on submission
+
+### 4. Dashboard Integration
+Updated dashboard/page.tsx:
+- Added "Report Incident" link with warning icon in header navigation
+
+### 5. Database Schema
+Created scripts/create_incident_reports_table.sql:
+- Enum types for incident_type, severity, status
+- incident_reports table with all fields
+- Indexes for common queries
+- Trigger for auto-updating updated_at
+
+### 6. E2E Testing with Puppeteer MCP
+Complete test flow:
+1. Navigate to login page
+2. Login as customer (dev mode)
+3. Navigate to incidents page via header link
+4. Click "Report Incident" button
+5. Fill incident type (Flat Tire)
+6. Fill title ("Flat tire on rear driver side")
+7. Fill description (detailed explanation)
+8. Fill location (optional)
+9. Submit incident report
+10. Verify success message: "Incident report submitted successfully"
+11. Verify incident appears in list with correct data
+
+All tests passed with screenshots captured.
+
+## Files Created/Modified This Session
+1. backend/app/models/incident_report.py (NEW)
+2. backend/app/models/__init__.py (export IncidentReport, enums)
+3. backend/app/api/customer.py (Added 6 incident endpoints)
+4. frontend/app/incidents/page.tsx (NEW)
+5. frontend/app/dashboard/page.tsx (Added incident link)
+6. scripts/create_incident_reports_table.sql (NEW)
+7. spec/feature_list.json (Feature #33 marked passing)
+
+## Feature Progress
+- Features Passing: 30/211
+- Feature #33: Customer incident report submission - PASSED
+
+## E2E Test Screenshots
+- step-10-after-login.png
+- step-11-incidents-page.png
+- step-12-form-displayed.png
+- step-13-form-filled.png
+- step-14-after-submit.png (SUCCESS MESSAGE + INCIDENT IN LIST)
+
+## Quality Gates Verified
+- Stop condition checked (30/211 - not complete)
+- Services healthy (backend/frontend running)
+- E2E test passed with Puppeteer MCP tools
+- Screenshots saved documenting functionality
+- All feature test steps verified:
+  - Login as customer with active lease
+  - Navigate to incident report section
+  - Click 'Report Incident' button
+  - Fill incident type/category
+  - Fill incident description
+  - Submit incident report
+  - Verify success confirmation
+- Zero console errors
+
+## Next Session Tasks
+1. Feature #34: Incident photo storage - MinIO integration
+2. Feature #35: Payment proof upload workflow
+3. Feature #36: Payment history view
+4. Continue with customer experience features
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+## Customer Portal URLs
+- Incidents: http://localhost:3002/incidents
+- Dashboard: http://localhost:3002/dashboard
+- Notifications: http://localhost:3002/notifications
+
+================================================================================
+END SESSION 14
+================================================================================
