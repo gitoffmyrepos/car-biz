@@ -64,6 +64,10 @@ from app.models.delinquency_case import (
     DelinquencyStatus,
     EscalationLevel,
 )
+from app.models.recovery_action import (
+    RecoveryAction,
+    RecoveryStatus,
+)
 from app.models.system_settings import (
     SystemSettings,
     SettingCategory,
@@ -109,6 +113,8 @@ __all__ = [
     "DelinquencyCase",
     "DelinquencyStatus",
     "EscalationLevel",
+    "RecoveryAction",
+    "RecoveryStatus",
     "SystemSettings",
     "SettingCategory",
     "DEFAULT_SETTINGS",

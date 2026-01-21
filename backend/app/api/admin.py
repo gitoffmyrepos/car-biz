@@ -41,6 +41,10 @@ from app.models.delinquency_case import (
     DelinquencyStatus,
     EscalationLevel,
 )
+from app.models.recovery_action import (
+    RecoveryAction,
+    RecoveryStatus,
+)
 from app.models.incident_report import (
     IncidentReport,
     IncidentType,
@@ -51,6 +55,7 @@ from app.services.storage import storage_service
 from app.services.audit import audit_service
 from app.services.notification import notification_service
 from app.services.invoice import invoice_service
+from app.services.email import email_service
 
 logger = logging.getLogger(__name__)
 
@@ -3565,12 +3570,13 @@ async def process_late_fees(
     session: AsyncSession = Depends(get_db),
 ):
     """
-    Process late fees for overdue invoices.
+    Process late fees for overdue invoices and create delinquency cases.
 
     Requires admin role.
 
     Marks invoices as DUE if their due date has passed, then applies late fees
-    to invoices that are more than 1 day overdue.
+    to invoices that are more than 1 day overdue. Creates DelinquencyCase records
+    for tracking and escalation.
     """
     # Validate admin access
     _ = user
@@ -3579,14 +3585,15 @@ async def process_late_fees(
         # First mark due invoices
         due_count = await invoice_service.mark_due_invoices(session)
 
-        # Then apply late fees
-        late_count = await invoice_service.apply_late_fees(session)
+        # Then apply late fees and create delinquency cases
+        late_fee_count, delinquency_count = await invoice_service.apply_late_fees(session)
 
         return {
             "success": True,
-            "message": f"Processed late fees: {due_count} invoices marked as due, {late_count} late fees applied",
+            "message": f"Processed late fees: {due_count} invoices marked as due, {late_fee_count} late fees applied, {delinquency_count} delinquency cases created",
             "invoices_marked_due": due_count,
-            "late_fees_applied": late_count,
+            "late_fees_applied": late_fee_count,
+            "delinquency_cases_created": delinquency_count,
         }
 
     except Exception as e:
@@ -4359,14 +4366,32 @@ class ContactAttemptRequest(BaseModel):
 
 
 class RecoveryAuthorizationRequest(BaseModel):
-    """Schema for authorizing recovery."""
-    notes: Optional[str] = None
+    """Schema for authorizing recovery with compliance gate."""
+    compliance_confirmed: bool  # Must be True to authorize
+    reason: str  # Reason for recovery
+    contract_version: str  # Contract version reference
+    notes: Optional[str] = None  # Supporting notes
 
 
 class TowScheduleRequest(BaseModel):
     """Schema for scheduling a tow."""
     scheduled_at: datetime
     notes: Optional[str] = None
+
+
+class TowVendorDetailsRequest(BaseModel):
+    """Schema for entering tow vendor details."""
+    vendor_name: str
+    vendor_phone: Optional[str] = None
+    vendor_email: Optional[str] = None
+    vendor_reference: Optional[str] = None  # Vendor's job/reference number
+    vendor_address: Optional[str] = None
+    vendor_notes: Optional[str] = None
+    # Optional scheduling info
+    scheduled_at: Optional[datetime] = None
+    pickup_location: Optional[str] = None
+    destination: Optional[str] = None
+    estimated_cost: Optional[float] = None
 
 
 class ResolveDelinquencyRequest(BaseModel):
@@ -4810,6 +4835,7 @@ async def escalate_delinquency(
     """
     Escalate a delinquency case to a new level.
 
+    Sends escalation notice email and creates in-app notification.
     Requires admin role.
     """
     case = await session.get(DelinquencyCase, case_id)
@@ -4828,17 +4854,74 @@ async def escalate_delinquency(
             detail=f"Invalid escalation level: {level}"
         )
 
+    old_level = case.escalation_level.value
     case.escalate(new_level)
+    case.days_delinquent = max(case.days_delinquent, 2)  # At least Day 2 if being escalated
     await session.commit()
 
-    # Log the action
+    # Get customer info for notification
+    customer = await session.get(CustomerProfile, case.customer_profile_id)
+    email_sent = False
+    notification_created = False
+
+    if customer:
+        customer_name = customer.full_name or customer.email or "Valued Customer"
+        customer_email = customer.email
+
+        # Send escalation notice email
+        if customer_email:
+            email_result = await email_service.send_escalation_notice(
+                to_email=customer_email,
+                customer_name=customer_name,
+                case_number=case.case_number,
+                amount_owed=float(case.amount_owed),
+                late_fees=float(case.late_fees_accumulated),
+                total_owed=float(case.total_owed),
+                days_delinquent=case.days_delinquent,
+                escalation_level=new_level.value,
+            )
+            email_sent = email_result.get("success", False)
+            if not email_sent:
+                logger.warning(f"Failed to send escalation email for case {case.case_number}: {email_result.get('error')}")
+
+        # Create in-app notification for customer
+        try:
+            from app.models.notification import NotificationType, NotificationPriority
+            await notification_service.create_notification(
+                db=session,
+                customer_profile_id=case.customer_profile_id,
+                notification_type=NotificationType.DELINQUENCY_ESCALATION,
+                title="Account Escalation Notice",
+                message=f"Your account has been escalated to {new_level.value.replace('_', ' ').upper()}. "
+                        f"Total amount owed: ${float(case.total_owed):.2f}. Please make payment immediately to avoid further action.",
+                priority=NotificationPriority.URGENT,
+                action_url="/payments",
+                action_label="Make Payment",
+                related_entity_type="delinquency_case",
+                related_entity_id=case.id,
+            )
+            notification_created = True
+        except Exception as e:
+            logger.warning(f"Failed to create escalation notification for case {case.case_number}: {str(e)}")
+
+    # Log the action with before/after states
     await audit_service.log_action(
         session=session,
         user=user,
         action=AuditAction.DELINQUENCY_ESCALATION,
         target_type="delinquency_case",
         target_id=str(case.id),
-        target_description=f"Escalated case {case.case_number} to {level}",
+        target_description=f"Escalated case {case.case_number} from {old_level} to {level}",
+        before_state={
+            "escalation_level": old_level,
+            "status": "open",
+        },
+        after_state={
+            "escalation_level": level,
+            "status": case.status.value,
+            "email_sent": email_sent,
+            "notification_created": notification_created,
+        },
     )
 
     return {
@@ -4847,6 +4930,8 @@ async def escalate_delinquency(
         "case_id": case.id,
         "escalation_level": case.escalation_level.value,
         "status": case.status.value,
+        "email_sent": email_sent,
+        "notification_created": notification_created,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -4861,8 +4946,33 @@ async def authorize_recovery(
     """
     Authorize vehicle recovery for a delinquency case.
 
+    Requires compliance gate authorization with:
+    - compliance_confirmed: Must be True
+    - reason: Reason for recovery action
+    - contract_version: Contract version reference
+    - notes: Optional supporting notes
+
     Requires admin role.
     """
+    # Validate compliance gate
+    if not data.compliance_confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Compliance authorization must be confirmed to initiate recovery"
+        )
+
+    if not data.reason or len(data.reason.strip()) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recovery reason must be at least 10 characters"
+        )
+
+    if not data.contract_version or len(data.contract_version.strip()) < 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contract version reference is required"
+        )
+
     case = await session.get(DelinquencyCase, case_id)
 
     if not case:
@@ -4871,12 +4981,308 @@ async def authorize_recovery(
             detail="Delinquency case not found"
         )
 
+    # Store compliance gate details in admin notes
+    existing_notes = case.admin_notes or ""
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    compliance_entry = (
+        f"\n[{timestamp}] COMPLIANCE GATE AUTHORIZED\n"
+        f"  - Authorized By: {user.email}\n"
+        f"  - Reason: {data.reason.strip()}\n"
+        f"  - Contract Version: {data.contract_version.strip()}\n"
+    )
+    if data.notes:
+        compliance_entry += f"  - Supporting Notes: {data.notes.strip()}\n"
+    case.admin_notes = f"{existing_notes}{compliance_entry}".strip()
+
+    # Authorize recovery
     case.authorize_recovery(user.email)
     case.escalation_level = EscalationLevel.LEVEL_4
-    if data.notes:
-        existing_notes = case.admin_notes or ""
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-        case.admin_notes = f"{existing_notes}\n[{timestamp}] Recovery authorized: {data.notes}".strip()
+
+    # Generate action number
+    action_timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    action_number = f"REC-{case.customer_profile_id:06d}-{action_timestamp}"
+
+    # Create RecoveryAction record
+    recovery_action = RecoveryAction(
+        delinquency_case_id=case.id,
+        customer_profile_id=case.customer_profile_id,
+        lease_id=case.lease_id,
+        vehicle_id=case.vehicle_id,
+        action_number=action_number,
+        status=RecoveryStatus.TOW_REQUESTED,
+        authorized_by=user.email,
+        authorization_reason=data.reason.strip(),
+        contract_version=data.contract_version.strip(),
+        authorization_notes=data.notes.strip() if data.notes else None,
+    )
+    session.add(recovery_action)
+
+    await session.commit()
+    await session.refresh(recovery_action)
+
+    # Log the action with compliance gate details
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.RECOVERY_AUTHORIZATION,
+        target_type="delinquency_case",
+        target_id=str(case.id),
+        target_description=f"Compliance gate authorized for case {case.case_number}",
+        before_state={
+            "status": "escalated",
+            "recovery_authorized": False,
+        },
+        after_state={
+            "status": case.status.value,
+            "recovery_authorized": True,
+            "compliance_confirmed": True,
+            "reason": data.reason.strip(),
+            "contract_version": data.contract_version.strip(),
+            "notes": data.notes.strip() if data.notes else None,
+        },
+    )
+
+    return {
+        "success": True,
+        "message": "Recovery authorized via compliance gate",
+        "case_id": case.id,
+        "recovery_authorized": case.recovery_authorized,
+        "recovery_authorized_at": case.recovery_authorized_at.isoformat() if case.recovery_authorized_at else None,
+        "recovery_action": {
+            "id": recovery_action.id,
+            "action_number": recovery_action.action_number,
+            "status": recovery_action.status.value,
+            "authorized_by": recovery_action.authorized_by,
+            "created_at": recovery_action.created_at.isoformat(),
+        },
+        "compliance_gate": {
+            "confirmed": True,
+            "reason": data.reason.strip(),
+            "contract_version": data.contract_version.strip(),
+            "notes": data.notes.strip() if data.notes else None,
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/recovery-actions")
+async def list_recovery_actions(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    """
+    List all recovery actions with optional status filter.
+
+    Requires admin role.
+    """
+    query = select(RecoveryAction).order_by(RecoveryAction.created_at.desc())
+
+    if status_filter:
+        try:
+            status_enum = RecoveryStatus(status_filter)
+            query = query.where(RecoveryAction.status == status_enum)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join([s.value for s in RecoveryStatus])}"
+            )
+
+    query = query.offset(offset).limit(limit)
+    result = await session.execute(query)
+    actions = result.scalars().all()
+
+    items = []
+    for action in actions:
+        # Get customer info
+        customer = await session.get(CustomerProfile, action.customer_profile_id)
+        customer_name = customer.full_name if customer else "Unknown"
+        customer_email = customer.email if customer else None
+
+        # Get vehicle info
+        vehicle_info = None
+        if action.vehicle_id:
+            vehicle = await session.get(Vehicle, action.vehicle_id)
+            if vehicle:
+                vehicle_info = f"{vehicle.year} {vehicle.make} {vehicle.model}"
+
+        items.append({
+            "id": action.id,
+            "action_number": action.action_number,
+            "status": action.status.value,
+            "customer_profile_id": action.customer_profile_id,
+            "customer_name": customer_name,
+            "customer_email": customer_email,
+            "vehicle_id": action.vehicle_id,
+            "vehicle_info": vehicle_info,
+            "delinquency_case_id": action.delinquency_case_id,
+            "authorized_by": action.authorized_by,
+            "authorization_reason": action.authorization_reason,
+            "tow_vendor_name": action.tow_vendor_name,
+            "tow_vendor_phone": action.tow_vendor_phone,
+            "tow_vendor_reference": action.tow_vendor_reference,
+            "tow_scheduled_at": action.tow_scheduled_at.isoformat() if action.tow_scheduled_at else None,
+            "created_at": action.created_at.isoformat(),
+            "updated_at": action.updated_at.isoformat(),
+        })
+
+    return {
+        "items": items,
+        "total": len(items),
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/recovery-actions/{action_id}")
+async def get_recovery_action(
+    action_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Get recovery action details by ID.
+
+    Requires admin role.
+    """
+    action = await session.get(RecoveryAction, action_id)
+
+    if not action:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recovery action not found"
+        )
+
+    # Get customer info
+    customer = await session.get(CustomerProfile, action.customer_profile_id)
+    customer_name = customer.full_name if customer else "Unknown"
+    customer_email = customer.email if customer else None
+
+    # Get vehicle info
+    vehicle_info = None
+    if action.vehicle_id:
+        vehicle = await session.get(Vehicle, action.vehicle_id)
+        if vehicle:
+            vehicle_info = f"{vehicle.year} {vehicle.make} {vehicle.model}"
+
+    # Get delinquency case info
+    case = await session.get(DelinquencyCase, action.delinquency_case_id)
+
+    return {
+        "id": action.id,
+        "action_number": action.action_number,
+        "status": action.status.value,
+        "customer_profile_id": action.customer_profile_id,
+        "customer_name": customer_name,
+        "customer_email": customer_email,
+        "lease_id": action.lease_id,
+        "vehicle_id": action.vehicle_id,
+        "vehicle_info": vehicle_info,
+        "delinquency_case_id": action.delinquency_case_id,
+        "case_number": case.case_number if case else None,
+        # Authorization details
+        "authorized_by": action.authorized_by,
+        "authorization_reason": action.authorization_reason,
+        "contract_version": action.contract_version,
+        "authorization_notes": action.authorization_notes,
+        # Tow vendor details
+        "tow_vendor_name": action.tow_vendor_name,
+        "tow_vendor_phone": action.tow_vendor_phone,
+        "tow_vendor_email": action.tow_vendor_email,
+        "tow_vendor_reference": action.tow_vendor_reference,
+        "tow_vendor_address": action.tow_vendor_address,
+        "tow_vendor_notes": action.tow_vendor_notes,
+        # Scheduling
+        "tow_scheduled_at": action.tow_scheduled_at.isoformat() if action.tow_scheduled_at else None,
+        "tow_pickup_location": action.tow_pickup_location,
+        "tow_destination": action.tow_destination,
+        "estimated_tow_cost": float(action.estimated_tow_cost) if action.estimated_tow_cost else None,
+        "actual_tow_cost": float(action.actual_tow_cost) if action.actual_tow_cost else None,
+        # Recovery outcomes
+        "vehicle_recovered_at": action.vehicle_recovered_at.isoformat() if action.vehicle_recovered_at else None,
+        "recovery_completed_by": action.recovery_completed_by,
+        "vehicle_condition_notes": action.vehicle_condition_notes,
+        "mileage_at_recovery": action.mileage_at_recovery,
+        # Failure/cancellation
+        "failure_reason": action.failure_reason,
+        "cancelled_by": action.cancelled_by,
+        "cancelled_at": action.cancelled_at.isoformat() if action.cancelled_at else None,
+        "cancellation_reason": action.cancellation_reason,
+        # Customer notification
+        "customer_notified": action.customer_notified,
+        "customer_notified_at": action.customer_notified_at.isoformat() if action.customer_notified_at else None,
+        # Lease/ban tracking
+        "lease_terminated": action.lease_terminated,
+        "lease_terminated_at": action.lease_terminated_at.isoformat() if action.lease_terminated_at else None,
+        "customer_banned": action.customer_banned,
+        "ban_record_id": action.ban_record_id,
+        # Notes and timestamps
+        "admin_notes": action.admin_notes,
+        "created_at": action.created_at.isoformat(),
+        "updated_at": action.updated_at.isoformat(),
+    }
+
+
+@router.put("/recovery-actions/{action_id}/vendor")
+async def update_tow_vendor_details(
+    action_id: int,
+    data: TowVendorDetailsRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Update tow vendor details for a recovery action.
+
+    Requires admin role.
+    """
+    action = await session.get(RecoveryAction, action_id)
+
+    if not action:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recovery action not found"
+        )
+
+    if action.status not in [RecoveryStatus.TOW_REQUESTED, RecoveryStatus.TOW_SCHEDULED]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot update vendor details when action status is {action.status.value}"
+        )
+
+    # Validate vendor name
+    if not data.vendor_name or len(data.vendor_name.strip()) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vendor name is required (minimum 2 characters)"
+        )
+
+    before_state = {
+        "tow_vendor_name": action.tow_vendor_name,
+        "tow_vendor_phone": action.tow_vendor_phone,
+        "tow_vendor_reference": action.tow_vendor_reference,
+        "status": action.status.value,
+    }
+
+    # Update tow vendor details
+    action.update_tow_vendor(
+        vendor_name=data.vendor_name.strip(),
+        vendor_phone=data.vendor_phone.strip() if data.vendor_phone else None,
+        vendor_email=data.vendor_email.strip() if data.vendor_email else None,
+        vendor_reference=data.vendor_reference.strip() if data.vendor_reference else None,
+        vendor_address=data.vendor_address.strip() if data.vendor_address else None,
+        vendor_notes=data.vendor_notes.strip() if data.vendor_notes else None,
+    )
+
+    # If scheduling info provided, schedule the tow
+    if data.scheduled_at:
+        action.schedule_tow(
+            scheduled_at=data.scheduled_at,
+            pickup_location=data.pickup_location.strip() if data.pickup_location else None,
+            destination=data.destination.strip() if data.destination else None,
+            estimated_cost=Decimal(str(data.estimated_cost)) if data.estimated_cost else None,
+        )
 
     await session.commit()
 
@@ -4884,18 +5290,40 @@ async def authorize_recovery(
     await audit_service.log_action(
         session=session,
         user=user,
-        action=AuditAction.RECOVERY_AUTHORIZATION,
-        target_type="delinquency_case",
-        target_id=str(case.id),
-        target_description=f"Authorized recovery for case {case.case_number}",
+        action=AuditAction.TOW_ACTION,
+        target_type="recovery_action",
+        target_id=str(action.id),
+        target_description=f"Updated tow vendor details for action {action.action_number}",
+        before_state=before_state,
+        after_state={
+            "tow_vendor_name": action.tow_vendor_name,
+            "tow_vendor_phone": action.tow_vendor_phone,
+            "tow_vendor_reference": action.tow_vendor_reference,
+            "status": action.status.value,
+        },
     )
 
     return {
         "success": True,
-        "message": "Recovery authorized",
-        "case_id": case.id,
-        "recovery_authorized": case.recovery_authorized,
-        "recovery_authorized_at": case.recovery_authorized_at.isoformat(),
+        "message": "Tow vendor details updated successfully",
+        "action_id": action.id,
+        "action_number": action.action_number,
+        "status": action.status.value,
+        "tow_vendor": {
+            "name": action.tow_vendor_name,
+            "phone": action.tow_vendor_phone,
+            "email": action.tow_vendor_email,
+            "reference": action.tow_vendor_reference,
+            "address": action.tow_vendor_address,
+            "notes": action.tow_vendor_notes,
+        },
+        "scheduling": {
+            "scheduled_at": action.tow_scheduled_at.isoformat() if action.tow_scheduled_at else None,
+            "pickup_location": action.tow_pickup_location,
+            "destination": action.tow_destination,
+            "estimated_cost": float(action.estimated_tow_cost) if action.estimated_tow_cost else None,
+        },
+        "updated_by": user.email,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -5672,5 +6100,215 @@ async def delete_setting(
     return {
         "success": True,
         "message": f"Setting '{setting_key}' deleted",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# =============================================================================
+# FRAUD DETECTION - DUPLICATE PAYMENT PROOF ALERTS
+# =============================================================================
+
+
+class FlaggedInvoiceResponse(BaseModel):
+    """Flagged invoice with duplicate detection info."""
+    id: int
+    invoice_number: str
+    customer_email: str
+    customer_name: Optional[str]
+    amount: float
+    status: str
+    payment_proof_uploaded_at: Optional[datetime]
+    is_duplicate_flagged: bool
+    duplicate_of_invoice_id: Optional[int]
+    duplicate_of_invoice_number: Optional[str]
+    duplicate_flagged_at: Optional[datetime]
+    payment_method: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/fraud-alerts/flagged-invoices", response_model=list)
+async def get_flagged_invoices(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """
+    Get invoices flagged for potential duplicate payment proof.
+
+    Requires: ops or admin role
+
+    Returns invoices where is_duplicate_flagged = True, indicating
+    the payment proof screenshot matches a previously uploaded one.
+    This is a potential fraud indicator.
+    """
+    # Query flagged invoices with customer info
+    result = await session.execute(
+        select(WeeklyInvoice, CustomerProfile)
+        .join(CustomerProfile, WeeklyInvoice.customer_profile_id == CustomerProfile.id)
+        .where(WeeklyInvoice.is_duplicate_flagged == True)
+        .order_by(WeeklyInvoice.duplicate_flagged_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    rows = result.all()
+
+    flagged_invoices = []
+    for invoice, customer in rows:
+        # Get the original invoice number if duplicate_of_invoice_id is set
+        duplicate_of_invoice_number = None
+        if invoice.duplicate_of_invoice_id:
+            original_result = await session.execute(
+                select(WeeklyInvoice.invoice_number)
+                .where(WeeklyInvoice.id == invoice.duplicate_of_invoice_id)
+            )
+            original = original_result.scalar_one_or_none()
+            duplicate_of_invoice_number = original
+
+        flagged_invoices.append({
+            "id": invoice.id,
+            "invoice_number": invoice.invoice_number,
+            "customer_email": customer.email,
+            "customer_name": customer.full_name,
+            "amount": float(invoice.total_amount),
+            "status": invoice.status.value,
+            "payment_proof_uploaded_at": invoice.payment_proof_uploaded_at,
+            "is_duplicate_flagged": invoice.is_duplicate_flagged,
+            "duplicate_of_invoice_id": invoice.duplicate_of_invoice_id,
+            "duplicate_of_invoice_number": duplicate_of_invoice_number,
+            "duplicate_flagged_at": invoice.duplicate_flagged_at,
+            "payment_method": invoice.payment_method,
+        })
+
+    logger.info(f"Admin {user.email} retrieved {len(flagged_invoices)} flagged invoices")
+
+    return flagged_invoices
+
+
+@router.get("/fraud-alerts/summary")
+async def get_fraud_alerts_summary(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get summary of fraud detection alerts.
+
+    Requires: ops or admin role
+
+    Returns counts of flagged invoices by status.
+    """
+    # Count total flagged invoices
+    total_result = await session.execute(
+        select(func.count(WeeklyInvoice.id))
+        .where(WeeklyInvoice.is_duplicate_flagged == True)
+    )
+    total_flagged = total_result.scalar() or 0
+
+    # Count by status
+    status_counts = {}
+    for invoice_status in [InvoiceStatus.VERIFICATION_IN_PROGRESS, InvoiceStatus.PAID, InvoiceStatus.REJECTED]:
+        result = await session.execute(
+            select(func.count(WeeklyInvoice.id))
+            .where(
+                WeeklyInvoice.is_duplicate_flagged == True,
+                WeeklyInvoice.status == invoice_status
+            )
+        )
+        status_counts[invoice_status.value] = result.scalar() or 0
+
+    # Get recent flagged (last 7 days)
+    from datetime import timedelta
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    recent_result = await session.execute(
+        select(func.count(WeeklyInvoice.id))
+        .where(
+            WeeklyInvoice.is_duplicate_flagged == True,
+            WeeklyInvoice.duplicate_flagged_at >= seven_days_ago
+        )
+    )
+    recent_flagged = recent_result.scalar() or 0
+
+    return {
+        "total_flagged": total_flagged,
+        "recent_flagged_7_days": recent_flagged,
+        "by_status": status_counts,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/fraud-alerts/{invoice_id}/clear-flag")
+async def clear_duplicate_flag(
+    invoice_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+    reason: str = Query(..., min_length=10, description="Reason for clearing the flag"),
+):
+    """
+    Clear the duplicate flag on an invoice after admin review.
+
+    Requires: admin role (ops cannot clear flags)
+
+    This action is audit logged.
+    """
+    result = await session.execute(
+        select(WeeklyInvoice).where(WeeklyInvoice.id == invoice_id)
+    )
+    invoice = result.scalar_one_or_none()
+
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+
+    if not invoice.is_duplicate_flagged:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invoice is not flagged as duplicate"
+        )
+
+    # Store previous state for audit
+    before_state = {
+        "is_duplicate_flagged": invoice.is_duplicate_flagged,
+        "duplicate_of_invoice_id": invoice.duplicate_of_invoice_id,
+        "duplicate_flagged_at": invoice.duplicate_flagged_at.isoformat() if invoice.duplicate_flagged_at else None,
+    }
+
+    # Clear the flag
+    invoice.is_duplicate_flagged = False
+    invoice.duplicate_of_invoice_id = None
+    invoice.duplicate_flagged_at = None
+
+    # Log to audit trail
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.ADMIN_ACTION,
+        target_type="WeeklyInvoice",
+        target_id=str(invoice.id),
+        target_description=f"Invoice {invoice.invoice_number} - duplicate flag cleared",
+        before_state=before_state,
+        after_state={
+            "is_duplicate_flagged": False,
+            "duplicate_of_invoice_id": None,
+        },
+        reason=reason,
+    )
+
+    await session.commit()
+
+    logger.info(
+        f"Admin {user.email} cleared duplicate flag on invoice {invoice.invoice_number}. Reason: {reason}"
+    )
+
+    return {
+        "success": True,
+        "message": f"Duplicate flag cleared for invoice {invoice.invoice_number}",
+        "invoice_id": invoice.id,
+        "invoice_number": invoice.invoice_number,
+        "cleared_by": user.email,
+        "reason": reason,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

@@ -851,7 +851,7 @@
       "Verify customer notified of escalation",
       "Verify audit log entry created"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -869,7 +869,7 @@
       "Verify RecoveryAuthorization event logged",
       "Take screenshot of compliance gate"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -883,7 +883,7 @@
       "Verify action updated with vendor details",
       "Take screenshot of recovery action"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
