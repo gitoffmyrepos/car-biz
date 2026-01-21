@@ -5017,6 +5017,78 @@ async def authorize_recovery(
     )
     session.add(recovery_action)
 
+    # === LEASE TERMINATION ON RECOVERY (Feature #63) ===
+
+    # 1. Terminate the lease
+    lease = await session.get(Lease, case.lease_id)
+    lease_terminated = False
+    vehicle_status_changed = False
+    email_sent = False
+    notification_created = False
+    old_lease_status = None
+    old_vehicle_status = None
+
+    if lease:
+        old_lease_status = lease.status.value
+        lease.status = LeaseStatus.TERMINATED
+        lease.terminated_at = datetime.now(timezone.utc)
+        lease.termination_reason = f"Recovery initiated due to non-payment. Case: {case.case_number}. Reason: {data.reason.strip()}"
+        recovery_action.terminate_lease()
+        lease_terminated = True
+
+        # 2. Update vehicle status to PENDING_INSPECTION (needs to be checked after recovery)
+        vehicle = await session.get(Vehicle, case.vehicle_id) if case.vehicle_id else None
+        if vehicle:
+            old_vehicle_status = vehicle.status.value
+            vehicle.status = VehicleStatus.PENDING_INSPECTION
+            vehicle.current_lease_id = None  # Clear the current lease assignment
+            vehicle.notes = f"{vehicle.notes or ''}\n[{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')}] Lease terminated due to recovery. Case: {case.case_number}".strip()
+            vehicle_status_changed = True
+
+        # 3. Get customer profile for email notification
+        customer = await session.get(CustomerProfile, case.customer_profile_id)
+        if customer and customer.email:
+            # Get vehicle info for email
+            vehicle_info = f"{lease.vehicle_year} {lease.vehicle_make} {lease.vehicle_model}"
+
+            # Calculate total amount owed
+            amount_owed = float(case.amount_owed or 0) + float(case.late_fees_accumulated or 0)
+
+            # Send termination email
+            try:
+                from app.models.notification import NotificationType, NotificationPriority, Notification
+
+                email_result = await email_service.send_lease_termination_notice(
+                    to_email=customer.email,
+                    customer_name=customer.full_name or "Valued Customer",
+                    vehicle_info=vehicle_info,
+                    termination_reason=data.reason.strip(),
+                    case_number=case.case_number,
+                    amount_owed=amount_owed,
+                    recovery_action_number=action_number,
+                )
+                email_sent = email_result.get("success", False)
+
+                # 4. Create in-app notification for customer
+                notification = Notification(
+                    customer_profile_id=customer.id,
+                    notification_type=NotificationType.LEASE_TERMINATED,
+                    title="Lease Terminated",
+                    message=f"Your lease for {vehicle_info} has been terminated due to non-payment. Vehicle recovery has been initiated. Case: {case.case_number}. Please contact us immediately if you have questions.",
+                    priority=NotificationPriority.URGENT,
+                    related_entity_type="recovery_action",
+                    related_entity_id=recovery_action.id,
+                    action_url="/dashboard",
+                    action_label="View Account Status",
+                )
+                session.add(notification)
+                notification_created = True
+
+                # Mark customer as notified on recovery action
+                recovery_action.notify_customer()
+            except Exception as e:
+                logger.error(f"Failed to send termination email/notification: {str(e)}")
+
     await session.commit()
     await session.refresh(recovery_action)
 
@@ -5031,6 +5103,8 @@ async def authorize_recovery(
         before_state={
             "status": "escalated",
             "recovery_authorized": False,
+            "lease_status": old_lease_status if lease_terminated else None,
+            "vehicle_status": old_vehicle_status if vehicle_status_changed else None,
         },
         after_state={
             "status": case.status.value,
@@ -5039,6 +5113,10 @@ async def authorize_recovery(
             "reason": data.reason.strip(),
             "contract_version": data.contract_version.strip(),
             "notes": data.notes.strip() if data.notes else None,
+            "lease_terminated": lease_terminated,
+            "vehicle_status_changed": vehicle_status_changed,
+            "email_sent": email_sent,
+            "notification_created": notification_created,
         },
     )
 
@@ -5060,6 +5138,13 @@ async def authorize_recovery(
             "reason": data.reason.strip(),
             "contract_version": data.contract_version.strip(),
             "notes": data.notes.strip() if data.notes else None,
+        },
+        "lease_termination": {
+            "lease_terminated": lease_terminated,
+            "termination_reason": lease.termination_reason if lease and lease_terminated else None,
+            "vehicle_status_changed": vehicle_status_changed,
+            "email_sent": email_sent,
+            "notification_created": notification_created,
         },
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

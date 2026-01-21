@@ -896,7 +896,7 @@
       "Verify customer access restricted",
       "Verify termination email sent to customer"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

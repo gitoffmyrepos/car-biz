@@ -802,6 +802,761 @@ Questions? Contact us at support@fxweeklylease.com
                 "error": str(e),
             }
 
+    async def send_escalation_notice(
+        self,
+        to_email: str,
+        customer_name: str,
+        case_number: str,
+        amount_owed: float,
+        late_fees: float,
+        total_owed: float,
+        days_delinquent: int,
+        escalation_level: str,
+    ) -> dict:
+        """
+        Send escalation notice email to customer for Day 2+ delinquency.
+
+        Args:
+            to_email: Customer's email address
+            customer_name: Customer's full name
+            case_number: Delinquency case number
+            amount_owed: Original amount owed
+            late_fees: Accumulated late fees
+            total_owed: Total amount owed
+            days_delinquent: Number of days delinquent
+            escalation_level: Current escalation level
+
+        Returns:
+            dict with success status and message/error
+        """
+        if not self.enabled:
+            logger.info(f"Email service disabled - would have sent escalation notice to {to_email}")
+            return {
+                "success": True,
+                "message": "Email service disabled - email not sent",
+                "simulated": True
+            }
+
+        # Determine urgency based on escalation level
+        is_final_warning = escalation_level in ['level_3', 'level_4', 'level_5']
+        urgency_text = "FINAL WARNING" if is_final_warning else "URGENT"
+        subject = f"{urgency_text}: Payment Escalation Notice - {case_number} - FX Weekly Lease"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #1A1A1A;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: {'#DC2626' if is_final_warning else '#EA580C'};
+                    color: #FFFFFF;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: 600;
+                }}
+                .header .subtitle {{
+                    font-size: 14px;
+                    opacity: 0.9;
+                    margin-top: 5px;
+                }}
+                .content {{
+                    background: #FEF2F2;
+                    padding: 30px;
+                    border: 1px solid #FCA5A5;
+                }}
+                .highlight {{
+                    color: #DC2626;
+                    font-weight: 600;
+                }}
+                .warning-box {{
+                    background: #FFFFFF;
+                    border: 2px solid #DC2626;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                .warning-icon {{
+                    font-size: 48px;
+                }}
+                .amount-box {{
+                    background: #FFFFFF;
+                    padding: 20px;
+                    border-left: 4px solid #DC2626;
+                    margin: 20px 0;
+                }}
+                .amount-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #E5E5E5;
+                }}
+                .amount-row:last-child {{
+                    border-bottom: none;
+                    font-weight: bold;
+                    font-size: 18px;
+                    color: #DC2626;
+                }}
+                .consequences {{
+                    background: #FEE2E2;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                }}
+                .consequences h4 {{
+                    color: #DC2626;
+                    margin-top: 0;
+                }}
+                .consequences ul {{
+                    margin: 10px 0;
+                    padding-left: 20px;
+                }}
+                .consequences li {{
+                    margin: 8px 0;
+                    color: #7F1D1D;
+                }}
+                .footer {{
+                    background: #1A1A1A;
+                    color: #FFFFFF;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .footer a {{
+                    color: #C5A572;
+                    text-decoration: none;
+                }}
+                .cta-button {{
+                    display: inline-block;
+                    background: #DC2626;
+                    color: #FFFFFF;
+                    padding: 14px 35px;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    margin-top: 20px;
+                    font-size: 16px;
+                }}
+                .cta-button:hover {{
+                    background: #B91C1C;
+                }}
+                .contact-box {{
+                    background: #FFFFFF;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-top: 20px;
+                    text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>{'⚠️ ' if is_final_warning else '📢 '}{urgency_text}: Payment Escalation</h1>
+                <div class="subtitle">Case Reference: {case_number}</div>
+            </div>
+            <div class="content">
+                <p>Dear <span class="highlight">{customer_name}</span>,</p>
+
+                <div class="warning-box">
+                    <div class="warning-icon">{'🚨' if is_final_warning else '⚠️'}</div>
+                    <h3 style="margin: 10px 0; color: #DC2626;">Your Account is {days_delinquent} Days Past Due</h3>
+                    <p style="margin: 0; color: #7F1D1D;">Immediate action is required to avoid further consequences.</p>
+                </div>
+
+                <p>Your weekly lease payment is now <strong>{days_delinquent} days overdue</strong> and has been escalated to <strong>{escalation_level.replace('_', ' ').upper()}</strong> of our collections process.</p>
+
+                <div class="amount-box">
+                    <h4 style="margin-top: 0; color: #DC2626;">Amount Due</h4>
+                    <div class="amount-row">
+                        <span>Original Amount:</span>
+                        <span>${amount_owed:.2f}</span>
+                    </div>
+                    <div class="amount-row">
+                        <span>Late Fees:</span>
+                        <span>${late_fees:.2f}</span>
+                    </div>
+                    <div class="amount-row">
+                        <span>Total Due Now:</span>
+                        <span>${total_owed:.2f}</span>
+                    </div>
+                </div>
+
+                <div class="consequences">
+                    <h4>{'⛔ Immediate Consequences if Not Resolved:' if is_final_warning else '⚠️ What Happens Next:'}</h4>
+                    <ul>
+                        <li>Additional late fees will continue to accrue</li>
+                        {'<li><strong>Vehicle recovery may be initiated without further notice</strong></li>' if is_final_warning else '<li>Your account may be escalated to recovery status</li>'}
+                        <li>Your account may be reported to collections</li>
+                        <li>You may be permanently banned from our leasing program</li>
+                        {'<li><strong>You may be responsible for all recovery costs</strong></li>' if is_final_warning else ''}
+                    </ul>
+                </div>
+
+                <p><strong>To resolve this immediately:</strong></p>
+                <ol>
+                    <li>Make your full payment of <strong>${total_owed:.2f}</strong> via Zelle, CashApp, or cash</li>
+                    <li>Upload your payment proof to your FX Weekly account</li>
+                    <li>Or contact us immediately to discuss payment arrangements</li>
+                </ol>
+
+                <center>
+                    <a href="{settings.API_BASE_URL.replace('8100', '3002')}/payments" class="cta-button">
+                        Upload Payment Proof Now
+                    </a>
+                </center>
+
+                <div class="contact-box">
+                    <p style="margin: 0;"><strong>Need to discuss payment options?</strong></p>
+                    <p style="margin: 5px 0 0 0;">Contact us immediately at <a href="mailto:support@fxweeklylease.com" style="color: #DC2626;">support@fxweeklylease.com</a></p>
+                </div>
+            </div>
+            <div class="footer">
+                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>This is an automated message regarding your account status.</p>
+                <p>Case Reference: {case_number}</p>
+                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+{urgency_text}: PAYMENT ESCALATION NOTICE
+
+Case Reference: {case_number}
+
+Dear {customer_name},
+
+Your weekly lease payment is now {days_delinquent} DAYS PAST DUE.
+
+Your account has been escalated to {escalation_level.replace('_', ' ').upper()} of our collections process.
+
+AMOUNT DUE
+----------
+Original Amount: ${amount_owed:.2f}
+Late Fees: ${late_fees:.2f}
+TOTAL DUE NOW: ${total_owed:.2f}
+
+{'⛔ IMMEDIATE CONSEQUENCES IF NOT RESOLVED:' if is_final_warning else '⚠️ WHAT HAPPENS NEXT:'}
+- Additional late fees will continue to accrue
+- {'Vehicle recovery may be initiated WITHOUT FURTHER NOTICE' if is_final_warning else 'Your account may be escalated to recovery status'}
+- Your account may be reported to collections
+- You may be permanently banned from our leasing program
+{'- You may be responsible for all recovery costs' if is_final_warning else ''}
+
+TO RESOLVE THIS IMMEDIATELY:
+1. Make your full payment of ${total_owed:.2f} via Zelle, CashApp, or cash
+2. Upload your payment proof to your FX Weekly account
+3. Or contact us immediately to discuss payment arrangements
+
+Upload payment proof at: {settings.API_BASE_URL.replace('8100', '3002')}/payments
+
+Need to discuss payment options?
+Contact us immediately at support@fxweeklylease.com
+
+---
+FX Weekly Lease - Premium Weekly Vehicle Leasing
+Case Reference: {case_number}
+© 2026 FX Weekly Lease. All rights reserved.
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+
+            response = resend.Emails.send(params)
+
+            logger.info(f"Escalation notice email sent to {to_email} for case {case_number}, ID: {response.get('id', 'unknown')}")
+
+            return {
+                "success": True,
+                "message": "Email sent successfully",
+                "email_id": response.get("id"),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send escalation notice email to {to_email}: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
+    async def send_late_payment_notice(
+        self,
+        to_email: str,
+        customer_name: str,
+        invoice_number: str,
+        amount_owed: float,
+        late_fee: float,
+        total_owed: float,
+        case_number: str,
+    ) -> dict:
+        """
+        Send late payment notice email (Day 1) to customer.
+
+        Args:
+            to_email: Customer's email address
+            customer_name: Customer's full name
+            invoice_number: Invoice number
+            amount_owed: Original amount owed
+            late_fee: Late fee amount
+            total_owed: Total amount owed
+            case_number: Delinquency case number
+
+        Returns:
+            dict with success status and message/error
+        """
+        if not self.enabled:
+            logger.info(f"Email service disabled - would have sent late payment notice to {to_email}")
+            return {
+                "success": True,
+                "message": "Email service disabled - email not sent",
+                "simulated": True
+            }
+
+        subject = f"Late Payment Notice - ${total_owed:.2f} Due Immediately - FX Weekly Lease"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #1A1A1A;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: #F59E0B;
+                    color: #1A1A1A;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .content {{
+                    background: #FFFBEB;
+                    padding: 30px;
+                    border: 1px solid #FCD34D;
+                }}
+                .highlight {{
+                    color: #D97706;
+                    font-weight: 600;
+                }}
+                .amount-box {{
+                    background: #FFFFFF;
+                    padding: 20px;
+                    border-left: 4px solid #F59E0B;
+                    margin: 20px 0;
+                }}
+                .amount-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #E5E5E5;
+                }}
+                .amount-row:last-child {{
+                    border-bottom: none;
+                    font-weight: bold;
+                    font-size: 18px;
+                    color: #D97706;
+                }}
+                .warning-box {{
+                    background: #FEF3C7;
+                    border: 1px solid #F59E0B;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin: 20px 0;
+                }}
+                .footer {{
+                    background: #1A1A1A;
+                    color: #FFFFFF;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .footer a {{
+                    color: #C5A572;
+                }}
+                .cta-button {{
+                    display: inline-block;
+                    background: #F59E0B;
+                    color: #1A1A1A;
+                    padding: 14px 35px;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    margin-top: 20px;
+                    font-size: 16px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>⚠️ Late Payment Notice</h1>
+                <p style="margin: 5px 0 0 0;">Invoice: {invoice_number}</p>
+            </div>
+            <div class="content">
+                <p>Dear <span class="highlight">{customer_name}</span>,</p>
+
+                <p>Your weekly lease payment is now <strong>past due</strong>. A late fee of <strong>${late_fee:.2f}</strong> has been added to your account.</p>
+
+                <div class="amount-box">
+                    <h4 style="margin-top: 0; color: #D97706;">Amount Due</h4>
+                    <div class="amount-row">
+                        <span>Original Amount:</span>
+                        <span>${amount_owed:.2f}</span>
+                    </div>
+                    <div class="amount-row">
+                        <span>Late Fee:</span>
+                        <span>${late_fee:.2f}</span>
+                    </div>
+                    <div class="amount-row">
+                        <span>Total Due Now:</span>
+                        <span>${total_owed:.2f}</span>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Important:</strong> If payment is not received within 24 hours, your account will be escalated and additional actions may be taken, including potential vehicle recovery.
+                </div>
+
+                <p>A delinquency case has been opened: <strong>{case_number}</strong></p>
+
+                <p><strong>To avoid further action:</strong></p>
+                <ol>
+                    <li>Make your payment immediately via Zelle, CashApp, or cash</li>
+                    <li>Upload your payment proof to your FX Weekly account</li>
+                </ol>
+
+                <center>
+                    <a href="{settings.API_BASE_URL.replace('8100', '3002')}/payments" class="cta-button">
+                        Upload Payment Proof
+                    </a>
+                </center>
+            </div>
+            <div class="footer">
+                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
+                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+LATE PAYMENT NOTICE
+
+Invoice: {invoice_number}
+
+Dear {customer_name},
+
+Your weekly lease payment is now PAST DUE. A late fee of ${late_fee:.2f} has been added to your account.
+
+AMOUNT DUE
+----------
+Original Amount: ${amount_owed:.2f}
+Late Fee: ${late_fee:.2f}
+TOTAL DUE NOW: ${total_owed:.2f}
+
+⚠️ IMPORTANT: If payment is not received within 24 hours, your account will be escalated and additional actions may be taken, including potential vehicle recovery.
+
+A delinquency case has been opened: {case_number}
+
+TO AVOID FURTHER ACTION:
+1. Make your payment immediately via Zelle, CashApp, or cash
+2. Upload your payment proof to your FX Weekly account
+
+Upload payment proof at: {settings.API_BASE_URL.replace('8100', '3002')}/payments
+
+---
+FX Weekly Lease - Premium Weekly Vehicle Leasing
+Questions? Contact us at support@fxweeklylease.com
+© 2026 FX Weekly Lease. All rights reserved.
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+
+            response = resend.Emails.send(params)
+
+            logger.info(f"Late payment notice email sent to {to_email} for invoice {invoice_number}")
+
+            return {
+                "success": True,
+                "message": "Email sent successfully",
+                "email_id": response.get("id"),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send late payment notice email to {to_email}: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
+
+    async def send_lease_termination_notice(
+        self,
+        to_email: str,
+        customer_name: str,
+        vehicle_info: str,
+        termination_reason: str,
+        case_number: str,
+        amount_owed: float,
+        recovery_action_number: str,
+    ) -> dict:
+        """
+        Send lease termination notice email to customer when recovery is initiated.
+
+        Args:
+            to_email: Customer's email address
+            customer_name: Customer's full name
+            vehicle_info: Vehicle description (e.g., "2022 BMW 330i")
+            termination_reason: Reason for lease termination
+            case_number: Delinquency case number
+            amount_owed: Total amount owed at termination
+            recovery_action_number: Recovery action number
+
+        Returns:
+            dict with success status and message/error
+        """
+        if not self.enabled:
+            logger.info(f"Email service disabled - would have sent lease termination notice to {to_email}")
+            return {
+                "success": True,
+                "message": "Email service disabled - email not sent",
+                "simulated": True
+            }
+
+        subject = "IMPORTANT: Lease Termination Notice - FX Weekly Lease"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #1A1A1A;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: #DC2626;
+                    color: #FFFFFF;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: 600;
+                }}
+                .content {{
+                    background: #FEF2F2;
+                    padding: 30px;
+                    border: 1px solid #FECACA;
+                }}
+                .highlight {{
+                    color: #DC2626;
+                    font-weight: 600;
+                }}
+                .info-box {{
+                    background: #FFFFFF;
+                    padding: 20px;
+                    border-left: 4px solid #DC2626;
+                    margin: 20px 0;
+                }}
+                .info-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #E5E5E5;
+                }}
+                .info-row:last-child {{
+                    border-bottom: none;
+                }}
+                .warning-box {{
+                    background: #FEE2E2;
+                    border: 2px solid #DC2626;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                .footer {{
+                    background: #1A1A1A;
+                    color: #FFFFFF;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .footer a {{
+                    color: #C5A572;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>⚠️ Lease Termination Notice</h1>
+                <p style="margin: 5px 0 0 0;">Case: {case_number}</p>
+            </div>
+            <div class="content">
+                <p>Dear <span class="highlight">{customer_name}</span>,</p>
+
+                <p>We regret to inform you that your vehicle lease has been <strong>terminated</strong> due to non-payment and failure to resolve your delinquency case.</p>
+
+                <div class="info-box">
+                    <h4 style="margin-top: 0; color: #DC2626;">Termination Details</h4>
+                    <div class="info-row">
+                        <span>Vehicle:</span>
+                        <span><strong>{vehicle_info}</strong></span>
+                    </div>
+                    <div class="info-row">
+                        <span>Case Number:</span>
+                        <span>{case_number}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Recovery Action:</span>
+                        <span>{recovery_action_number}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Outstanding Balance:</span>
+                        <span style="color: #DC2626; font-weight: bold;">${amount_owed:.2f}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Termination Reason:</span>
+                        <span>{termination_reason}</span>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ VEHICLE RECOVERY IN PROGRESS</strong>
+                    <p style="margin: 10px 0 0 0;">
+                        Vehicle recovery has been authorized. A tow vendor will be dispatched to recover the vehicle.
+                        Please ensure the vehicle is accessible and in the condition it was leased.
+                    </p>
+                </div>
+
+                <p><strong>What This Means:</strong></p>
+                <ul>
+                    <li>Your lease agreement has been terminated effective immediately</li>
+                    <li>Your account has been restricted from future vehicle requests</li>
+                    <li>The outstanding balance of <strong>${amount_owed:.2f}</strong> remains your responsibility</li>
+                    <li>A permanent restriction has been placed on your account</li>
+                </ul>
+
+                <p><strong>Your Rights:</strong></p>
+                <p>If you believe this action was taken in error or wish to discuss this matter, please contact us immediately at the contact information below. All actions are logged for compliance purposes.</p>
+            </div>
+            <div class="footer">
+                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>For urgent matters: <a href="mailto:legal@fxweeklylease.com">legal@fxweeklylease.com</a></p>
+                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+LEASE TERMINATION NOTICE
+========================
+
+Case: {case_number}
+
+Dear {customer_name},
+
+We regret to inform you that your vehicle lease has been TERMINATED due to non-payment and failure to resolve your delinquency case.
+
+TERMINATION DETAILS
+-------------------
+Vehicle: {vehicle_info}
+Case Number: {case_number}
+Recovery Action: {recovery_action_number}
+Outstanding Balance: ${amount_owed:.2f}
+Termination Reason: {termination_reason}
+
+⚠️ VEHICLE RECOVERY IN PROGRESS ⚠️
+Vehicle recovery has been authorized. A tow vendor will be dispatched to recover the vehicle.
+Please ensure the vehicle is accessible and in the condition it was leased.
+
+WHAT THIS MEANS:
+- Your lease agreement has been terminated effective immediately
+- Your account has been restricted from future vehicle requests
+- The outstanding balance of ${amount_owed:.2f} remains your responsibility
+- A permanent restriction has been placed on your account
+
+YOUR RIGHTS:
+If you believe this action was taken in error or wish to discuss this matter, please contact us immediately. All actions are logged for compliance purposes.
+
+---
+FX Weekly Lease - Premium Weekly Vehicle Leasing
+For urgent matters: legal@fxweeklylease.com
+© 2026 FX Weekly Lease. All rights reserved.
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+
+            response = resend.Emails.send(params)
+
+            logger.info(f"Lease termination notice email sent to {to_email} for case {case_number}")
+
+            return {
+                "success": True,
+                "message": "Email sent successfully",
+                "email_id": response.get("id"),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send lease termination notice email to {to_email}: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
 
 # Singleton instance
 email_service = EmailService()
