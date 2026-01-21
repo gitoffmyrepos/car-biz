@@ -173,7 +173,7 @@
       "Verify user session is established",
       "Take screenshot of authenticated state"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

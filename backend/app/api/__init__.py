@@ -7,11 +7,13 @@ Main API router that includes all sub-routers.
 
 from fastapi import APIRouter
 
+from app.api.auth import router as auth_router
 from app.api.inquiries import router as inquiries_router
 
 router = APIRouter()
 
 # Include sub-routers
+router.include_router(auth_router)
 router.include_router(inquiries_router)
 
 
