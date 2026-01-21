@@ -11,6 +11,10 @@ from app.models.customer_profile import (
     CustomerProfile,
     InsuranceStatus,
 )
+from app.models.audit_log import (
+    AuditLog,
+    AuditAction,
+)
 
 __all__ = [
     "Inquiry",
@@ -20,4 +24,6 @@ __all__ = [
     "VehicleType",
     "CustomerProfile",
     "InsuranceStatus",
+    "AuditLog",
+    "AuditAction",
 ]

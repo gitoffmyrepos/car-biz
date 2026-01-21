@@ -23,7 +23,9 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.inquiry import Inquiry, InquiryStatus
 from app.models.customer_profile import CustomerProfile, InsuranceStatus
+from app.models.audit_log import AuditLog, AuditAction
 from app.services.storage import storage_service
+from app.services.audit import audit_service
 
 logger = logging.getLogger(__name__)
 
@@ -377,9 +379,15 @@ async def get_customer_detail(
     }
 
 
-@router.get("/customers/{customer_id}/insurance-document")
+class InsuranceAccessRequest(BaseModel):
+    """Request to access insurance document (requires reason for audit)."""
+    reason: str
+
+
+@router.post("/customers/{customer_id}/insurance-document")
 async def get_insurance_document_url(
     customer_id: int,
+    request: InsuranceAccessRequest,
     user: AuthenticatedUser = Depends(require_ops),
     session: AsyncSession = Depends(get_db),
 ):
@@ -388,7 +396,16 @@ async def get_insurance_document_url(
 
     Requires admin or ops role.
     Returns a time-limited signed URL for viewing the document.
+
+    IMPORTANT: This is a break-glass access operation.
+    A reason must be provided and will be recorded in the audit log.
     """
+    if not request.reason or len(request.reason.strip()) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A reason for access is required (minimum 10 characters)"
+        )
+
     result = await session.execute(
         select(CustomerProfile).where(CustomerProfile.id == customer_id)
     )
@@ -413,13 +430,24 @@ async def get_insurance_document_url(
         expires_in=300,  # 5 minutes
     )
 
-    logger.info(f"Admin {user.email} accessed insurance document for customer {customer_id}")
+    # Create audit log entry for this access
+    await audit_service.log_insurance_document_access(
+        session=session,
+        user=user,
+        customer_id=customer_id,
+        customer_email=customer.email,
+        reason=request.reason.strip(),
+    )
+
+    logger.info(f"Admin {user.email} accessed insurance document for customer {customer_id} (reason: {request.reason[:50]}...)")
 
     return {
         "customer_id": customer_id,
         "document_url": signed_url,
         "expires_in_seconds": 300,
         "accessed_by": user.email,
+        "access_reason": request.reason,
+        "audit_logged": True,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -463,8 +491,9 @@ async def verify_customer_insurance(
         )
 
     old_status = customer.insurance_status.value
+    is_approved = request.action == "approve"
 
-    if request.action == "approve":
+    if is_approved:
         if not request.expiration_date:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -480,6 +509,20 @@ async def verify_customer_insurance(
         message = f"Insurance rejected for customer {customer.email}"
 
     customer.updated_at = datetime.now(timezone.utc)
+
+    # Create audit log entry for verification decision
+    await audit_service.log_insurance_verification(
+        session=session,
+        user=user,
+        customer_id=customer_id,
+        customer_email=customer.email,
+        approved=is_approved,
+        old_status=old_status,
+        new_status=customer.insurance_status.value,
+        expiration_date=request.expiration_date if is_approved else None,
+        notes=request.notes,
+    )
+
     await session.commit()
 
     logger.info(f"Admin {user.email} {request.action}d insurance for customer {customer_id}: {request.notes or 'No notes'}")
@@ -492,3 +535,188 @@ async def verify_customer_insurance(
         actor=user.email,
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
+
+
+# =============================================================================
+# Audit Log Management
+# =============================================================================
+
+class AuditLogResponse(BaseModel):
+    """Audit log entry for API response."""
+    id: int
+    actor_id: str
+    actor_email: str
+    actor_role: str
+    action: str
+    target_type: str
+    target_id: str
+    target_description: Optional[str]
+    reason: Optional[str]
+    requires_reason: bool
+    notes: Optional[str]
+    success: bool
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/audit-logs", response_model=list[AuditLogResponse])
+async def list_audit_logs(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+    action_filter: Optional[str] = Query(None, description="Filter by action type"),
+    target_type_filter: Optional[str] = Query(None, description="Filter by target type"),
+    actor_email_filter: Optional[str] = Query(None, description="Filter by actor email"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List audit log entries.
+
+    Requires admin role.
+    Supports filtering by action type, target type, and actor email.
+    """
+    query = select(AuditLog).order_by(AuditLog.timestamp.desc())
+
+    if action_filter:
+        try:
+            action_enum = AuditAction(action_filter)
+            query = query.where(AuditLog.action == action_enum)
+        except ValueError:
+            valid_actions = [a.value for a in AuditAction]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid action filter. Must be one of: {', '.join(valid_actions)}"
+            )
+
+    if target_type_filter:
+        query = query.where(AuditLog.target_type == target_type_filter)
+
+    if actor_email_filter:
+        query = query.where(AuditLog.actor_email.ilike(f"%{actor_email_filter}%"))
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    logs = result.scalars().all()
+
+    return [
+        AuditLogResponse(
+            id=log.id,
+            actor_id=log.actor_id,
+            actor_email=log.actor_email,
+            actor_role=log.actor_role,
+            action=log.action.value,
+            target_type=log.target_type,
+            target_id=log.target_id,
+            target_description=log.target_description,
+            reason=log.reason,
+            requires_reason=log.requires_reason,
+            notes=log.notes,
+            success=log.success,
+            timestamp=log.timestamp,
+        )
+        for log in logs
+    ]
+
+
+@router.get("/audit-logs/insurance", response_model=list[AuditLogResponse])
+async def list_insurance_audit_logs(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+    customer_id: Optional[int] = Query(None, description="Filter by customer ID"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """
+    List audit log entries specifically for insurance-related actions.
+
+    Requires admin role.
+    This provides a focused view of all insurance document access and verification actions.
+    """
+    insurance_actions = [
+        AuditAction.INSURANCE_DOCUMENT_VIEW,
+        AuditAction.INSURANCE_DOCUMENT_DOWNLOAD,
+        AuditAction.INSURANCE_VERIFICATION_APPROVE,
+        AuditAction.INSURANCE_VERIFICATION_REJECT,
+        AuditAction.INSURANCE_BREAK_GLASS_ACCESS,
+    ]
+
+    query = (
+        select(AuditLog)
+        .where(AuditLog.action.in_(insurance_actions))
+        .order_by(AuditLog.timestamp.desc())
+    )
+
+    if customer_id:
+        query = query.where(AuditLog.target_id == str(customer_id))
+
+    query = query.limit(limit).offset(offset)
+
+    result = await session.execute(query)
+    logs = result.scalars().all()
+
+    return [
+        AuditLogResponse(
+            id=log.id,
+            actor_id=log.actor_id,
+            actor_email=log.actor_email,
+            actor_role=log.actor_role,
+            action=log.action.value,
+            target_type=log.target_type,
+            target_id=log.target_id,
+            target_description=log.target_description,
+            reason=log.reason,
+            requires_reason=log.requires_reason,
+            notes=log.notes,
+            success=log.success,
+            timestamp=log.timestamp,
+        )
+        for log in logs
+    ]
+
+
+@router.get("/audit-logs/{log_id}")
+async def get_audit_log_detail(
+    log_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get detailed audit log entry including before/after state.
+
+    Requires admin role.
+    """
+    result = await session.execute(
+        select(AuditLog).where(AuditLog.id == log_id)
+    )
+    log = result.scalar_one_or_none()
+
+    if not log:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Audit log entry not found"
+        )
+
+    return {
+        "id": log.id,
+        "actor_id": log.actor_id,
+        "actor_email": log.actor_email,
+        "actor_role": log.actor_role,
+        "action": log.action.value,
+        "target_type": log.target_type,
+        "target_id": log.target_id,
+        "target_description": log.target_description,
+        "request_id": log.request_id,
+        "ip_address": log.ip_address,
+        "user_agent": log.user_agent,
+        "before_state": log.before_state,
+        "after_state": log.after_state,
+        "reason": log.reason,
+        "requires_reason": log.requires_reason,
+        "notes": log.notes,
+        "success": log.success,
+        "error_message": log.error_message,
+        "timestamp": log.timestamp.isoformat(),
+    }

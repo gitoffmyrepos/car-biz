@@ -58,9 +58,13 @@ export default function AdminCustomersPage() {
   const [verificationNotes, setVerificationNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Document access state (audit requirement)
+  const [showAccessReasonModal, setShowAccessReasonModal] = useState(false);
+  const [accessReason, setAccessReason] = useState('');
+
   const getAuthToken = () => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token') || '';
+      return localStorage.getItem('fx_weekly_lease_token') || '';
     }
     return '';
   };
@@ -119,26 +123,42 @@ export default function AdminCustomersPage() {
     }
   };
 
+  const openAccessReasonModal = () => {
+    setAccessReason('');
+    setShowAccessReasonModal(true);
+  };
+
   const fetchDocumentUrl = async () => {
     if (!selectedCustomer) return;
+    if (!accessReason || accessReason.trim().length < 10) {
+      setError('Please provide a reason for accessing this document (minimum 10 characters)');
+      return;
+    }
 
     try {
       setLoadingDocument(true);
       const response = await fetch(
         `http://localhost:8100/api/admin/customers/${selectedCustomer.id}/insurance-document`,
         {
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${getAuthToken()}`,
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            reason: accessReason.trim(),
+          }),
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to get document URL');
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to get document URL');
       }
 
       const data = await response.json();
       setDocumentUrl(data.document_url);
+      setShowAccessReasonModal(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load document');
     } finally {
@@ -409,13 +429,21 @@ export default function AdminCustomersPage() {
                   <div className="mb-4">
                     <label className="text-xs font-medium text-gray-500 uppercase">Document</label>
                     {!documentUrl ? (
-                      <button
-                        onClick={fetchDocumentUrl}
-                        disabled={loadingDocument}
-                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
-                      >
-                        {loadingDocument ? 'Loading...' : 'View Insurance Document'}
-                      </button>
+                      <div className="mt-2">
+                        <button
+                          onClick={openAccessReasonModal}
+                          disabled={loadingDocument}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
+                        >
+                          {loadingDocument ? 'Loading...' : 'View Insurance Document'}
+                        </button>
+                        <p className="text-xs text-amber-600 mt-2 flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          Access will be logged for audit purposes
+                        </p>
+                      </div>
                     ) : (
                       <div className="mt-2">
                         <a
@@ -429,6 +457,12 @@ export default function AdminCustomersPage() {
                           </svg>
                           Open Document (expires in 5 min)
                         </a>
+                        <p className="text-xs text-green-600 mt-1 flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Access logged to audit trail
+                        </p>
                         <p className="text-xs text-gray-500 mt-1">
                           Document key: {selectedCustomer.insurance_document_key}
                         </p>
@@ -533,6 +567,76 @@ export default function AdminCustomersPage() {
                 className="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Access Reason Modal (Break-Glass) */}
+      {showAccessReasonModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-luxury-charcoal">Document Access Required</h2>
+                  <p className="text-sm text-gray-500">Break-glass access will be logged</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-4">
+                Accessing customer insurance documents is a security-sensitive operation.
+                Please provide a reason for this access. Your action will be recorded in
+                the audit log for compliance purposes.
+              </p>
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reason for Access <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={accessReason}
+                onChange={(e) => setAccessReason(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-sm"
+                placeholder="e.g., Verifying insurance document authenticity for approval decision"
+                minLength={10}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum 10 characters required
+              </p>
+
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 bg-gray-50 flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowAccessReasonModal(false);
+                  setAccessReason('');
+                  setError(null);
+                }}
+                className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={fetchDocumentUrl}
+                disabled={loadingDocument || accessReason.trim().length < 10}
+                className="flex-1 py-2 px-4 bg-gold-600 text-white rounded-lg hover:bg-gold-700 disabled:opacity-50 font-medium text-sm"
+              >
+                {loadingDocument ? 'Loading...' : 'Access Document'}
               </button>
             </div>
           </div>

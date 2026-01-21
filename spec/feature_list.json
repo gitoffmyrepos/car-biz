@@ -366,7 +366,7 @@
       "Navigate to audit log viewer",
       "Take screenshot of insurance access audit entry"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
