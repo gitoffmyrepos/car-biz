@@ -1,0 +1,139 @@
+# Claude Harness Progress Tracker
+# Weekly Vehicle Leasing Platform - Salvage-to-Lux Fleet Management
+
+================================================================================
+SESSION 1: INITIALIZATION (Initializer Agent)
+================================================================================
+
+Date: Session 1
+Status: COMPLETED
+Commit: daeda68 (Initial setup)
+
+## Objectives Completed
+
+### 1. FX Pattern Discovery
+Analyzed /home/kelvin/SB-HomeLAb/FX directory for existing homelab conventions:
+
+**Discovered Patterns:**
+- Environment Variables: {SCOPE}_{SERVICE}_{PROPERTY} format
+- Vault Paths: secret/forex/{category}/{subcategory} -> secret/fx-weekly-lease/{env}/*
+- Image Tagging: {VERSION}-{COMMIT}, latest-{ENV}
+- Registry: nexus.strategybase.io:8082/sb-custom-docker-images
+- Jenkins Stages: Checkout, Detect Environment, Build, Test, Push, Deploy
+- MinIO Buckets: {project}-{purpose} naming convention
+- Multi-arch support: linux/amd64,linux/arm64
+
+### 2. Feature List Created (spec/feature_list.json)
+- **Total Features:** 211
+- **Categories:** functional, style
+- **Format:** Array of objects with category, description, steps, passes
+- **All features start with:** "passes": false
+
+**Feature Coverage:**
+- Public Pages (9): Home, How It Works, Fleet, Requirements, FAQ, Contact, Terms, Privacy, GPS Disclosure
+- Customer Experience (20+): Dashboard, Profile, Insurance Upload, Vehicle Request, Payments, Notifications
+- Admin Operations (40+): Customer Management, Vehicles CRUD, Trackers, Invoices, Payment Verification
+- Delinquency Workflow (10+): Late Detection, Escalation, Recovery, Compliance Gate, Bans
+- Security Features (15+): OIDC/Keycloak, RBAC, Vault Transit, Rate Limiting, Audit Logging
+- Infrastructure (20+): Docker, Kubernetes, MinIO, Nexus, Health Checks
+- API Endpoints (25+): Customer APIs, Admin APIs, File Upload APIs
+- UI/UX Features (20+): Forms, Tables, Navigation, Modals, Loading States
+- Testing & Quality (10+): Unit Tests, Integration Tests, E2E Tests, Linting
+
+### 3. Development Setup Script (init.sh)
+Created comprehensive setup script that:
+- Checks prerequisites (Docker, Docker Compose, Node.js, Python)
+- Creates directory structure
+- Generates .env from template
+- Creates docker-compose.yml with PostgreSQL, Redis, Backend, Frontend
+- Starts development services
+- Provides helpful access information
+
+### 4. Project Structure Created
+```
+car-biz/
+├── frontend/
+│   ├── app/           # Next.js App Router
+│   ├── components/    # React components
+│   ├── lib/           # Utilities
+│   └── styles/        # Global styles
+├── backend/
+│   └── app/
+│       ├── api/       # Route handlers
+│       ├── core/      # Configuration
+│       ├── models/    # SQLAlchemy models
+│       ├── schemas/   # Pydantic schemas
+│       ├── services/  # Business logic
+│       ├── workers/   # Background jobs
+│       └── tests/     # Test suites
+├── docker/            # Docker configs
+├── k8s/manifests/     # Kubernetes manifests
+├── scripts/           # Utility scripts
+├── spec/              # Specifications
+│   ├── app_spec.txt   # Full specification
+│   └── feature_list.json  # Feature tracking
+├── .env.example       # Environment template
+├── .gitignore         # Git ignore rules
+├── docker-compose.yml # Local development
+├── init.sh            # Setup script
+└── README.md          # Documentation
+```
+
+### 5. Git Repository Initialized
+- Initial commit: daeda68
+- 20 files committed
+- 4,571 lines of code/configuration
+
+## Files Created This Session
+1. spec/feature_list.json (211 features, 2765 lines)
+2. init.sh (executable setup script)
+3. README.md (comprehensive documentation)
+4. .env.example (all environment variables)
+5. .gitignore (Python, Node, Docker, IDE patterns)
+6. docker-compose.yml (PostgreSQL, Redis, Backend, Frontend)
+7. backend/app/__init__.py (+ 7 submodule __init__.py files)
+8. frontend/*/.gitkeep (4 placeholder files)
+9. docker/.gitkeep, k8s/manifests/.gitkeep, scripts/.gitkeep
+10. claude-progress.txt (this file)
+
+## Next Session Tasks
+
+### High Priority (Phase 1 - Foundation)
+1. Create Backend Dockerfile
+2. Create Frontend Dockerfile
+3. Set up FastAPI main.py with health check
+4. Set up Next.js basic app structure
+5. Configure Keycloak OIDC integration
+6. Create PostgreSQL schema + Alembic migrations
+7. Implement RBAC middleware
+8. Create MinIO upload service with signed URLs
+9. Implement Vault integration for secrets + Transit
+10. Create audit logging framework
+
+### Medium Priority (Phase 2 - Customer Experience)
+11. Build public marketing pages (Home, How It Works, etc.)
+12. Implement inquiry form + Resend email
+13. Customer onboarding + insurance upload
+14. Customer dashboard + vehicle request
+15. Payment proof upload workflow
+
+### Configuration Notes for Next Session
+- Keycloak realm: fx-weekly-lease
+- Vault KV path: secret/fx-weekly-lease/dev/*
+- Vault Transit key: fx-weekly-lease-dev-transit
+- MinIO buckets: fx-weekly-lease-{payments,insurance,incidents}
+- Image names: fx-weekly-lease-{frontend,backend}
+- Registry: nexus.strategybase.io:8082/sb-custom-docker-images
+
+## Important Reminders
+- NEVER remove or edit features in feature_list.json
+- Only change "passes": false to "passes": true when verified
+- Follow FX patterns for all infrastructure code
+- Use OIDC (Keycloak) - DO NOT build custom auth
+- Store sensitive files in MinIO, metadata in PostgreSQL
+- Encrypt sensitive metadata with Vault Transit
+- All admin actions must be audit logged
+
+================================================================================
+END SESSION 1
+================================================================================
