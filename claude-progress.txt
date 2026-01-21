@@ -989,3 +989,240 @@ Updated frontend/app/admin/customers/page.tsx:
 ================================================================================
 END SESSION 9
 ================================================================================
+
+================================================================================
+SESSION 10: FEATURE #29 - CUSTOMER VEHICLE REQUEST
+================================================================================
+
+Date: 2026-01-20
+Status: COMPLETED
+Commit: 84fd6ac (feat: Implement Feature #29 - Customer vehicle request)
+
+## Objectives Completed
+
+### 1. VehicleRequest Model
+Created backend/app/models/vehicle_request.py:
+
+**VehicleRequestStatus Enum:**
+- PENDING - Customer submitted request
+- REVIEWING - Admin is reviewing request
+- APPROVED - Request approved, vehicle being assigned
+- ASSIGNED - Vehicle assigned to customer
+- REJECTED - Request rejected
+- CANCELLED - Customer cancelled request
+
+**VehiclePreference Enum:**
+- SEDAN, SUV, LUXURY_SEDAN, LUXURY_SUV, SPORTS, ANY
+
+**VehicleRequest Model Fields:**
+- id: Primary key
+- customer_profile_id: FK to CustomerProfile
+- customer_email, customer_name: Snapshot for display
+- status: VehicleRequestStatus enum
+- vehicle_preference: VehiclePreference enum
+- notes, preferred_start_date: Request details
+- admin_notes, rejection_reason: Admin response fields
+- assigned_vehicle_id, assigned_vehicle_info: Assignment tracking
+- created_at, updated_at, reviewed_at, assigned_at: Timestamps
+
+### 2. Backend API Endpoints
+Updated backend/app/api/customer.py:
+
+**New Endpoints:**
+- POST /api/customer/vehicle-request - Submit vehicle request
+- GET /api/customer/vehicle-requests - List customer's requests
+- GET /api/customer/vehicle-request/{id} - Get specific request
+- POST /api/customer/vehicle-request/{id}/cancel - Cancel pending request
+- GET /api/customer/can-request-vehicle - Check eligibility
+
+**Business Rules Enforced:**
+- Only customers with approved insurance can submit requests
+- Customer cannot have multiple active requests (pending/reviewing/approved)
+- Only pending requests can be cancelled
+
+### 3. Frontend Vehicle Request Page
+Created frontend/app/vehicle-request/page.tsx:
+
+**Features:**
+- Eligibility check (shows warning if insurance not approved)
+- Vehicle preference selection cards (6 options with descriptions)
+- Preferred start date picker
+- Additional notes textarea
+- Submit Request and Cancel buttons
+- "Your Vehicle Requests" section showing history
+- Status badges (Pending Review, Approved, Rejected, Cancelled)
+- Cancel button for pending requests
+- Success/error message handling
+
+### 4. Dashboard Integration
+Updated frontend/app/dashboard/page.tsx:
+- Added "Request a Vehicle" card to Quick Actions
+- Changed grid from 2-column to 3-column layout
+- Link to /vehicle-request page
+
+### 5. E2E Testing with Puppeteer MCP
+Complete vehicle request flow tested:
+1. Login as customer with approved insurance
+2. Navigate to customer dashboard
+3. Click "Request Vehicle" link
+4. Verify vehicle request form displays
+5. Fill in notes
+6. Submit vehicle request
+7. Verify success message and request appears in list
+8. Reload page and verify persistence
+9. Cancel the request
+10. Verify cancelled status shows in history
+
+All 8 screenshots captured documenting full flow.
+
+## Files Created/Modified This Session
+1. backend/app/models/vehicle_request.py (NEW - VehicleRequest model)
+2. backend/app/models/__init__.py (export VehicleRequest, VehicleRequestStatus, VehiclePreference)
+3. backend/app/api/customer.py (Added vehicle request endpoints)
+4. frontend/app/vehicle-request/page.tsx (NEW - Vehicle request page)
+5. frontend/app/dashboard/page.tsx (Added Request a Vehicle card)
+6. spec/feature_list.json (Feature #29 marked passing)
+7. test_results.json (E2E test results)
+
+## Feature Progress
+- Features Passing: 26/211
+- Feature #29: Customer vehicle request - PASSED ✓
+
+## Quality Gates Verified
+✅ Stop condition checked (26/211 - not complete)
+✅ Services healthy (backend/frontend running)
+✅ E2E test passed with Puppeteer MCP tools
+✅ Screenshots saved documenting functionality:
+   - feature_29_step1_login_page.png
+   - feature_29_step2_customer_dashboard.png
+   - feature_29_step3_vehicle_request_page.png
+   - feature_29_step4_form_filled.png
+   - feature_29_step5_after_submit.png
+   - feature_29_step6_persistence_verified.png
+   - feature_29_step7_after_cancel.png
+   - feature_29_step8_cancelled_request_history.png
+✅ test_results.json created with all test steps
+✅ Database record created and verified
+✅ Request submission and cancellation work correctly
+✅ Business rules enforced (insurance approval required, one active request)
+✅ Zero console errors
+
+## Next Session Tasks
+1. Feature #30: Vehicle request restriction for non-approved customers
+2. Feature #31: Admin vehicle request management
+3. Feature #32: Vehicle assignment workflow
+4. Continue with vehicle leasing workflow features
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+## Customer Portal URLs
+- Customer Dashboard: http://localhost:3002/dashboard
+- Vehicle Request: http://localhost:3002/vehicle-request
+
+================================================================================
+END SESSION 10
+================================================================================
+
+================================================================================
+SESSION 11: FEATURE #30 - VEHICLE REQUEST RESTRICTION
+================================================================================
+
+Date: 2026-01-21
+Status: COMPLETED
+Commit: (pending)
+
+## Objectives Completed
+
+### 1. Verified Existing Restriction Implementation
+The vehicle request restriction was already implemented in:
+- Frontend: frontend/app/vehicle-request/page.tsx (lines 296-333)
+- Backend: backend/app/api/customer.py (/can-request-vehicle endpoint)
+
+**Frontend Logic:**
+- Checks eligibility via API before showing form
+- Shows "Cannot Submit Request" warning if eligibility check fails
+- Displays specific reasons (insurance not approved, active request exists, banned)
+- Provides "Upload Insurance Document" CTA link
+- Hides request form when customer cannot submit
+
+**Backend Logic:**
+- GET /api/customer/can-request-vehicle returns eligibility status
+- Checks insurance_status == APPROVED
+- Checks no active pending/reviewing/approved requests
+- Checks is_banned == false
+- Returns detailed reasons list
+
+### 2. Bug Fix: Race Condition in get_or_create_profile
+Fixed a race condition that caused IntegrityError when concurrent requests
+tried to create the same customer profile:
+
+**Problem:**
+- Two requests arriving at the same time both see no profile exists
+- Both attempt to INSERT, causing unique constraint violation
+
+**Solution:**
+- Added try/except IntegrityError handling
+- On IntegrityError, rollback and re-fetch the existing profile
+- Ensures graceful handling of concurrent profile creation
+
+### 3. E2E Testing with Puppeteer MCP
+Complete test flow:
+
+**Test 1: Non-approved customer (pending_customer@test.com)**
+1. Login as customer with insurance_status = NOT_UPLOADED
+2. Navigate to /vehicle-request
+3. Verify "Cannot Submit Request" warning displayed
+4. Verify reason: "Insurance must be approved. Current status: not_uploaded"
+5. Verify "Upload Insurance Document" link shown
+6. Verify request form is HIDDEN
+
+**Test 2: Approved customer (customer@example.com)**
+1. Login as customer with insurance_status = APPROVED
+2. Navigate to /vehicle-request
+3. Verify request form IS VISIBLE
+4. Verify Submit Request button available
+5. Verify vehicle preference options displayed
+
+## Files Modified This Session
+1. backend/app/api/customer.py (race condition fix in get_or_create_profile)
+2. spec/feature_list.json (Feature #30 marked passing)
+3. .claude/verification/test_results.json (updated)
+4. claude-progress.txt (updated)
+
+## Feature Progress
+- Features Passing: 27/211
+- Feature #30: Vehicle request restriction - PASSED ✓
+
+## Quality Gates Verified
+✅ Stop condition checked (27/211 - not complete)
+✅ Services healthy (backend/frontend running)
+✅ E2E test passed with Puppeteer MCP tools
+✅ Screenshots saved documenting functionality:
+   - feature_30_step1_login_page.png
+   - feature_30_step2_dashboard_after_login.png
+   - feature_30_step4_restriction_message.png
+   - feature_30_step5_approved_customer_can_request.png
+✅ test_results.json created with "overall_status": "passed"
+✅ Both positive and negative test cases verified
+✅ Zero console errors
+✅ Completion promise output: FEATURE_COMPLETE
+
+## Next Session Tasks
+1. Feature #31: Customer assigned vehicle view
+2. Feature #32: Customer notifications center
+3. Feature #33: Customer incident report submission
+4. Continue with customer experience features
+
+## Running Services
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 11
+================================================================================

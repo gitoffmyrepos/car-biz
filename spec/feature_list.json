@@ -420,7 +420,7 @@
       "Verify message explaining approval requirement",
       "Take screenshot showing restriction for non-approved customer"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

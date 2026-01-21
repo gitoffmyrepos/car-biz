@@ -12,6 +12,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -78,7 +79,11 @@ async def get_or_create_profile(
     user: AuthenticatedUser,
     db: AsyncSession
 ) -> CustomerProfile:
-    """Get existing profile or create a new one for the user."""
+    """Get existing profile or create a new one for the user.
+
+    Handles race conditions where concurrent requests might try to create
+    the same profile by catching IntegrityError and re-fetching.
+    """
     # Try to find existing profile
     result = await db.execute(
         select(CustomerProfile).where(CustomerProfile.keycloak_id == user.sub)
@@ -86,15 +91,30 @@ async def get_or_create_profile(
     profile = result.scalar_one_or_none()
 
     if profile is None:
-        # Create new profile
-        profile = CustomerProfile(
-            keycloak_id=user.sub,
-            email=user.email,
-            full_name=user.name if user.name else None,
-        )
-        db.add(profile)
-        await db.flush()
-        await db.refresh(profile)
+        try:
+            # Create new profile
+            profile = CustomerProfile(
+                keycloak_id=user.sub,
+                email=user.email,
+                full_name=user.name if user.name else None,
+            )
+            db.add(profile)
+            await db.flush()
+            await db.refresh(profile)
+        except IntegrityError:
+            # Race condition: another request created the profile
+            # Rollback the failed insert and re-fetch
+            await db.rollback()
+            result = await db.execute(
+                select(CustomerProfile).where(CustomerProfile.keycloak_id == user.sub)
+            )
+            profile = result.scalar_one_or_none()
+            if profile is None:
+                # This should not happen, but handle it gracefully
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to create or retrieve customer profile"
+                )
 
     return profile
 
