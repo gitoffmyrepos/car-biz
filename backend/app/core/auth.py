@@ -36,6 +36,9 @@ class AuthenticatedUser:
     roles: list[str]
     email_verified: bool = False
     raw_token: str = ""
+    mfa_enabled: bool = False  # Whether user has MFA configured
+    mfa_verified: bool = False  # Whether MFA was verified in current session
+    acr: str = ""  # Authentication Context Class Reference
 
     @property
     def is_admin(self) -> bool:
@@ -51,6 +54,17 @@ class AuthenticatedUser:
 
     def has_role(self, role: UserRole) -> bool:
         return role.value in self.roles
+
+    @property
+    def admin_mfa_satisfied(self) -> bool:
+        """Check if admin MFA requirement is satisfied.
+
+        Admin users must have MFA verified to access admin functions.
+        Non-admin users don't need MFA.
+        """
+        if not self.is_admin:
+            return True  # Non-admin users don't need MFA
+        return self.mfa_verified
 
 
 class OIDCAuthenticator:
@@ -164,6 +178,27 @@ class OIDCAuthenticator:
             client_access = resource_access.get(settings.OIDC_CLIENT_ID, {})
             roles.extend(client_access.get("roles", []))
 
+            # Check for MFA/2FA authentication
+            # Keycloak uses 'acr' (Authentication Context Class Reference) to indicate auth level
+            # acr=1 typically means password only, acr=2+ means MFA was used
+            # Keycloak may also use 'amr' (Authentication Methods References)
+            acr = payload.get("acr", "")
+            amr = payload.get("amr", [])
+
+            # Check if MFA was verified during this session
+            # acr of "urn:mace:incommon:iap:silver" or higher typically indicates MFA
+            # Or acr values like "2" or "aal2" indicate MFA
+            mfa_verified = (
+                acr in ["2", "aal2", "urn:mace:incommon:iap:silver"]
+                or "otp" in amr
+                or "totp" in amr
+                or "mfa" in amr
+            )
+
+            # Check if user has MFA enabled (from Keycloak attributes)
+            # This is typically in a custom claim like "mfa_enabled" or derived from acr
+            mfa_enabled = mfa_verified or payload.get("mfa_enabled", False)
+
             return AuthenticatedUser(
                 sub=payload.get("sub", ""),
                 email=payload.get("email", ""),
@@ -172,6 +207,9 @@ class OIDCAuthenticator:
                 roles=list(set(roles)),  # Deduplicate
                 email_verified=payload.get("email_verified", False),
                 raw_token=token,
+                mfa_enabled=mfa_enabled,
+                mfa_verified=mfa_verified,
+                acr=acr,
             )
 
         except ExpiredSignatureError:
@@ -189,18 +227,29 @@ class OIDCAuthenticator:
         """
         Validate a development token.
 
-        Format: dev:<role>:<email>
-        Example: dev:admin:admin@example.com
+        Format: dev:<role>:<email> or dev:<role>:<email>:mfa
+        Example: dev:admin:admin@example.com or dev:admin:admin@example.com:mfa
         """
         if not token.startswith("dev:"):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid development token format. Use: dev:<role>:<email>"
+                detail="Invalid development token format. Use: dev:<role>:<email>[:mfa]"
             )
 
         try:
-            _, role, email = token.split(":", 2)
+            parts = token.split(":")
+            if len(parts) < 3:
+                raise ValueError("Not enough parts")
+
+            role = parts[1]
+            email = parts[2]
+            # Check if MFA flag is present (4th part)
+            mfa_verified = len(parts) >= 4 and parts[3] == "mfa"
             name = email.split("@")[0].replace(".", " ").title()
+
+            # In dev mode, admin users have MFA enabled by default
+            is_admin = role == "admin"
+            mfa_enabled = is_admin  # Admin users always have MFA enabled
 
             return AuthenticatedUser(
                 sub=f"dev-user-{email}",
@@ -210,11 +259,14 @@ class OIDCAuthenticator:
                 roles=[role],
                 email_verified=True,
                 raw_token=token,
+                mfa_enabled=mfa_enabled,
+                mfa_verified=mfa_verified,
+                acr="2" if mfa_verified else "1",
             )
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid development token format. Use: dev:<role>:<email>"
+                detail="Invalid development token format. Use: dev:<role>:<email>[:mfa]"
             )
 
 
@@ -311,3 +363,35 @@ def require_any_role(*roles: UserRole):
 require_admin = require_role(UserRole.ADMIN)
 require_ops = require_any_role(UserRole.ADMIN, UserRole.OPS)
 require_customer = require_role(UserRole.CUSTOMER)
+
+
+def require_admin_with_mfa():
+    """
+    Factory function to create a dependency that requires admin role with MFA verified.
+
+    Usage:
+        @app.get("/admin/sensitive")
+        async def sensitive_data(user: AuthenticatedUser = Depends(require_admin_with_mfa())):
+            ...
+    """
+    async def admin_mfa_checker(
+        user: AuthenticatedUser = Depends(get_current_user),
+    ) -> AuthenticatedUser:
+        if not user.has_role(UserRole.ADMIN):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions. Required role: admin"
+            )
+        if not user.mfa_verified:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="MFA verification required for admin access. Please complete MFA authentication.",
+                headers={"X-MFA-Required": "true"}
+            )
+        return user
+
+    return admin_mfa_checker
+
+
+# Admin with MFA requirement dependency
+require_admin_mfa = require_admin_with_mfa()

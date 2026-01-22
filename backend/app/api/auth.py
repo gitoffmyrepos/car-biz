@@ -44,6 +44,9 @@ class UserInfoResponse(BaseModel):
     is_admin: bool
     is_ops: bool
     is_customer: bool
+    mfa_enabled: bool = False
+    mfa_verified: bool = False
+    admin_mfa_satisfied: bool = True
 
 
 class DevLoginRequest(BaseModel):
@@ -97,6 +100,9 @@ async def get_current_user_info(
         is_admin=user.is_admin,
         is_ops=user.is_ops,
         is_customer=user.is_customer,
+        mfa_enabled=user.mfa_enabled,
+        mfa_verified=user.mfa_verified,
+        admin_mfa_satisfied=user.admin_mfa_satisfied,
     )
 
 
@@ -122,6 +128,9 @@ async def get_current_user_info_optional(
         is_admin=user.is_admin,
         is_ops=user.is_ops,
         is_customer=user.is_customer,
+        mfa_enabled=user.mfa_enabled,
+        mfa_verified=user.mfa_verified,
+        admin_mfa_satisfied=user.admin_mfa_satisfied,
     )
 
 
@@ -164,13 +173,15 @@ async def dev_login(
             is_admin=user.is_admin,
             is_ops=user.is_ops,
             is_customer=user.is_customer,
+            mfa_enabled=user.mfa_enabled,
+            mfa_verified=user.mfa_verified,
+            admin_mfa_satisfied=user.admin_mfa_satisfied,
         ),
     )
 
 
 @router.post("/verify-token")
 async def verify_token(
-    request: Request,
     user: AuthenticatedUser = Depends(get_current_user),
     _: None = Depends(auth_rate_limit),
 ):
@@ -185,4 +196,76 @@ async def verify_token(
         "valid": True,
         "sub": user.sub,
         "roles": user.roles,
+        "mfa_verified": user.mfa_verified,
     }
+
+
+class DevMFAVerifyRequest(BaseModel):
+    """Request body for dev mode MFA verification."""
+    totp_code: str
+
+
+class DevMFAVerifyResponse(BaseModel):
+    """Response for dev mode MFA verification."""
+    success: bool
+    access_token: str
+    user: UserInfoResponse
+
+
+@router.post("/dev-mfa-verify", response_model=DevMFAVerifyResponse)
+async def dev_mfa_verify(
+    mfa_request: DevMFAVerifyRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+    _: None = Depends(auth_rate_limit),
+):
+    """
+    Development-only MFA verification endpoint.
+
+    Simulates TOTP verification for testing admin MFA flow.
+    Accepts any 6-digit code in dev mode.
+
+    Rate limited: 5 requests per 60 seconds per IP.
+    """
+    if not oidc_auth.is_dev_mode:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dev MFA verification is only available in development mode"
+        )
+
+    # In dev mode, accept any 6-digit code
+    if not mfa_request.totp_code or len(mfa_request.totp_code) != 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid TOTP code. Please enter a 6-digit code."
+        )
+
+    if not mfa_request.totp_code.isdigit():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid TOTP code. Code must contain only digits."
+        )
+
+    # Create new token with MFA verified
+    new_token = f"dev:{user.roles[0]}:{user.email}:mfa"
+
+    # Validate the new token to get updated user info
+    verified_user = await oidc_auth.validate_token(new_token)
+
+    return DevMFAVerifyResponse(
+        success=True,
+        access_token=new_token,
+        user=UserInfoResponse(
+            sub=verified_user.sub,
+            email=verified_user.email,
+            name=verified_user.name,
+            preferred_username=verified_user.preferred_username,
+            roles=verified_user.roles,
+            email_verified=verified_user.email_verified,
+            is_admin=verified_user.is_admin,
+            is_ops=verified_user.is_ops,
+            is_customer=verified_user.is_customer,
+            mfa_enabled=verified_user.mfa_enabled,
+            mfa_verified=verified_user.mfa_verified,
+            admin_mfa_satisfied=verified_user.admin_mfa_satisfied,
+        ),
+    )

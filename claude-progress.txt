@@ -3591,3 +3591,256 @@ and working correctly through comprehensive E2E testing with Puppeteer MCP.
 ================================================================================
 END SESSION 33
 ================================================================================
+
+================================================================================
+SESSION 34: Feature #66 - Banned Customer Restrictions (Enhancement Agent)
+================================================================================
+
+Date: January 22, 2026
+Status: COMPLETED
+Commit: 351f800
+
+## Feature Implemented
+
+**Feature #66: Banned customer restrictions - Banned customers have restricted access to platform**
+
+### Backend Changes (backend/app/api/customer.py)
+
+1. Added `is_banned: bool` and `ban_reason: Optional[str]` to ProfileResponse model
+2. Updated get_profile endpoint to return ban status fields
+3. Updated update_profile endpoint to return ban status fields
+4. Added DashboardSummary model fields: `is_banned: bool = False`, `ban_reason: Optional[str] = None`
+5. Updated get_dashboard_summary endpoint to include ban status
+6. Added ban check to create_vehicle_request endpoint:
+   - Returns 403 Forbidden if customer is banned
+   - Error message includes ban reason and contact support instructions
+
+### Frontend Changes
+
+**dashboard/page.tsx:**
+- Added `is_banned: boolean` and `ban_reason: string | null` to DashboardSummary interface
+- Added prominent "Account Banned" banner (red background) showing:
+  - Ban icon
+  - "Account Banned" heading
+  - Message explaining restrictions
+  - Ban reason (if available)
+  - Contact support link
+- Modified "Request a Vehicle" card:
+  - Shows disabled state when banned (opacity-60)
+  - Red text: "Vehicle requests are unavailable while your account is banned"
+  - Disabled button: "Request Blocked" with ban icon
+- Updated Account Status badge:
+  - Shows red "Banned" badge instead of green "Active" when banned
+
+**vehicle-request/page.tsx:**
+- Added separate "Banned Customer Warning" section:
+  - Red banner with ban icon
+  - Account Banned heading
+  - Cannot request vehicles message
+  - Contact support link
+- Modified eligibility check to only show yellow warning when NOT banned
+
+## E2E Testing
+
+Tested with Puppeteer MCP:
+1. Navigated to homepage
+2. Logged in as banned customer (customer@example.com)
+3. Verified dashboard shows:
+   - Account Banned banner with reason
+   - Account Status badge shows "Banned"
+   - Request Vehicle card disabled with "Request Blocked" button
+4. Navigated to vehicle-request page
+5. Verified Account Banned warning displayed
+6. Verified historical requests still viewable (Request #2, Request #1)
+7. Tested API directly - confirmed 403 response with ban message
+8. Regression tested admin dashboard - still working
+
+## Test Results
+
+All requirements verified:
+- dashboard_shows_banned_status: true
+- vehicle_request_blocked_with_ban_message: true
+- historical_requests_viewable: true
+- new_lease_creation_blocked: true
+- account_status_badge_shows_banned: true
+- api_blocks_banned_customer_request: true
+- contact_support_link_visible: true
+
+## Screenshots Captured
+
+1. 01_homepage.png - Public homepage
+2. 02_login_page.png - Login page
+3. 03_customer_dashboard_banned.png - Dashboard with banned banner
+4. 04_customer_dashboard_account_status.png - Account Status showing Banned
+5. 05_vehicle_request_banned.png - Vehicle request page with banned warning
+6. 09_admin_dashboard.png - Admin dashboard (regression check)
+
+## Progress Update
+
+- Features Passing: 75/211 (35.5% complete)
+- Feature #66: Banned customer restrictions - PASSED
+- No regressions detected
+
+## Files Modified
+
+1. backend/app/api/customer.py - Added ban status to profile and dashboard responses, block vehicle request for banned
+2. frontend/app/dashboard/page.tsx - Added banned banner and disabled request card
+3. frontend/app/vehicle-request/page.tsx - Added banned customer warning section
+4. spec/feature_list.json - Updated feature #66 passes: true
+5. test_results.json - Updated with feature #66 test results
+
+## Running Services
+
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 34
+================================================================================
+
+================================================================================
+SESSION 35: FEATURE #16 - ADMIN MFA REQUIREMENT
+================================================================================
+
+Date: 2026-01-22
+Status: COMPLETED
+Feature: Admin MFA requirement - Admin users require multi-factor authentication configured in Keycloak
+
+## Implementation Summary
+
+### 1. Backend Core Auth Changes (backend/app/core/auth.py)
+
+**AuthenticatedUser Dataclass Updates:**
+- Added `mfa_enabled: bool = False` - Whether user has MFA configured
+- Added `mfa_verified: bool = False` - Whether MFA was verified in current session
+- Added `acr: str = ""` - Authentication Context Class Reference
+- Added `admin_mfa_satisfied` property - Returns True if not admin or if MFA verified
+
+**Token Validation Updates:**
+- Production mode: Extract MFA info from JWT claims (acr, amr)
+- Dev mode: Support `:mfa` suffix in token format (dev:admin:email:mfa)
+- Admin users in dev mode have mfa_enabled=True by default
+
+**New Dependency:**
+- `require_admin_with_mfa()` - Factory for endpoints requiring admin + MFA
+- Returns 403 with `X-MFA-Required: true` header if MFA not verified
+
+### 2. Backend API Changes (backend/app/api/auth.py)
+
+**UserInfoResponse Model Updates:**
+- Added `mfa_enabled: bool = False`
+- Added `mfa_verified: bool = False`
+- Added `admin_mfa_satisfied: bool = True`
+
+**New Endpoint: POST /api/auth/dev-mfa-verify**
+- Request: `{"totp_code": "123456"}`
+- Validates 6-digit code (dev mode accepts any valid 6-digit)
+- Returns new token with `:mfa` suffix
+- Returns updated user info with mfa_verified=True
+
+### 3. Frontend Auth Context (frontend/lib/auth.tsx)
+
+**User Interface Updates:**
+- Added `mfa_enabled: boolean`
+- Added `mfa_verified: boolean`
+- Added `admin_mfa_satisfied: boolean`
+
+**AuthContext Updates:**
+- Added `verifyMfa(totpCode: string)` function
+- Added `requiresMfa: boolean` computed property
+- requiresMfa = isAuthenticated && user?.is_admin && !user?.mfa_verified
+
+### 4. New MFA Verification Page (frontend/app/login/mfa/page.tsx)
+
+**Features:**
+- 6-digit TOTP input with individual boxes
+- Auto-focus next input on digit entry
+- Backspace navigation to previous input
+- Paste support for full code
+- Dev mode notice (any 6-digit code accepted)
+- Security notice explaining MFA requirement
+- Loading spinner during verification
+- Error handling with user-friendly messages
+- Redirect to /login if not authenticated
+- Redirect to appropriate dashboard if MFA not required
+
+### 5. Login Page Updates (frontend/app/login/page.tsx)
+
+**Changes:**
+- Admin quick login button now redirects to /login/mfa instead of /admin
+- Admin form login redirects to /login/mfa
+- Customer and Ops still go directly to their dashboards
+
+## E2E Testing Results
+
+### Test Cases Passed:
+
+1. **Admin Login → MFA Page**
+   - Login as admin via quick login button
+   - Verify redirect to /login/mfa
+   - Verify MFA page shows correct UI elements
+
+2. **MFA Code Entry**
+   - Enter 6-digit code (123456)
+   - Verify code appears in input boxes
+   - Submit form
+
+3. **MFA Verification Success**
+   - API call to /api/auth/dev-mfa-verify
+   - New token returned with :mfa suffix
+   - Redirect to /admin dashboard
+
+4. **Customer Login (No MFA)**
+   - Login as customer via quick login
+   - Verify direct redirect to /dashboard
+   - No MFA prompt shown
+
+5. **Ops Login (No MFA)**
+   - Login as ops via quick login
+   - Verify direct redirect to /admin
+   - No MFA prompt shown
+
+### API Tests Passed:
+
+1. `POST /api/auth/dev-login (admin)`:
+   - Returns mfa_enabled: true, mfa_verified: false, admin_mfa_satisfied: false
+
+2. `POST /api/auth/dev-mfa-verify`:
+   - Accepts 6-digit code
+   - Returns mfa_verified: true, admin_mfa_satisfied: true
+   - Returns new token with :mfa suffix
+
+3. `POST /api/auth/dev-login (customer)`:
+   - Returns mfa_enabled: false, admin_mfa_satisfied: true
+
+4. `GET /api/auth/me`:
+   - Returns all MFA fields correctly
+
+## Progress Update
+
+- Features Passing: 76/211 (36.0% complete)
+- Feature #16: Admin MFA requirement - PASSED
+- No regressions detected
+
+## Files Modified
+
+1. backend/app/core/auth.py - Added MFA fields to AuthenticatedUser, MFA validation
+2. backend/app/api/auth.py - Added MFA fields to response, new dev-mfa-verify endpoint
+3. frontend/lib/auth.tsx - Added MFA fields and verifyMfa function
+4. frontend/app/login/page.tsx - Admin redirects to MFA page
+5. frontend/app/login/mfa/page.tsx - NEW: MFA verification page
+6. spec/feature_list.json - Updated feature #16 passes: true
+7. test_results.json - Updated with feature #16 test results
+
+## Running Services
+
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 35
+================================================================================

@@ -47,8 +47,10 @@ export default function LoginPage() {
 
     try {
       await devLogin(devRole, devEmail || `${devRole}@example.com`);
-      // Redirect based on role
-      if (devRole === 'admin' || devRole === 'ops') {
+      // Redirect based on role - admin users need MFA verification
+      if (devRole === 'admin') {
+        router.push('/login/mfa');
+      } else if (devRole === 'ops') {
         router.push('/admin');
       } else {
         router.push('/dashboard');
@@ -214,7 +216,8 @@ export default function LoginPage() {
                       justLoggedIn.current = true;
                       try {
                         await devLogin('admin', 'admin@example.com');
-                        router.push('/admin');
+                        // Admin users need MFA verification
+                        router.push('/login/mfa');
                       } catch {
                         justLoggedIn.current = false;
                         setError('Login failed');

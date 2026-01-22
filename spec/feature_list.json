@@ -227,7 +227,7 @@
       "Verify successful admin login",
       "Verify MFA is not required for customer role"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
