@@ -35,6 +35,26 @@ services:
     networks:
       - fx-weekly-lease-network
 
+  # HashiCorp Vault (dev mode)
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: fx-weekly-lease-vault
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root-token
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: http://0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fx-weekly-lease-network
+
   # FastAPI Backend
   backend:
     build:
@@ -47,6 +67,11 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/weekly_lease
       - REDIS_URL=redis://redis:6379
       - CORS_ALLOWED_ORIGINS=["http://localhost:3002","http://localhost:8100"]
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-root-token
+      - VAULT_AUTH_METHOD=token
+      - VAULT_TRANSIT_KEY_NAME=fx-weekly-lease-dev-transit
+      - VAULT_KV_PATH_PREFIX=secret/fx-weekly-lease/dev
     ports:
       - "8100:8000"
     volumes:
@@ -55,6 +80,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      vault:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

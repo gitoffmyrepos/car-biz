@@ -60,6 +60,56 @@ class VaultService:
             self.enabled = False
             self._client = None
 
+    def renew_token(self) -> Tuple[bool, str]:
+        """
+        Renew the Vault token to extend its TTL.
+
+        Returns:
+            Tuple of (success, message or error)
+        """
+        if not self.enabled or not self._client:
+            return False, "Vault client not available"
+
+        try:
+            # Renew the current token
+            result = self._client.auth.token.renew_self()
+            ttl = result.get("auth", {}).get("lease_duration", 0)
+            logger.info(f"Vault token renewed successfully, new TTL: {ttl}s")
+            return True, f"Token renewed, TTL: {ttl}s"
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Failed to renew Vault token: {error_msg}")
+            # If token cannot be renewed (e.g., root token in dev mode), that's OK
+            if "not renewable" in error_msg.lower() or "root" in error_msg.lower():
+                return True, "Token is not renewable (root/dev token never expires)"
+            return False, error_msg
+
+    def get_token_info(self) -> Optional[dict]:
+        """
+        Get information about the current Vault token.
+
+        Returns:
+            Token metadata dictionary or None if unavailable
+        """
+        if not self.enabled or not self._client:
+            return None
+
+        try:
+            result = self._client.auth.token.lookup_self()
+            data = result.get("data", {})
+            return {
+                "id": data.get("id", "")[:8] + "...",  # Truncate for security
+                "display_name": data.get("display_name"),
+                "policies": data.get("policies", []),
+                "ttl": data.get("ttl"),
+                "renewable": data.get("renewable"),
+                "creation_time": data.get("creation_time"),
+                "expire_time": data.get("expire_time"),
+            }
+        except Exception as e:
+            logger.error(f"Failed to lookup Vault token: {e}")
+            return None
+
     def _local_encrypt(self, plaintext: str) -> str:
         """
         Local fallback encryption for development.

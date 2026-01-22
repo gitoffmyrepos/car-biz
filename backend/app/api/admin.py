@@ -6670,5 +6670,156 @@ async def get_vault_status(
         "vault_enabled": vault_service.enabled,
         "vault_addr": settings.VAULT_ADDR[:20] + "..." if settings.VAULT_ADDR else None,
         "transit_key_name": settings.VAULT_TRANSIT_KEY_NAME,
+        "kv_path_prefix": settings.VAULT_KV_PATH_PREFIX,
         "fallback_encryption": "dev_base64" if not vault_service.enabled else None,
     }
+
+
+@router.get("/vault/kv/read/{secret_path:path}")
+async def read_vault_secret(
+    secret_path: str,
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Read a secret from Vault KV v2.
+
+    Admin only. Returns secret data from the configured KV mount point.
+    """
+    if not settings.DEBUG:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vault secret reading only available in debug mode"
+        )
+
+    if not vault_service.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vault is not configured or unavailable"
+        )
+
+    secret_data = vault_service.read_secret(secret_path)
+
+    if secret_data is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Secret not found at path: {secret_path}"
+        )
+
+    return {
+        "success": True,
+        "path": secret_path,
+        "data": secret_data,
+    }
+
+
+@router.get("/vault/health")
+async def vault_health_check(
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Verify Vault integration is working by checking authentication and basic operations.
+
+    Admin only. Used to verify Vault KV v2 integration for feature testing.
+    """
+    health_status = {
+        "vault_configured": bool(settings.VAULT_ADDR and settings.VAULT_TOKEN),
+        "vault_enabled": vault_service.enabled,
+        "vault_addr": settings.VAULT_ADDR,
+        "auth_method": settings.VAULT_AUTH_METHOD,
+        "kv_path_prefix": settings.VAULT_KV_PATH_PREFIX,
+        "transit_key_name": settings.VAULT_TRANSIT_KEY_NAME,
+        "client_authenticated": False,
+        "kv_accessible": False,
+        "transit_accessible": False,
+        "errors": [],
+    }
+
+    if not vault_service.enabled or not vault_service._client:
+        health_status["errors"].append("Vault client not initialized")
+        return health_status
+
+    # Check if client is authenticated
+    try:
+        health_status["client_authenticated"] = vault_service._client.is_authenticated()
+    except Exception as e:
+        health_status["errors"].append(f"Auth check failed: {str(e)}")
+
+    # Test KV v2 access (try to list secrets or read a known path)
+    try:
+        mount_point = settings.VAULT_KV_PATH_PREFIX.split("/")[0]
+        # Try to list secrets at the configured path prefix
+        kv_path = "/".join(settings.VAULT_KV_PATH_PREFIX.split("/")[1:])
+        vault_service._client.secrets.kv.v2.list_secrets(
+            path=kv_path,
+            mount_point=mount_point,
+        )
+        health_status["kv_accessible"] = True
+    except Exception as e:
+        # 404 means KV engine is accessible but path doesn't exist - that's OK
+        if "404" in str(e) or "not found" in str(e).lower():
+            health_status["kv_accessible"] = True
+        else:
+            health_status["errors"].append(f"KV access check: {str(e)}")
+
+    # Test Transit encryption (encrypt/decrypt a test value)
+    try:
+        success, result = vault_service.encrypt("vault-health-check-test")
+        if success and result.startswith("vault:v"):
+            health_status["transit_accessible"] = True
+        elif success and result.startswith("dev:v"):
+            health_status["errors"].append("Transit falling back to dev encryption")
+        else:
+            health_status["errors"].append(f"Transit encrypt failed: {result}")
+    except Exception as e:
+        health_status["errors"].append(f"Transit test failed: {str(e)}")
+
+    return health_status
+
+
+@router.post("/vault/token/renew")
+async def renew_vault_token(
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Renew the Vault token to extend its TTL.
+
+    Admin only. Used to verify Vault token renewal works.
+    """
+    if not vault_service.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vault is not configured or unavailable"
+        )
+
+    success, message = vault_service.renew_token()
+
+    return {
+        "success": success,
+        "message": message,
+    }
+
+
+@router.get("/vault/token/info")
+async def get_vault_token_info(
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Get information about the current Vault token.
+
+    Admin only.
+    """
+    if not vault_service.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vault is not configured or unavailable"
+        )
+
+    token_info = vault_service.get_token_info()
+
+    if token_info is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve token information"
+        )
+
+    return token_info

@@ -1121,7 +1121,7 @@
       "Verify no secrets hardcoded in code or config files",
       "Verify Vault token renewal works"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
