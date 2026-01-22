@@ -1612,7 +1612,7 @@
       "Verify test stage",
       "Verify ArgoCD integration if applicable"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1626,7 +1626,7 @@
       "Verify script is idempotent",
       "Verify script follows FX patterns"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1638,7 +1638,7 @@
       "Verify no hardcoded secrets in code",
       "Verify variable naming follows FX convention"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1650,7 +1650,7 @@
       "Verify helpful output printed",
       "Verify access instructions provided"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
