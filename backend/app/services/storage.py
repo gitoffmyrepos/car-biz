@@ -15,6 +15,7 @@ from uuid import uuid4
 import magic
 
 from app.core.config import settings
+from app.core.metrics import track_upload
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ class StorageService:
         filename: str,
         allowed_types: dict = ALLOWED_INSURANCE_TYPES,
         max_size: int = MAX_FILE_SIZE,
+        upload_type: str = "general",
     ) -> Tuple[bool, str, Optional[str]]:
         """
         Validate uploaded file.
@@ -96,10 +98,12 @@ class StorageService:
         # Check file size
         if len(file_content) > max_size:
             max_mb = max_size / (1024 * 1024)
+            track_upload(upload_type=upload_type, success=False, size_bytes=len(file_content))
             return False, f"File too large. Maximum size is {max_mb:.0f}MB", None
 
         # Check file is not empty
         if len(file_content) == 0:
+            track_upload(upload_type=upload_type, success=False, size_bytes=0)
             return False, "File is empty", None
 
         # Detect MIME type using magic bytes
@@ -108,11 +112,13 @@ class StorageService:
             detected_type = mime.from_buffer(file_content)
         except Exception as e:
             logger.error(f"Failed to detect file type: {e}")
+            track_upload(upload_type=upload_type, success=False, size_bytes=len(file_content))
             return False, "Could not determine file type", None
 
         # Validate MIME type
         if detected_type not in allowed_types:
             allowed_str = ", ".join(allowed_types.keys())
+            track_upload(upload_type=upload_type, success=False, size_bytes=len(file_content))
             return False, f"Invalid file type: {detected_type}. Allowed types: {allowed_str}", detected_type
 
         return True, "", detected_type
@@ -144,6 +150,7 @@ class StorageService:
         bucket: str,
         key: str,
         content_type: str,
+        upload_type: str = "general",
     ) -> bool:
         """
         Upload file to storage.
@@ -151,9 +158,14 @@ class StorageService:
         Returns True if successful, False otherwise.
         """
         if self.use_s3:
-            return await self._upload_to_s3(file_content, bucket, key, content_type)
+            success = await self._upload_to_s3(file_content, bucket, key, content_type)
         else:
-            return self._upload_to_local(file_content, bucket, key)
+            success = self._upload_to_local(file_content, bucket, key)
+
+        # Track upload metrics
+        track_upload(upload_type=upload_type, success=success, size_bytes=len(file_content))
+
+        return success
 
     async def _upload_to_s3(
         self,

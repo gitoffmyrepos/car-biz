@@ -1697,7 +1697,7 @@
       "Verify failure metric incremented",
       "Check metrics endpoint"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1709,7 +1709,7 @@
       "Verify escalation count metric",
       "Document baseline metrics"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1721,7 +1721,7 @@
       "Verify rejections counted",
       "Verify average processing time tracked"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

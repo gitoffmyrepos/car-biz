@@ -7,6 +7,7 @@ Service for generating and managing weekly invoices.
 
 import logging
 import hashlib
+import time
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from typing import Optional, Tuple
@@ -18,8 +19,11 @@ from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.models.lease import Lease, LeaseStatus
 from app.models.customer_profile import CustomerProfile
 from app.models.notification import NotificationType, NotificationPriority
+from app.models.delinquency_case import DelinquencyCase, DelinquencyStatus, EscalationLevel
+from app.models.vehicle import Vehicle
 from app.services.notification import notification_service
 from app.services.email import email_service
+from app.core.metrics import track_payment_verification, update_delinquency_metrics, update_past_due_count
 
 logger = logging.getLogger(__name__)
 
@@ -246,14 +250,20 @@ class InvoiceService:
         logger.info(f"Marked {count} invoices as due")
         return count
 
-    async def apply_late_fees(self, db: AsyncSession) -> int:
+    def _generate_case_number(self, invoice_id: int) -> str:
+        """Generate a unique delinquency case number."""
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        return f"DEL-{invoice_id:06d}-{timestamp}"
+
+    async def apply_late_fees(self, db: AsyncSession) -> Tuple[int, int]:
         """
-        Apply late fees to overdue invoices.
+        Apply late fees to overdue invoices and create DelinquencyCase records.
 
         Applies late fee to invoices that are past due date and not paid.
+        Also creates DelinquencyCase records for tracking and escalation.
 
         Returns:
-            Number of invoices with late fees applied
+            Tuple of (invoices_with_late_fees_applied, delinquency_cases_created)
         """
         now = datetime.now(timezone.utc)
         grace_period_days = 1  # 1 day grace period
@@ -267,21 +277,80 @@ class InvoiceService:
         )
         overdue_invoices = result.scalars().all()
 
-        count = 0
+        late_fee_count = 0
+        delinquency_count = 0
+
         for invoice in overdue_invoices:
+            # Apply late fee
             invoice.apply_late_fee(self.late_fee_amount)
             invoice.status = InvoiceStatus.LATE
             invoice.days_late = (now - invoice.due_date).days
-            count += 1
+            late_fee_count += 1
 
-            # Create notification
+            # Get lease information for delinquency case
+            lease = await db.get(Lease, invoice.lease_id)
+            if not lease:
+                logger.warning(f"Lease {invoice.lease_id} not found for invoice {invoice.id}")
+                continue
+
+            # Try to find vehicle ID from lease
+            vehicle_id = None
+            if lease:
+                # Check if there's a vehicle with this lease_id as current_lease_id
+                vehicle_result = await db.execute(
+                    select(Vehicle).where(Vehicle.current_lease_id == lease.id)
+                )
+                vehicle = vehicle_result.scalar_one_or_none()
+                if vehicle:
+                    vehicle_id = vehicle.id
+
+            # Check if a delinquency case already exists for this invoice
+            existing_case = await db.scalar(
+                select(DelinquencyCase).where(
+                    DelinquencyCase.invoice_id == invoice.id
+                )
+            )
+
+            if not existing_case:
+                # Create new DelinquencyCase
+                case_number = self._generate_case_number(invoice.id)
+                total_owed = invoice.total_amount
+
+                delinquency_case = DelinquencyCase(
+                    customer_profile_id=invoice.customer_profile_id,
+                    invoice_id=invoice.id,
+                    lease_id=invoice.lease_id,
+                    vehicle_id=vehicle_id,
+                    case_number=case_number,
+                    status=DelinquencyStatus.OPEN,
+                    escalation_level=EscalationLevel.LEVEL_1,
+                    amount_owed=invoice.amount,
+                    late_fees_accumulated=invoice.late_fee,
+                    total_owed=total_owed,
+                    amount_paid=Decimal("0.00"),
+                    remaining_balance=total_owed,
+                    days_delinquent=invoice.days_late,
+                    delinquent_since=invoice.due_date,
+                    next_escalation_at=now + timedelta(days=1),  # Escalate to Level 2 tomorrow
+                )
+
+                db.add(delinquency_case)
+                await db.flush()
+                delinquency_count += 1
+
+                logger.info(
+                    f"Created delinquency case {case_number} for invoice {invoice.invoice_number}, "
+                    f"amount owed: ${total_owed:.2f}"
+                )
+
+            # Create notification for late payment
             try:
                 await notification_service.create_notification(
                     db=db,
                     customer_profile_id=invoice.customer_profile_id,
                     notification_type=NotificationType.PAYMENT_OVERDUE,
-                    title="Payment Overdue",
-                    message=f"Your payment for invoice #{invoice.invoice_number} is overdue. A late fee of ${self.late_fee_amount:.2f} has been applied. New total: ${invoice.total_amount:.2f}",
+                    title="Payment Overdue - Action Required",
+                    message=f"Your payment for invoice #{invoice.invoice_number} is overdue. A late fee of ${self.late_fee_amount:.2f} has been applied. New total: ${invoice.total_amount:.2f}. Please make payment immediately to avoid further action.",
                     priority=NotificationPriority.URGENT,
                     action_url="/payments",
                     action_label="Pay Now",
@@ -291,11 +360,48 @@ class InvoiceService:
             except Exception as e:
                 logger.warning(f"Failed to create late payment notification: {e}")
 
-        if count > 0:
+        if late_fee_count > 0:
             await db.commit()
 
-        logger.info(f"Applied late fees to {count} overdue invoices")
-        return count
+        logger.info(
+            f"Late fee processing complete: {late_fee_count} invoices with late fees, "
+            f"{delinquency_count} delinquency cases created"
+        )
+
+        # Update delinquency metrics after processing
+        await self._update_delinquency_metrics(db)
+
+        return late_fee_count, delinquency_count
+
+    async def _update_delinquency_metrics(self, db: AsyncSession) -> None:
+        """Update delinquency and past due metrics gauges."""
+        from sqlalchemy import func
+
+        # Count delinquency cases by status
+        status_counts = await db.execute(
+            select(DelinquencyCase.status, func.count(DelinquencyCase.id))
+            .group_by(DelinquencyCase.status)
+        )
+
+        # Build counts dict from query results
+        counts_by_status: dict[DelinquencyStatus, int] = {}
+        for row in status_counts:
+            counts_by_status[row[0]] = row[1]
+
+        update_delinquency_metrics(
+            active=counts_by_status.get(DelinquencyStatus.OPEN, 0),
+            escalated=counts_by_status.get(DelinquencyStatus.ESCALATED, 0),
+            resolved=counts_by_status.get(DelinquencyStatus.RESOLVED, 0),
+            recovered=counts_by_status.get(DelinquencyStatus.VEHICLE_RECOVERED, 0),
+        )
+
+        # Count past due invoices
+        past_due_count = await db.scalar(
+            select(func.count(WeeklyInvoice.id)).where(
+                WeeklyInvoice.status == InvoiceStatus.LATE
+            )
+        )
+        update_past_due_count(past_due_count or 0)
 
     async def verify_payment(
         self,
@@ -320,6 +426,8 @@ class InvoiceService:
         Returns:
             Updated WeeklyInvoice
         """
+        start_time = time.perf_counter()
+
         invoice = await db.get(WeeklyInvoice, invoice_id)
         if not invoice:
             raise ValueError(f"Invoice {invoice_id} not found")
@@ -360,6 +468,11 @@ class InvoiceService:
             )
         except Exception as e:
             logger.warning(f"Failed to create payment verification notification: {e}")
+
+        # Track payment verification metrics
+        duration = time.perf_counter() - start_time
+        status = "approved" if approved else "rejected"
+        track_payment_verification(status=status, duration_seconds=duration)
 
         return invoice
 
