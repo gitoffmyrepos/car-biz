@@ -2319,7 +2319,7 @@
       "Enter valid data",
       "Verify form submits successfully"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
