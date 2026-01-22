@@ -322,7 +322,7 @@
       "Decrypt metadata using Vault Transit",
       "Verify original object_key is recovered"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

@@ -26,6 +26,7 @@ from app.services.email import email_service
 from app.models.incident_report import IncidentReport, IncidentType, IncidentSeverity, IncidentStatus
 from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
 from app.services.storage import storage_service
+from app.services.vault import vault_service
 
 logger = logging.getLogger(__name__)
 
@@ -290,19 +291,36 @@ async def upload_insurance_document(
 
     # Delete old insurance document if exists
     if profile.insurance_document_key:
-        await storage_service.delete_file(
-            bucket=settings.S3_BUCKET_INSURANCE,
-            key=profile.insurance_document_key
+        # Decrypt old key if encrypted
+        old_key = profile.insurance_document_key
+        if vault_service.is_encrypted(old_key):
+            success_decrypt, old_key = vault_service.decrypt(old_key)
+            if not success_decrypt:
+                logger.warning(f"Failed to decrypt old insurance key for deletion: {old_key}")
+                old_key = None
+        if old_key:
+            await storage_service.delete_file(
+                bucket=settings.S3_BUCKET_INSURANCE,
+                key=old_key
+            )
+
+    # Encrypt the storage key before storing in database
+    success_encrypt, encrypted_key = vault_service.encrypt(storage_key)
+    if not success_encrypt:
+        logger.error(f"Failed to encrypt insurance document key: {encrypted_key}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to secure document metadata. Please try again."
         )
 
-    # Update profile
-    profile.insurance_document_key = storage_key
+    # Update profile with encrypted key
+    profile.insurance_document_key = encrypted_key
     profile.insurance_status = InsuranceStatus.PENDING
     await db.flush()
     await db.refresh(profile)
 
     logger.info(
-        f"Insurance document uploaded for user {user.sub}: {storage_key}"
+        f"Insurance document uploaded for user {user.sub}: {storage_key} (encrypted in DB)"
     )
 
     return InsuranceUploadResponse(
@@ -326,10 +344,21 @@ async def get_insurance_status(
     # Generate signed URL if document exists
     document_url = None
     if profile.insurance_document_key:
-        document_url = storage_service.generate_signed_url(
-            bucket=settings.S3_BUCKET_INSURANCE,
-            key=profile.insurance_document_key,
-        )
+        # Decrypt the storage key if encrypted
+        storage_key = profile.insurance_document_key
+        if vault_service.is_encrypted(storage_key):
+            success, decrypted_key = vault_service.decrypt(storage_key)
+            if success:
+                storage_key = decrypted_key
+            else:
+                logger.error(f"Failed to decrypt insurance document key for user {user.sub}")
+                storage_key = None
+
+        if storage_key:
+            document_url = storage_service.generate_signed_url(
+                bucket=settings.S3_BUCKET_INSURANCE,
+                key=storage_key,
+            )
 
     return {
         "insurance_status": profile.insurance_status.value,

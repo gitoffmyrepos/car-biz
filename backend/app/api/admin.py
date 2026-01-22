@@ -66,6 +66,7 @@ from app.services.audit import audit_service
 from app.services.notification import notification_service
 from app.services.invoice import invoice_service
 from app.services.email import email_service
+from app.services.vault import vault_service
 
 logger = logging.getLogger(__name__)
 
@@ -509,10 +510,23 @@ async def get_insurance_document_url(
             detail="No insurance document uploaded"
         )
 
+    # Decrypt the storage key if encrypted
+    storage_key = customer.insurance_document_key
+    if vault_service.is_encrypted(storage_key):
+        success, decrypted_key = vault_service.decrypt(storage_key)
+        if success:
+            storage_key = decrypted_key
+        else:
+            logger.error(f"Failed to decrypt insurance document key for customer {customer_id}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to decrypt document metadata"
+            )
+
     # Generate signed URL (valid for 5 minutes)
     signed_url = storage_service.generate_signed_url(
         bucket=settings.S3_BUCKET_INSURANCE,
-        key=customer.insurance_document_key,
+        key=storage_key,
         expires_in=300,  # 5 minutes
     )
 
@@ -6542,4 +6556,84 @@ async def clear_duplicate_flag(
         "cleared_by": user.email,
         "reason": reason,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+
+# ============================================================================
+# Vault Transit Encryption Testing (Dev/Debug only)
+# ============================================================================
+
+
+class VaultTestRequest(BaseModel):
+    """Request for testing vault encryption."""
+    plaintext: str
+
+
+@router.post("/vault/test-encryption")
+async def test_vault_encryption(
+    request: VaultTestRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Test Vault Transit encryption/decryption cycle.
+
+    Admin only. Returns encryption status and round-trip verification.
+    """
+    if not settings.DEBUG:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vault testing only available in debug mode"
+        )
+
+    plaintext = request.plaintext
+
+    # Encrypt
+    success_encrypt, ciphertext = vault_service.encrypt(plaintext)
+    if not success_encrypt:
+        return {
+            "success": False,
+            "error": f"Encryption failed: {ciphertext}",
+            "vault_enabled": vault_service.enabled,
+        }
+
+    # Decrypt
+    success_decrypt, decrypted = vault_service.decrypt(ciphertext)
+    if not success_decrypt:
+        return {
+            "success": False,
+            "error": f"Decryption failed: {decrypted}",
+            "vault_enabled": vault_service.enabled,
+            "ciphertext": ciphertext,
+        }
+
+    # Verify round-trip
+    round_trip_success = (decrypted == plaintext)
+
+    return {
+        "success": round_trip_success,
+        "vault_enabled": vault_service.enabled,
+        "encryption_type": "vault_transit" if ciphertext.startswith("vault:v") else "dev_fallback",
+        "plaintext_length": len(plaintext),
+        "ciphertext_length": len(ciphertext),
+        "ciphertext_preview": ciphertext[:50] + "..." if len(ciphertext) > 50 else ciphertext,
+        "round_trip_verified": round_trip_success,
+        "decrypted_matches": decrypted == plaintext,
+    }
+
+
+@router.get("/vault/status")
+async def get_vault_status(
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Get Vault connection status.
+
+    Admin only.
+    """
+    return {
+        "vault_enabled": vault_service.enabled,
+        "vault_addr": settings.VAULT_ADDR[:20] + "..." if settings.VAULT_ADDR else None,
+        "transit_key_name": settings.VAULT_TRANSIT_KEY_NAME,
+        "fallback_encryption": "dev_base64" if not vault_service.enabled else None,
     }
