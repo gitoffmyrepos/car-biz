@@ -2245,7 +2245,7 @@
       "Verify error handling",
       "Test form submission"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
