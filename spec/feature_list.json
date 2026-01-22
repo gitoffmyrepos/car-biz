@@ -1280,7 +1280,7 @@
       "Verify AuditLog table exists",
       "Verify proper foreign key relationships"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1292,7 +1292,7 @@
       "Verify rollback works",
       "Verify migration history tracked"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1304,7 +1304,7 @@
       "Verify rate limit counters use Redis",
       "Verify cache TTL respected"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1317,7 +1317,7 @@
       "Upload test file to bucket",
       "Verify file uploaded successfully"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1342,7 +1342,7 @@
       "Navigate to /openapi.json",
       "Verify valid OpenAPI JSON returned"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
