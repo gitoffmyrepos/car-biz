@@ -1251,7 +1251,7 @@
       "Verify no PII logged in plain text",
       "Verify sensitive fields redacted"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
@@ -1264,7 +1264,7 @@
       "Verify timestamp in ISO format",
       "Verify log level present"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

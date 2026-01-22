@@ -6,6 +6,7 @@ Main application entry point with health check and API routing.
 """
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any
@@ -18,12 +19,23 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.security import SecurityHeadersMiddleware
 from app.core.rate_limit import rate_limiter
+from app.core.logging import setup_logging, CorrelationIdMiddleware, get_correlation_id
 from app.api import router as api_router
 from app.services.background_jobs import background_job_service
 from app.workers.email_worker import register_email_handlers
 
 # Import all models to register them with SQLAlchemy before init_db
 import app.models  # noqa: F401
+
+# Configure structured logging on module import
+setup_logging(
+    log_level=settings.LOG_LEVEL,
+    json_format=settings.APP_ENV != "dev" or not settings.DEBUG,  # JSON in prod, can disable in dev
+    enable_sensitive_filter=True,
+)
+
+# Get logger for this module
+logger = logging.getLogger(__name__)
 
 # Store background worker task reference
 _worker_task = None
@@ -35,27 +47,39 @@ async def lifespan(app: FastAPI):
     global _worker_task
 
     # Startup
-    print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    print(f"Environment: {settings.APP_ENV}")
+    logger.info(
+        "Application starting",
+        extra={
+            "app_name": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "environment": settings.APP_ENV,
+        }
+    )
+
     # Initialize database tables
     await init_db()
-    print("Database tables initialized")
-    print("Rate limiter connected to Redis")
+    logger.info("Database tables initialized")
+
+    # Redis rate limiter ready
+    logger.info("Rate limiter connected to Redis")
 
     # Register email job handlers
     register_email_handlers()
-    print("Email job handlers registered")
+    logger.info("Email job handlers registered")
 
     # Start background job worker
     _worker_task = asyncio.create_task(
         background_job_service.start_worker(poll_interval=1.0)
     )
-    print("Background job worker started")
+    logger.info("Background job worker started")
 
     yield
 
     # Shutdown
-    print(f"Shutting down {settings.APP_NAME}")
+    logger.info(
+        "Application shutting down",
+        extra={"app_name": settings.APP_NAME}
+    )
 
     # Stop background job worker
     background_job_service.stop_worker()
@@ -66,7 +90,7 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
     await background_job_service.close()
-    print("Background job worker stopped")
+    logger.info("Background job worker stopped")
 
     # Close rate limiter connection
     await rate_limiter.close()
@@ -81,6 +105,9 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None,
     lifespan=lifespan,
 )
+
+# Add correlation ID middleware for request tracing (outermost for consistent ID)
+app.add_middleware(CorrelationIdMiddleware)
 
 # Add security headers middleware (must be added before CORS)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -173,10 +200,24 @@ app.include_router(api_router, prefix="/api")
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Global exception handler for unhandled errors."""
+    # Log the exception with correlation ID
+    correlation_id = get_correlation_id()
+    logger.error(
+        "Unhandled exception",
+        extra={
+            "correlation_id": correlation_id,
+            "path": str(request.url.path),
+            "method": request.method,
+            "exception_type": type(exc).__name__,
+        },
+        exc_info=exc,
+    )
+
     return JSONResponse(
         status_code=500,
         content={
             "error": "internal_server_error",
             "message": "An unexpected error occurred" if not settings.DEBUG else str(exc),
+            "correlation_id": correlation_id,
         },
     )
