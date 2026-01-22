@@ -1514,7 +1514,7 @@
       "Verify ConfigMap for non-sensitive config",
       "Validate manifests with kubectl --dry-run"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1527,7 +1527,7 @@
       "Verify probes point to health endpoints",
       "Verify probe timing appropriate"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1540,7 +1540,7 @@
       "Verify resources.limits.memory defined",
       "Verify limits are reasonable for workload"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1552,7 +1552,7 @@
       "Verify backend can reach databases",
       "Verify external access properly controlled"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1564,7 +1564,7 @@
       "Verify host matching configured",
       "Verify HTTP to HTTPS redirect"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1576,7 +1576,7 @@
       "Verify readOnlyRootFilesystem where feasible",
       "Verify no privileged containers"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1587,7 +1587,7 @@
       "Verify secrets injected at runtime",
       "Verify application receives secrets correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1598,7 +1598,7 @@
       "Verify imagePullSecrets configured",
       "Verify image names match FX convention"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

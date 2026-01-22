@@ -1,0 +1,205 @@
+# Network Policies for FX Weekly Lease
+# Implements network isolation between application components
+---
+# Default deny all ingress traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels:
+    app: fx-weekly-lease
+spec:
+  podSelector:
+    matchLabels:
+      app: fx-weekly-lease
+  policyTypes:
+  - Ingress
+---
+# Frontend Network Policy
+# Allows: ingress from ingress controller, egress to backend and DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-network-policy
+  labels:
+    app: fx-weekly-lease
+    component: frontend
+spec:
+  podSelector:
+    matchLabels:
+      app: fx-weekly-lease
+      component: frontend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 3000
+  # Allow traffic from within the app (for internal routing)
+  - from:
+    - podSelector:
+        matchLabels:
+          app: fx-weekly-lease
+    ports:
+    - protocol: TCP
+      port: 3000
+  egress:
+  # Allow egress to backend
+  - to:
+    - podSelector:
+        matchLabels:
+          app: fx-weekly-lease
+          component: backend
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow DNS lookups
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
+# Backend Network Policy
+# Allows: ingress from frontend and ingress, egress to databases, vault, and external
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-network-policy
+  labels:
+    app: fx-weekly-lease
+    component: backend
+spec:
+  podSelector:
+    matchLabels:
+      app: fx-weekly-lease
+      component: backend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from frontend
+  - from:
+    - podSelector:
+        matchLabels:
+          app: fx-weekly-lease
+          component: frontend
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow traffic from ingress controller (for direct API access)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  # Allow egress to PostgreSQL
+  - to:
+    - podSelector:
+        matchLabels:
+          component: postgresql
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow egress to external PostgreSQL service
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow egress to Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          component: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow egress to Vault
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: vault
+    ports:
+    - protocol: TCP
+      port: 8200
+  # Allow egress to MinIO
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 9000
+  # Allow egress to Keycloak
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: auth
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow DNS lookups
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+  # Allow HTTPS egress (for email service, external APIs)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - protocol: TCP
+      port: 443
+---
+# Database Network Policy (if databases are deployed in same namespace)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-network-policy
+  labels:
+    app: fx-weekly-lease
+spec:
+  podSelector:
+    matchExpressions:
+    - key: component
+      operator: In
+      values:
+      - postgresql
+      - redis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Only allow from backend
+  - from:
+    - podSelector:
+        matchLabels:
+          app: fx-weekly-lease
+          component: backend
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

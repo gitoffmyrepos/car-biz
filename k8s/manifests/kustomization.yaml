@@ -1,0 +1,36 @@
+# Kustomization for FX Weekly Lease
+# Use: kubectl apply -k k8s/manifests/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: fx-weekly-lease
+
+namespace: fx-weekly-lease-dev
+
+labels:
+- includeSelectors: true
+  pairs:
+    app: fx-weekly-lease
+
+resources:
+- 00-namespace.yaml
+- 01-configmap.yaml
+- 02-backend-deployment.yaml
+- 03-frontend-deployment.yaml
+- 04-ingress.yaml
+- 05-network-policies.yaml
+- 06-external-secrets.yaml
+
+# Image customization (set via CI/CD)
+images:
+- name: nexus.strategybase.io:8082/sb-custom-docker-images/fx-weekly-lease-backend
+  newTag: latest-dev
+- name: nexus.strategybase.io:8082/sb-custom-docker-images/fx-weekly-lease-frontend
+  newTag: latest-dev
+
+# Common annotations
+commonAnnotations:
+  app.kubernetes.io/name: fx-weekly-lease
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/version: "1.0.0"

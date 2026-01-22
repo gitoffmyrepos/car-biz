@@ -1,0 +1,34 @@
+# Namespace for FX Weekly Lease Application
+# Follows FX homelab naming conventions
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fx-weekly-lease-dev
+  labels:
+    app: fx-weekly-lease
+    environment: dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fx-weekly-lease-prod
+  labels:
+    app: fx-weekly-lease
+    environment: prod
+---
+# ServiceAccount for the application
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fx-weekly-lease-sa
+  namespace: fx-weekly-lease-dev
+  labels:
+    app: fx-weekly-lease
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fx-weekly-lease-sa
+  namespace: fx-weekly-lease-prod
+  labels:
+    app: fx-weekly-lease

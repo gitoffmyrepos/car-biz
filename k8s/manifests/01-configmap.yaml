@@ -1,0 +1,73 @@
+# ConfigMap for FX Weekly Lease Application
+# Non-sensitive configuration values
+# Sensitive values sourced from Vault via ExternalSecrets
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fx-weekly-lease-config
+  labels:
+    app: fx-weekly-lease
+data:
+  # =============================================================================
+  # APPLICATION CONFIGURATION (Non-sensitive)
+  # =============================================================================
+
+  # Application Settings
+  APP_NAME: "FX Weekly Lease"
+  APP_VERSION: "1.0.0"
+  ENVIRONMENT: "${ENVIRONMENT}"
+  DEBUG: "false"
+
+  # Frontend Configuration
+  NEXT_PUBLIC_API_URL: "https://api.weekly-lease.strategybase.io"
+  NEXT_PUBLIC_APP_URL: "https://weekly-lease.strategybase.io"
+
+  # Backend Configuration
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  CORS_ORIGINS: "https://weekly-lease.strategybase.io"
+
+  # Database Service Endpoints (credentials from Vault)
+  # PostgreSQL - Deployed separately or via operator
+  POSTGRES_HOST: "postgresql-service.fx-weekly-lease-prod.svc.cluster.local"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "fx_weekly_lease"
+
+  # Redis Service Endpoints
+  REDIS_HOST: "redis-service.fx-weekly-lease-prod.svc.cluster.local"
+  REDIS_PORT: "6379"
+
+  # MinIO/S3 Configuration (credentials from Vault)
+  MINIO_HOST: "minio.prod-forex.svc.cluster.local"
+  MINIO_PORT: "9000"
+  MINIO_BUCKET_PAYMENTS: "fx-weekly-lease-payments"
+  MINIO_BUCKET_INSURANCE: "fx-weekly-lease-insurance"
+  MINIO_BUCKET_INCIDENTS: "fx-weekly-lease-incidents"
+
+  # Vault Configuration
+  VAULT_ADDR: "http://vault.vault.svc.cluster.local:8200"
+  VAULT_KV_PATH: "secret/fx-weekly-lease/${ENVIRONMENT}"
+  VAULT_TRANSIT_KEY: "fx-weekly-lease-${ENVIRONMENT}-transit"
+  VAULT_AUTH_METHOD: "kubernetes"
+
+  # Keycloak/OIDC Configuration
+  KEYCLOAK_HOST: "keycloak.auth.svc.cluster.local"
+  KEYCLOAK_REALM: "fx-weekly-lease"
+  OIDC_ISSUER_URL: "https://auth.strategybase.io/realms/fx-weekly-lease"
+  OIDC_CLIENT_ID: "fx-weekly-lease-app"
+
+  # Rate Limiting
+  RATE_LIMIT_REQUESTS_PER_MINUTE: "60"
+  RATE_LIMIT_AUTH_REQUESTS_PER_MINUTE: "10"
+
+  # Logging Configuration
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+
+  # Email Configuration (Resend API key from Vault)
+  EMAIL_FROM: "noreply@strategybase.io"
+  EMAIL_FROM_NAME: "FX Weekly Lease"
+
+  # Background Jobs
+  CELERY_BROKER_URL: "redis://redis-service.fx-weekly-lease-prod.svc.cluster.local:6379/0"
+  CELERY_RESULT_BACKEND: "redis://redis-service.fx-weekly-lease-prod.svc.cluster.local:6379/1"
