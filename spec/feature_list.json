@@ -2439,7 +2439,7 @@
       "Trigger again and confirm",
       "Verify action proceeds"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

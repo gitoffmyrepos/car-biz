@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ConfirmModal } from '@/components/ui/Modal';
 
 interface Vehicle {
   id: number;
@@ -152,6 +153,9 @@ export default function AdminVehiclesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showConditionReportModal, setShowConditionReportModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   // Form state
@@ -417,13 +421,19 @@ export default function AdminVehiclesPage() {
     }
   };
 
-  const handleDeleteVehicle = async (vehicle: Vehicle) => {
-    if (!confirm(`Are you sure you want to delete ${vehicle.year} ${vehicle.make} ${vehicle.model} (VIN: ${vehicle.vin})?`)) {
-      return;
-    }
+  const openDeleteConfirmModal = (vehicle: Vehicle) => {
+    setVehicleToDelete(vehicle);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const handleDeleteVehicle = async () => {
+    if (!vehicleToDelete) return;
+
+    setDeleting(true);
+    setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/vehicles/${vehicle.id}`, {
+      const response = await fetch(`http://localhost:8100/api/admin/vehicles/${vehicleToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -435,10 +445,19 @@ export default function AdminVehiclesPage() {
         throw new Error(errorData.detail || 'Failed to delete vehicle');
       }
 
+      setShowDeleteConfirmModal(false);
+      setVehicleToDelete(null);
       fetchVehicles();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete vehicle');
+    } finally {
+      setDeleting(false);
     }
+  };
+
+  const closeDeleteConfirmModal = () => {
+    setShowDeleteConfirmModal(false);
+    setVehicleToDelete(null);
   };
 
   return (
@@ -572,7 +591,7 @@ export default function AdminVehiclesPage() {
                         </button>
                         {!vehicle.current_lease_id && (
                           <button
-                            onClick={() => handleDeleteVehicle(vehicle)}
+                            onClick={() => openDeleteConfirmModal(vehicle)}
                             className="text-red-600 hover:text-red-700 text-sm font-medium"
                           >
                             Delete
@@ -1299,6 +1318,27 @@ export default function AdminVehiclesPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirmModal}
+        onClose={closeDeleteConfirmModal}
+        onConfirm={handleDeleteVehicle}
+        title="Delete Vehicle"
+        message={vehicleToDelete ? (
+          <>
+            Are you sure you want to delete <strong>{vehicleToDelete.year} {vehicleToDelete.make} {vehicleToDelete.model}</strong>?
+            <br />
+            <span className="text-gray-500 text-sm">VIN: {vehicleToDelete.vin}</span>
+            <br />
+            <span className="text-red-600 text-sm">This action cannot be undone.</span>
+          </>
+        ) : 'Are you sure you want to delete this vehicle?'}
+        confirmText="Delete Vehicle"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleting}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ConfirmModal } from '@/components/ui/Modal';
 
 interface Tracker {
   id: number;
@@ -107,6 +108,14 @@ export default function AdminTrackersPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
 
+  // Confirmation modal states
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [showUnassignConfirmModal, setShowUnassignConfirmModal] = useState(false);
+  const [trackerToDelete, setTrackerToDelete] = useState<Tracker | null>(null);
+  const [trackerToUnassign, setTrackerToUnassign] = useState<Tracker | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [unassigning, setUnassigning] = useState(false);
+
   const getAuthToken = () => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('fx_weekly_lease_token') || '';
@@ -202,16 +211,24 @@ export default function AdminTrackersPage() {
     }
   };
 
-  const handleUnassignTracker = async (tracker: Tracker) => {
-    if (!confirm(`Are you sure you want to unassign tracker ${tracker.device_id} from ${tracker.assigned_vehicle_info}?`)) {
-      return;
-    }
+  const openUnassignConfirmModal = (tracker: Tracker) => {
+    setTrackerToUnassign(tracker);
+    setShowUnassignConfirmModal(true);
+  };
 
-    setSubmitting(true);
+  const closeUnassignConfirmModal = () => {
+    setShowUnassignConfirmModal(false);
+    setTrackerToUnassign(null);
+  };
+
+  const handleUnassignTracker = async () => {
+    if (!trackerToUnassign) return;
+
+    setUnassigning(true);
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/trackers/${tracker.id}/unassign`, {
+      const response = await fetch(`http://localhost:8100/api/admin/trackers/${trackerToUnassign.id}/unassign`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -223,13 +240,15 @@ export default function AdminTrackersPage() {
         throw new Error(errorData.detail || 'Failed to unassign tracker');
       }
 
+      setShowUnassignConfirmModal(false);
+      setTrackerToUnassign(null);
       setShowDetailModal(false);
       setSelectedTracker(null);
       fetchTrackers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unassign tracker');
     } finally {
-      setSubmitting(false);
+      setUnassigning(false);
     }
   };
 
@@ -361,13 +380,24 @@ export default function AdminTrackersPage() {
     }
   };
 
-  const handleDeleteTracker = async (tracker: Tracker) => {
-    if (!confirm(`Are you sure you want to delete tracker ${tracker.device_id}?`)) {
-      return;
-    }
+  const openDeleteConfirmModal = (tracker: Tracker) => {
+    setTrackerToDelete(tracker);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const closeDeleteConfirmModal = () => {
+    setShowDeleteConfirmModal(false);
+    setTrackerToDelete(null);
+  };
+
+  const handleDeleteTracker = async () => {
+    if (!trackerToDelete) return;
+
+    setDeleting(true);
+    setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/trackers/${tracker.id}`, {
+      const response = await fetch(`http://localhost:8100/api/admin/trackers/${trackerToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -379,9 +409,13 @@ export default function AdminTrackersPage() {
         throw new Error(errorData.detail || 'Failed to delete tracker');
       }
 
+      setShowDeleteConfirmModal(false);
+      setTrackerToDelete(null);
       fetchTrackers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete tracker');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -530,7 +564,7 @@ export default function AdminTrackersPage() {
                         )}
                         {tracker.status === 'assigned' && (
                           <button
-                            onClick={() => handleUnassignTracker(tracker)}
+                            onClick={() => openUnassignConfirmModal(tracker)}
                             className="text-orange-600 hover:text-orange-700 text-sm font-medium"
                           >
                             Unassign
@@ -538,7 +572,7 @@ export default function AdminTrackersPage() {
                         )}
                         {tracker.status !== 'assigned' && (
                           <button
-                            onClick={() => handleDeleteTracker(tracker)}
+                            onClick={() => openDeleteConfirmModal(tracker)}
                             className="text-red-600 hover:text-red-700 text-sm font-medium"
                           >
                             Delete
@@ -1021,11 +1055,11 @@ export default function AdminTrackersPage() {
               )}
               {selectedTracker.status === 'assigned' && (
                 <button
-                  onClick={() => handleUnassignTracker(selectedTracker)}
-                  disabled={submitting}
+                  onClick={() => openUnassignConfirmModal(selectedTracker)}
+                  disabled={unassigning}
                   className="flex-1 min-w-[100px] py-2 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium disabled:opacity-50"
                 >
-                  {submitting ? 'Unassigning...' : 'Unassign'}
+                  {unassigning ? 'Unassigning...' : 'Unassign'}
                 </button>
               )}
               <button
@@ -1117,6 +1151,47 @@ export default function AdminTrackersPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Tracker Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirmModal}
+        onClose={closeDeleteConfirmModal}
+        onConfirm={handleDeleteTracker}
+        title="Delete Tracker"
+        message={trackerToDelete ? (
+          <>
+            Are you sure you want to delete tracker <strong className="font-mono">{trackerToDelete.device_id}</strong>?
+            <br />
+            <span className="text-gray-500 text-sm">Serial: {trackerToDelete.serial_number}</span>
+            <br />
+            <span className="text-red-600 text-sm">This action cannot be undone.</span>
+          </>
+        ) : 'Are you sure you want to delete this tracker?'}
+        confirmText="Delete Tracker"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleting}
+      />
+
+      {/* Unassign Tracker Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showUnassignConfirmModal}
+        onClose={closeUnassignConfirmModal}
+        onConfirm={handleUnassignTracker}
+        title="Unassign Tracker"
+        message={trackerToUnassign ? (
+          <>
+            Are you sure you want to unassign tracker <strong className="font-mono">{trackerToUnassign.device_id}</strong> from{' '}
+            <strong>{trackerToUnassign.assigned_vehicle_info}</strong>?
+            <br />
+            <span className="text-gray-500 text-sm">The tracker will become available for reassignment.</span>
+          </>
+        ) : 'Are you sure you want to unassign this tracker?'}
+        confirmText="Unassign Tracker"
+        cancelText="Cancel"
+        variant="warning"
+        isLoading={unassigning}
+      />
     </div>
   );
 }
