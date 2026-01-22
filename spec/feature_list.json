@@ -2760,6 +2760,6 @@
       "Verify test data appropriate",
       "Verify seed is idempotent"
     ],
-    "passes": false
+    "passes": true
   }
 ]
