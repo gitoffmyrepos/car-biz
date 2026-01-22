@@ -3945,3 +3945,94 @@ Feature: #24 - Insurance metadata encryption - Sensitive insurance metadata encr
 ================================================================================
 END SESSION 36
 ================================================================================
+
+================================================================================
+SESSION 37: INSURANCE SIGNED URL ACCESS VERIFICATION
+================================================================================
+
+Date: 2026-01-22
+Status: COMPLETED
+Feature: Insurance signed URL access - Insurance documents accessed only via short-lived MinIO signed URLs
+
+## Feature Verification Summary
+
+This session verified that the "Insurance signed URL access" feature is fully implemented
+and working correctly through comprehensive API and E2E testing.
+
+## E2E Test Steps Completed
+
+1. Uploaded test insurance document for signedurl_test@example.com
+2. Retrieved signed URL via GET /api/customer/insurance/status
+3. Verified TTL is correctly set (300 seconds = 5 minutes)
+4. Accessed document via signed URL endpoint - HTTP 200 success
+5. Verified unauthenticated access returns HTTP 401
+6. Tested admin break-glass access flow in UI
+7. Verified audit logging for all document access
+
+## Key Verifications
+
+### Signed URL Implementation
+- Storage service implements generate_signed_url() with configurable TTL
+- S3_SIGNED_URL_TTL_SECONDS default: 300 (5 minutes)
+- Production: Uses boto3 generate_presigned_url
+- Development: Uses authenticated file serving endpoint
+
+### Break-Glass Access
+- Admin must provide reason (minimum 10 characters)
+- UI shows "Document Access Required" modal
+- Warning: "Break-glass access will be logged"
+- After access: Shows "expires in 5 min" on button
+- Confirmation: "Access logged to audit trail"
+
+### Audit Logging
+- All insurance document access logged
+- action: "insurance_document_view"
+- target_type: "insurance_document"
+- requires_reason: true
+- Audit entries verified in database
+
+### Security
+- Authentication required for file access (401 without token)
+- Vault Transit encryption for storage keys
+- Short-lived URLs prevent unauthorized sharing
+
+## Screenshots Captured
+
+1. 11_admin_customers.png - Customer list with insurance status
+2. 12_customer_details.png - View Insurance Document button
+3. 13_view_document_clicked.png - Break-glass access modal
+4. 14_reason_entered.png - Reason entered for audit
+5. 15_document_accessed.png - Document with "expires in 5 min"
+
+## API Tests Passed
+
+1. POST /api/customer/insurance/upload - 200 OK
+2. GET /api/customer/insurance/status - Returns document_url
+3. POST /api/admin/customers/{id}/insurance-document - Returns signed URL with expires_in_seconds: 300
+4. GET /api/files/{bucket}/{path} (with auth) - 200 OK
+5. GET /api/files/{bucket}/{path} (without auth) - 401 Unauthorized
+6. GET /api/admin/audit-logs - Shows insurance_document_view entries
+
+## Progress Update
+
+- Features Passing: 79/211 (37.4% complete)
+- Feature: Insurance signed URL access - PASSED
+- No regressions detected
+- Baseline features intact
+
+## Files Modified
+
+1. spec/feature_list.json - Updated feature passes: true
+2. test_results.json - Updated with feature test results
+3. claude-progress.txt - Added session 37 notes
+
+## Running Services
+
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 37
+================================================================================

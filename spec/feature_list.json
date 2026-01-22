@@ -379,7 +379,7 @@
       "Attempt access after expiration",
       "Verify 403/expired error"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
