@@ -924,7 +924,7 @@
       "Verify new lease creation blocked",
       "Take screenshot of banned customer view"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

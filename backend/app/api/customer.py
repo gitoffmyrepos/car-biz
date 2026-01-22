@@ -50,6 +50,8 @@ class ProfileResponse(BaseModel):
     insurance_status: str
     insurance_expiration_date: Optional[datetime]
     is_verified: bool
+    is_banned: bool
+    ban_reason: Optional[str]
     notification_email: bool
     notification_sms: bool
     created_at: datetime
@@ -152,6 +154,8 @@ async def get_profile(
         insurance_status=profile.insurance_status.value,
         insurance_expiration_date=profile.insurance_expiration_date,
         is_verified=profile.is_verified,
+        is_banned=profile.is_banned,
+        ban_reason=profile.ban_reason,
         notification_email=profile.notification_email,
         notification_sms=profile.notification_sms,
         created_at=profile.created_at,
@@ -198,6 +202,8 @@ async def update_profile(
         insurance_status=profile.insurance_status.value,
         insurance_expiration_date=profile.insurance_expiration_date,
         is_verified=profile.is_verified,
+        is_banned=profile.is_banned,
+        ban_reason=profile.ban_reason,
         notification_email=profile.notification_email,
         notification_sms=profile.notification_sms,
         created_at=profile.created_at,
@@ -382,6 +388,13 @@ async def create_vehicle_request(
     """
     # Get customer profile
     profile = await get_or_create_profile(user, db)
+
+    # Check if customer is banned
+    if profile.is_banned:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Your account has been banned. Reason: {profile.ban_reason or 'Policy violation'}. You cannot request new vehicles. Please contact support if you believe this is an error."
+        )
 
     # Verify insurance is approved
     if profile.insurance_status != InsuranceStatus.APPROVED:
@@ -679,6 +692,8 @@ class DashboardSummary(BaseModel):
     total_leases_count: int
     active_lease: Optional[LeaseResponse]
     pending_request: Optional[dict]
+    is_banned: bool = False
+    ban_reason: Optional[str] = None
 
 
 @router.get("/leases")
@@ -848,6 +863,8 @@ async def get_dashboard_summary(
         total_leases_count=total_leases_count,
         active_lease=active_lease,
         pending_request=pending_request,
+        is_banned=profile.is_banned,
+        ban_reason=profile.ban_reason,
     )
 
 

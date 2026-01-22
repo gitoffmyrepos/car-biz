@@ -44,6 +44,8 @@ interface DashboardSummary {
   total_leases_count: number;
   active_lease: ActiveLease | null;
   pending_request: PendingRequest | null;
+  is_banned: boolean;
+  ban_reason: string | null;
 }
 
 export default function CustomerDashboard() {
@@ -194,6 +196,33 @@ export default function CustomerDashboard() {
         {error && (
           <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {/* Banned Status Banner */}
+        {dashboardData?.is_banned && (
+          <div className="mb-6 bg-red-50 border-2 border-red-500 rounded-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-red-800">Account Banned</h3>
+                <p className="text-red-700 mt-1">
+                  Your account has been banned and you cannot request new vehicles or create new leases.
+                </p>
+                {dashboardData.ban_reason && (
+                  <p className="text-red-600 mt-2 text-sm">
+                    <strong>Reason:</strong> {dashboardData.ban_reason}
+                  </p>
+                )}
+                <p className="text-red-600 mt-3 text-sm">
+                  If you believe this is an error, please <Link href="/contact" className="underline font-medium hover:text-red-800">contact support</Link>.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -361,20 +390,36 @@ export default function CustomerDashboard() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Request Vehicle Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className={`bg-white rounded-xl shadow-lg p-6 ${dashboardData?.is_banned ? 'opacity-60' : ''}`}>
             <h2 className="text-xl font-semibold text-charcoal mb-4">Request a Vehicle</h2>
-            <p className="text-gray-600 mb-4">
-              Ready to lease? Submit a vehicle request and we&apos;ll get you on the road.
-            </p>
-            <Link
-              href="/vehicle-request"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 transition-colors"
-            >
-              Request Vehicle
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
+            {dashboardData?.is_banned ? (
+              <>
+                <p className="text-red-600 mb-4">
+                  Vehicle requests are unavailable while your account is banned.
+                </p>
+                <span className="inline-flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-600 font-semibold rounded-lg cursor-not-allowed">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  Request Blocked
+                </span>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-600 mb-4">
+                  Ready to lease? Submit a vehicle request and we&apos;ll get you on the road.
+                </p>
+                <Link
+                  href="/vehicle-request"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 transition-colors"
+                >
+                  Request Vehicle
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Browse Vehicles Card */}
@@ -426,9 +471,15 @@ export default function CustomerDashboard() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Account Status</p>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Active
-              </span>
+              {dashboardData?.is_banned ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  Banned
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Active
+                </span>
+              )}
             </div>
             <div>
               <p className="text-sm text-gray-500">Member Since</p>
