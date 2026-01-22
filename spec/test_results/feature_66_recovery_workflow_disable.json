@@ -1,0 +1,71 @@
+{
+  "feature_id": 66,
+  "feature_description": "Recovery workflow disable option - Recovery workflow can be disabled via configuration",
+  "test_status": "passed",
+  "test_date": "2026-01-22T19:13:00Z",
+  "tester": "Claude Code",
+  "test_steps": [
+    {
+      "step": "Set configuration to disable recovery workflow",
+      "method": "API call to PUT /api/admin/settings/recovery_workflow_enabled with value 'false'",
+      "result": "passed",
+      "details": "Successfully set recovery_workflow_enabled to false via API"
+    },
+    {
+      "step": "Login as admin user",
+      "method": "Browser E2E test with Puppeteer - clicked Admin quick login, entered MFA code 123456",
+      "result": "passed",
+      "details": "Successfully logged in as admin with MFA in development mode"
+    },
+    {
+      "step": "Navigate to delinquency case",
+      "method": "Browser navigation to /admin/delinquency",
+      "result": "passed",
+      "details": "Successfully navigated to Delinquency & Recovery page"
+    },
+    {
+      "step": "Verify 'Initiate Recovery' option is hidden or disabled",
+      "method": "Visual inspection and backend test",
+      "result": "passed",
+      "details": "Backend rejects authorize-recovery requests with message: 'Recovery workflow is currently disabled. Contact system administrator to enable recovery actions.'"
+    },
+    {
+      "step": "Verify message explaining recovery is disabled",
+      "method": "Visual inspection via screenshot",
+      "result": "passed",
+      "details": "Amber warning banner displayed: 'Recovery Workflow Disabled - Vehicle recovery actions are currently disabled by system configuration. Contact a system administrator to enable recovery workflow if needed.'"
+    },
+    {
+      "step": "Re-enable recovery in configuration",
+      "method": "API call to PUT /api/admin/settings/recovery_workflow_enabled with value 'true'",
+      "result": "passed",
+      "details": "Successfully re-enabled recovery workflow via API"
+    },
+    {
+      "step": "Verify recovery option reappears",
+      "method": "Browser page refresh and visual inspection",
+      "result": "passed",
+      "details": "Warning banner no longer displayed when recovery workflow is enabled"
+    }
+  ],
+  "screenshots": [
+    "delinquency-page-recovery-disabled.png - Shows amber warning banner when recovery is disabled",
+    "delinquency-recovery-enabled.png - Shows page without warning banner when recovery is enabled"
+  ],
+  "implementation_details": {
+    "backend_changes": [
+      "Added GET /api/admin/settings/recovery-workflow-status endpoint to check recovery workflow setting",
+      "Added check in authorize-recovery endpoint to reject requests when recovery is disabled"
+    ],
+    "frontend_changes": [
+      "Added RecoveryWorkflowStatus interface and state",
+      "Added fetchRecoveryWorkflowStatus function to fetch setting on page load",
+      "Added amber warning banner when recovery workflow is disabled",
+      "Conditionally render 'Initiate Recovery' button based on setting (disabled/grayed out when workflow disabled)"
+    ],
+    "files_modified": [
+      "backend/app/api/admin.py",
+      "frontend/app/admin/delinquency/page.tsx"
+    ]
+  }
+}

@@ -1,7 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+
+interface RecoveryWorkflowStatus {
+  recovery_workflow_enabled: boolean;
+  message: string;
+  setting_exists: boolean;
+  updated_at?: string;
+  updated_by?: string;
+}
 
 interface DelinquencyCase {
   id: number;
@@ -107,6 +115,7 @@ export default function AdminDelinquencyPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [delinquencyTypes, setDelinquencyTypes] = useState<DelinquencyTypes | null>(null);
+  const [recoveryWorkflowStatus, setRecoveryWorkflowStatus] = useState<RecoveryWorkflowStatus | null>(null);
 
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -194,10 +203,42 @@ export default function AdminDelinquencyPage() {
     }
   };
 
+  const fetchRecoveryWorkflowStatus = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:8100/api/admin/settings/recovery-workflow-status', {
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        // Default to enabled if we can't fetch the setting
+        setRecoveryWorkflowStatus({
+          recovery_workflow_enabled: true,
+          message: 'Recovery workflow status unavailable',
+          setting_exists: false,
+        });
+        return;
+      }
+
+      const data = await response.json();
+      setRecoveryWorkflowStatus(data);
+    } catch (err) {
+      console.error('Failed to fetch recovery workflow status:', err);
+      // Default to enabled on error
+      setRecoveryWorkflowStatus({
+        recovery_workflow_enabled: true,
+        message: 'Recovery workflow status unavailable',
+        setting_exists: false,
+      });
+    }
+  }, []);
+
   useEffect(() => {
     fetchCases();
     fetchDelinquencyTypes();
-  }, [statusFilter]);
+    fetchRecoveryWorkflowStatus();
+  }, [statusFilter, fetchRecoveryWorkflowStatus]);
 
   const openDetailModal = (delinquencyCase: DelinquencyCase) => {
     setSelectedCase(delinquencyCase);
@@ -516,6 +557,22 @@ export default function AdminDelinquencyPage() {
         </Link>
       </div>
 
+      {/* Recovery Workflow Disabled Notice */}
+      {recoveryWorkflowStatus && recoveryWorkflowStatus.recovery_workflow_enabled === false && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center gap-3">
+          <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <p className="font-medium">Recovery Workflow Disabled</p>
+            <p className="text-sm text-amber-700">
+              Vehicle recovery actions are currently disabled by system configuration.
+              Contact a system administrator to enable recovery workflow if needed.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -772,13 +829,30 @@ export default function AdminDelinquencyPage() {
                       </button>
                     )}
                     {!selectedCase.recovery_authorized && selectedCase.escalation_level !== 'level_1' && (
-                      <button
-                        onClick={() => openRecoveryModal(selectedCase)}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                        disabled={submitting}
-                      >
-                        Initiate Recovery
-                      </button>
+                      recoveryWorkflowStatus?.recovery_workflow_enabled !== false ? (
+                        <button
+                          onClick={() => openRecoveryModal(selectedCase)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                          disabled={submitting}
+                        >
+                          Initiate Recovery
+                        </button>
+                      ) : (
+                        <div className="relative group">
+                          <button
+                            className="px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-60"
+                            disabled={true}
+                            title="Recovery workflow is currently disabled"
+                          >
+                            Initiate Recovery
+                          </button>
+                          <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                            <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                              Recovery workflow is disabled
+                            </div>
+                          </div>
+                        </div>
+                      )
                     )}
                     {selectedCase.recovery_authorized && (
                       <button

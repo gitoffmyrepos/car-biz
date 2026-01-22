@@ -4964,6 +4964,21 @@ async def authorize_recovery(
 
     Requires admin role.
     """
+    # Check if recovery workflow is enabled
+    recovery_setting_result = await session.execute(
+        select(SystemSettings).where(
+            SystemSettings.setting_key == "recovery_workflow_enabled",
+            SystemSettings.is_active == True
+        )
+    )
+    recovery_setting = recovery_setting_result.scalar_one_or_none()
+
+    if recovery_setting and not recovery_setting.get_typed_value():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recovery workflow is currently disabled. Contact system administrator to enable recovery actions."
+        )
+
     # Validate compliance gate
     if not data.compliance_confirmed:
         raise HTTPException(
@@ -6065,6 +6080,45 @@ async def get_all_settings(
         ],
         "categories": sorted(categories),
         "total": len(settings_list),
+    }
+
+
+@router.get("/settings/recovery-workflow-status")
+async def get_recovery_workflow_status(
+    user: AuthenticatedUser = Depends(require_ops),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get the current status of the recovery workflow setting.
+
+    Requires ops or admin role.
+    Returns whether the recovery workflow is enabled or disabled.
+    Used by frontend to conditionally show/hide recovery action buttons.
+    """
+    result = await session.execute(
+        select(SystemSettings).where(
+            SystemSettings.setting_key == "recovery_workflow_enabled",
+            SystemSettings.is_active == True
+        )
+    )
+    setting = result.scalar_one_or_none()
+
+    # Default to enabled if setting doesn't exist
+    if not setting:
+        return {
+            "recovery_workflow_enabled": True,
+            "message": "Recovery workflow is enabled (default - setting not configured)",
+            "setting_exists": False,
+        }
+
+    is_enabled = setting.get_typed_value()
+
+    return {
+        "recovery_workflow_enabled": is_enabled,
+        "message": f"Recovery workflow is {'enabled' if is_enabled else 'disabled'}",
+        "setting_exists": True,
+        "updated_at": setting.updated_at.isoformat() if setting.updated_at else None,
+        "updated_by": setting.updated_by,
     }
 
 

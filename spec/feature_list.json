@@ -938,7 +938,7 @@
       "Re-enable recovery in configuration",
       "Verify recovery option reappears"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
