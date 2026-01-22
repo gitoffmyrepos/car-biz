@@ -1023,7 +1023,7 @@
       "Verify email sent successfully",
       "Verify job completion logged"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

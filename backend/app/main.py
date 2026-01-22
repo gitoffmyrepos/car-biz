@@ -5,6 +5,7 @@ Salvage-to-Lux Fleet Management
 Main application entry point with health check and API routing.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any
@@ -18,14 +19,21 @@ from app.core.database import init_db
 from app.core.security import SecurityHeadersMiddleware
 from app.core.rate_limit import rate_limiter
 from app.api import router as api_router
+from app.services.background_jobs import background_job_service
+from app.workers.email_worker import register_email_handlers
 
 # Import all models to register them with SQLAlchemy before init_db
 import app.models  # noqa: F401
+
+# Store background worker task reference
+_worker_task = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
+    global _worker_task
+
     # Startup
     print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     print(f"Environment: {settings.APP_ENV}")
@@ -33,9 +41,33 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("Database tables initialized")
     print("Rate limiter connected to Redis")
+
+    # Register email job handlers
+    register_email_handlers()
+    print("Email job handlers registered")
+
+    # Start background job worker
+    _worker_task = asyncio.create_task(
+        background_job_service.start_worker(poll_interval=1.0)
+    )
+    print("Background job worker started")
+
     yield
+
     # Shutdown
     print(f"Shutting down {settings.APP_NAME}")
+
+    # Stop background job worker
+    background_job_service.stop_worker()
+    if _worker_task:
+        _worker_task.cancel()
+        try:
+            await _worker_task
+        except asyncio.CancelledError:
+            pass
+    await background_job_service.close()
+    print("Background job worker stopped")
+
     # Close rate limiter connection
     await rate_limiter.close()
 

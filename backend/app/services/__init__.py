@@ -4,5 +4,15 @@ from app.services.storage import storage_service
 from app.services.audit import audit_service
 from app.services.notification import notification_service
 from app.services.vault import vault_service
+from app.services.background_jobs import background_job_service, JobType, JobStatus
 
-__all__ = ["email_service", "storage_service", "audit_service", "notification_service", "vault_service"]
+__all__ = [
+    "email_service",
+    "storage_service",
+    "audit_service",
+    "notification_service",
+    "vault_service",
+    "background_job_service",
+    "JobType",
+    "JobStatus",
+]
