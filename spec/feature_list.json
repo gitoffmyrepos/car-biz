@@ -1200,7 +1200,7 @@
       "Verify 403 Forbidden response",
       "Verify no data leaked in error response"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",

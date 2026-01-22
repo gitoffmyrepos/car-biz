@@ -189,3 +189,156 @@ def validate_file_size(size: int, file_type: str = "default") -> bool:
     """
     max_size = MAX_FILE_SIZES.get(file_type, MAX_FILE_SIZES["default"])
     return size <= max_size
+
+
+# =============================================================================
+# IDOR Prevention Utilities
+# =============================================================================
+
+
+class IDORProtectionError(Exception):
+    """Exception raised when IDOR check fails."""
+
+    def __init__(self, resource_type: str = "Resource"):
+        self.resource_type = resource_type
+        super().__init__(f"{resource_type} not found or access denied")
+
+
+def check_resource_ownership(
+    resource: object,
+    owner_field: str,
+    expected_owner_id: int,
+    resource_type: str = "Resource",
+) -> None:
+    """
+    Verify resource ownership to prevent IDOR attacks.
+
+    This function checks that a resource belongs to the expected owner.
+    On failure, it raises IDORProtectionError with a generic message
+    to avoid leaking information about resource existence.
+
+    Args:
+        resource: The database resource object to check
+        owner_field: The attribute name containing the owner ID
+        expected_owner_id: The ID of the user who should own the resource
+        resource_type: Type name for error messages (e.g., "Invoice", "Vehicle Request")
+
+    Raises:
+        IDORProtectionError: If resource is None or ownership check fails
+
+    Example:
+        check_resource_ownership(
+            invoice,
+            "customer_profile_id",
+            current_user_profile.id,
+            "Invoice"
+        )
+    """
+    if resource is None:
+        raise IDORProtectionError(resource_type)
+
+    actual_owner_id = getattr(resource, owner_field, None)
+    if actual_owner_id != expected_owner_id:
+        # Log attempted unauthorized access (without revealing resource details)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            f"IDOR attempt blocked: {resource_type} access denied. "
+            f"Expected owner: {expected_owner_id}, Actual owner: {actual_owner_id}"
+        )
+        raise IDORProtectionError(resource_type)
+
+
+def verify_ownership_or_404(
+    resource: object,
+    owner_field: str,
+    expected_owner_id: int,
+    resource_type: str = "Resource",
+) -> object:
+    """
+    Verify resource ownership and return the resource, or raise HTTP 404.
+
+    This is a convenience wrapper around check_resource_ownership that
+    converts IDORProtectionError to HTTPException with 404 status.
+    Using 404 instead of 403 prevents information disclosure about
+    whether a resource exists.
+
+    Args:
+        resource: The database resource object to check
+        owner_field: The attribute name containing the owner ID
+        expected_owner_id: The ID of the user who should own the resource
+        resource_type: Type name for error messages
+
+    Returns:
+        The resource if ownership check passes
+
+    Raises:
+        HTTPException: 404 if resource is None or ownership check fails
+
+    Example:
+        invoice = verify_ownership_or_404(
+            db_invoice,
+            "customer_profile_id",
+            profile.id,
+            "Invoice"
+        )
+    """
+    from fastapi import HTTPException
+    from starlette import status
+
+    try:
+        check_resource_ownership(resource, owner_field, expected_owner_id, resource_type)
+        return resource
+    except IDORProtectionError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{resource_type} not found"
+        )
+
+
+def verify_ownership_or_403(
+    resource: object,
+    owner_field: str,
+    expected_owner_id: int,
+    resource_type: str = "Resource",
+) -> object:
+    """
+    Verify resource ownership and return the resource, or raise HTTP 403.
+
+    Similar to verify_ownership_or_404, but returns 403 Forbidden instead.
+    Use this when you explicitly want to inform the user that access is denied
+    (typically for admin/ops scenarios where hiding resource existence doesn't matter).
+
+    Args:
+        resource: The database resource object to check
+        owner_field: The attribute name containing the owner ID
+        expected_owner_id: The ID of the user who should own the resource
+        resource_type: Type name for error messages
+
+    Returns:
+        The resource if ownership check passes
+
+    Raises:
+        HTTPException: 404 if resource is None, 403 if ownership check fails
+    """
+    from fastapi import HTTPException
+    from starlette import status
+
+    if resource is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{resource_type} not found"
+        )
+
+    actual_owner_id = getattr(resource, owner_field, None)
+    if actual_owner_id != expected_owner_id:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            f"IDOR attempt blocked: {resource_type} access denied. "
+            f"Expected owner: {expected_owner_id}, Actual owner: {actual_owner_id}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied"
+        )
