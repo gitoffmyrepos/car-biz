@@ -20,6 +20,7 @@ from app.core.database import init_db
 from app.core.security import SecurityHeadersMiddleware
 from app.core.rate_limit import rate_limiter
 from app.core.logging import setup_logging, CorrelationIdMiddleware, get_correlation_id
+from app.core.metrics import MetricsMiddleware, get_metrics_response
 from app.api import router as api_router
 from app.services.background_jobs import background_job_service
 from app.workers.email_worker import register_email_handlers
@@ -109,6 +110,9 @@ app = FastAPI(
 # Add correlation ID middleware for request tracing (outermost for consistent ID)
 app.add_middleware(CorrelationIdMiddleware)
 
+# Add metrics collection middleware
+app.add_middleware(MetricsMiddleware)
+
 # Add security headers middleware (must be added before CORS)
 app.add_middleware(SecurityHeadersMiddleware)
 
@@ -191,6 +195,15 @@ async def root() -> dict[str, str]:
         "version": settings.APP_VERSION,
         "docs": "/docs" if settings.DEBUG else "API documentation disabled in production",
     }
+
+
+@app.get("/metrics", tags=["Monitoring"], include_in_schema=False)
+async def metrics():
+    """
+    Prometheus metrics endpoint.
+    Exposes application metrics in Prometheus text format.
+    """
+    return get_metrics_response()
 
 
 # Include API router

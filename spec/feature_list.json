@@ -1685,7 +1685,7 @@
       "Verify error rate metrics recorded",
       "Verify metrics format compatible with Prometheus"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
