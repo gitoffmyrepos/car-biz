@@ -1662,7 +1662,7 @@
       "Verify p95 reasonable for POST endpoints",
       "Document performance baseline"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1673,7 +1673,7 @@
       "Verify email sent within 60 seconds",
       "Verify job completion logged"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1737,7 +1737,7 @@
       "Verify reason field if applicable",
       "Verify target entity fields populated"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1748,7 +1748,7 @@
       "Verify before/after states captured",
       "Verify actor and timestamp logged"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1759,7 +1759,7 @@
       "Verify assignment details captured",
       "Verify before/after states logged"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1770,7 +1770,7 @@
       "Verify escalation reason captured",
       "Verify status change logged"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

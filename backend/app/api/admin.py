@@ -2049,6 +2049,16 @@ async def assign_vehicle_to_customer(
         lease_id=lease.id,
     )
 
+    # Audit log: Vehicle assignment
+    await audit_service.log_vehicle_assignment(
+        session=session,
+        user=user,
+        vehicle_id=vehicle.id,
+        customer_id=request.customer_profile_id,
+        is_assignment=True,
+        notes=f"Lease #{lease.id} created. Weekly payment: ${request.weekly_payment}",
+    )
+
     await session.commit()
 
     logger.info(
