@@ -1238,7 +1238,7 @@
       "Attempt upload with spoofed content-type",
       "Verify magic bytes validation catches mismatch"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
