@@ -1134,7 +1134,7 @@
       "Verify original plaintext recovered",
       "Verify key rotation supported"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",

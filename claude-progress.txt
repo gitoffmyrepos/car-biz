@@ -4464,3 +4464,59 @@ All feature steps verified:
 ================================================================================
 END SESSION 42
 ================================================================================
+
+================================================================================
+SESSION 43: ENHANCEMENT - VAULT TRANSIT ENCRYPTION
+================================================================================
+
+Date: 2026-01-22
+Status: COMPLETED
+Mode: Enhancement
+
+## Feature Implemented
+
+### Vault Transit encryption - Sensitive metadata encrypted via Vault Transit engine
+
+**VaultService Enhancements:**
+1. Added rotate_key() method for Transit key rotation
+2. Added rewrap() method to re-encrypt data with latest key version
+3. Added get_key_info() method to retrieve Transit key metadata
+
+**API Endpoints Added:**
+1. POST /api/admin/vault/transit/rotate - Rotate Transit encryption key
+2. POST /api/admin/vault/transit/rewrap - Re-encrypt ciphertext with latest key
+3. GET /api/admin/vault/transit/key-info - Get Transit key information
+
+**Feature Verification:**
+1. Configure Vault Transit key (VAULT_TRANSIT_KEY_NAME) - PASS
+   - Key: fx-weekly-lease-dev-transit
+   - Type: aes256-gcm96
+2. Encrypt test data using Transit API - PASS
+   - Encryption returns vault:vN:ciphertext format
+3. Verify ciphertext returned - PASS
+   - Ciphertext includes key version prefix
+4. Decrypt ciphertext using Transit API - PASS
+   - Round-trip encryption/decryption verified
+5. Verify original plaintext recovered - PASS
+   - Decrypted data matches original plaintext
+6. Verify key rotation supported - PASS
+   - Key rotated from v1 to v5 during testing
+   - Old ciphertexts (v4) can still be decrypted
+   - Rewrap upgrades ciphertext to latest version
+
+## Files Modified
+
+- backend/app/services/vault.py (added rotate_key, rewrap, get_key_info)
+- backend/app/api/admin.py (added Transit rotation and rewrap endpoints)
+- spec/feature_list.json (marked feature as passing)
+
+## Progress Update
+
+- Features Passing: 91/211 (43.1% complete)
+- Previous: 90/211 (42.7%)
+- Features Added: +1 (Vault Transit encryption)
+- No regressions detected
+
+================================================================================
+END SESSION 43
+================================================================================

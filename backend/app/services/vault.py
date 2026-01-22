@@ -223,6 +223,91 @@ class VaultService:
             return False
         return value.startswith("vault:v") or value.startswith("dev:v1:")
 
+    def rotate_key(self) -> Tuple[bool, str]:
+        """
+        Rotate the Transit encryption key.
+
+        Creates a new key version. Old versions can still decrypt existing data.
+
+        Returns:
+            Tuple of (success, message or error)
+        """
+        if not self.enabled or not self._client:
+            return False, "Vault client not available"
+
+        try:
+            self._client.secrets.transit.rotate_key(name=self._transit_key)
+            logger.info(f"Rotated Transit key '{self._transit_key}'")
+            return True, f"Key '{self._transit_key}' rotated successfully"
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Failed to rotate Transit key: {error_msg}")
+            return False, error_msg
+
+    def rewrap(self, ciphertext: str) -> Tuple[bool, str]:
+        """
+        Re-encrypt ciphertext with the latest key version.
+
+        Use after key rotation to update encrypted data to use the new key.
+
+        Args:
+            ciphertext: The Vault-encrypted ciphertext to rewrap
+
+        Returns:
+            Tuple of (success, new_ciphertext or error message)
+        """
+        if not ciphertext:
+            return False, "Empty ciphertext"
+
+        # Can only rewrap Vault-encrypted data
+        if not ciphertext.startswith("vault:v"):
+            return False, "Can only rewrap Vault-encrypted data"
+
+        if not self.enabled or not self._client:
+            return False, "Vault client not available"
+
+        try:
+            response = self._client.secrets.transit.rewrap_data(
+                name=self._transit_key,
+                ciphertext=ciphertext,
+            )
+            new_ciphertext = response["data"]["ciphertext"]
+            logger.debug(f"Rewrapped data using Transit key '{self._transit_key}'")
+            return True, new_ciphertext
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Transit rewrap failed: {error_msg}")
+            return False, error_msg
+
+    def get_key_info(self) -> Optional[dict]:
+        """
+        Get information about the Transit encryption key.
+
+        Returns:
+            Key metadata dictionary or None if unavailable
+        """
+        if not self.enabled or not self._client:
+            return None
+
+        try:
+            response = self._client.secrets.transit.read_key(name=self._transit_key)
+            data = response.get("data", {})
+            return {
+                "name": data.get("name"),
+                "type": data.get("type"),
+                "latest_version": data.get("latest_version"),
+                "min_decryption_version": data.get("min_decryption_version"),
+                "min_encryption_version": data.get("min_encryption_version"),
+                "supports_encryption": data.get("supports_encryption"),
+                "supports_decryption": data.get("supports_decryption"),
+                "auto_rotate_period": data.get("auto_rotate_period"),
+                "deletion_allowed": data.get("deletion_allowed"),
+                "key_versions": len(data.get("keys", {})),
+            }
+        except Exception as e:
+            logger.error(f"Failed to read Transit key info: {e}")
+            return None
+
     def read_secret(self, path: str) -> Optional[dict]:
         """
         Read a secret from Vault KV v2.

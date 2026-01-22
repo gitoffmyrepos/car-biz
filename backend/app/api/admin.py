@@ -6823,3 +6823,119 @@ async def get_vault_token_info(
         )
 
     return token_info
+
+
+class VaultRewrapRequest(BaseModel):
+    """Request for rewrapping ciphertext with latest key version."""
+    ciphertext: str
+
+
+@router.post("/vault/transit/rotate")
+async def rotate_transit_key(
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Rotate the Transit encryption key.
+
+    Creates a new key version. Existing encrypted data can still be decrypted.
+    Admin only. Only available in debug mode.
+    """
+    if not settings.DEBUG:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Key rotation only available in debug mode"
+        )
+
+    if not vault_service.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vault is not configured or unavailable"
+        )
+
+    success, message = vault_service.rotate_key()
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Key rotation failed: {message}"
+        )
+
+    # Get updated key info
+    key_info = vault_service.get_key_info()
+
+    return {
+        "success": True,
+        "message": message,
+        "key_info": key_info,
+    }
+
+
+@router.post("/vault/transit/rewrap")
+async def rewrap_ciphertext(
+    request: VaultRewrapRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Re-encrypt ciphertext with the latest key version.
+
+    Use after key rotation to update encrypted data to use the new key.
+    Admin only. Only available in debug mode.
+    """
+    if not settings.DEBUG:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Rewrap only available in debug mode"
+        )
+
+    if not vault_service.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vault is not configured or unavailable"
+        )
+
+    success, result = vault_service.rewrap(request.ciphertext)
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Rewrap failed: {result}"
+        )
+
+    # Extract version info from ciphertext
+    old_version = request.ciphertext.split(":")[1] if ":" in request.ciphertext else "unknown"
+    new_version = result.split(":")[1] if ":" in result else "unknown"
+
+    return {
+        "success": True,
+        "old_ciphertext": request.ciphertext[:50] + "..." if len(request.ciphertext) > 50 else request.ciphertext,
+        "new_ciphertext": result[:50] + "..." if len(result) > 50 else result,
+        "old_version": old_version,
+        "new_version": new_version,
+        "upgraded": old_version != new_version,
+    }
+
+
+@router.get("/vault/transit/key-info")
+async def get_transit_key_info(
+    user: AuthenticatedUser = Depends(require_admin),
+):
+    """
+    Get information about the Transit encryption key.
+
+    Admin only.
+    """
+    if not vault_service.enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vault is not configured or unavailable"
+        )
+
+    key_info = vault_service.get_key_info()
+
+    if key_info is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve key information"
+        )
+
+    return key_info
