@@ -15,6 +15,33 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+
+  /* Accessible focus styles - visible for all interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline-none ring-2 ring-gold-500 ring-offset-2 ring-offset-white;
+  }
+
+  /* High contrast focus for dark backgrounds */
+  .bg-gradient-luxury a:focus-visible,
+  .bg-gradient-luxury button:focus-visible,
+  .bg-luxury-charcoal a:focus-visible,
+  .bg-luxury-charcoal button:focus-visible {
+    @apply ring-white ring-offset-luxury-charcoal;
+  }
+
+  /* Skip to main content link */
+  .skip-to-main {
+    @apply absolute -translate-y-full left-1/2 -translate-x-1/2 bg-gold-500 text-white px-4 py-2 rounded-b-lg z-[100] transition-transform duration-200;
+  }
+
+  .skip-to-main:focus {
+    @apply translate-y-0;
+  }
 }
 
 @layer components {

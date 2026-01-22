@@ -1,12 +1,35 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useCallback } from 'react';
 
 export default function HomePage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((prev) => !prev);
+  }, []);
+
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
+  // Handle escape key to close mobile menu
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && mobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
+  }, [mobileMenuOpen]);
+
   return (
-    <main className="min-h-screen">
+    <div className="min-h-screen" onKeyDown={handleKeyDown}>
+      {/* Skip to main content - Accessibility */}
+      <a href="#main-content" className="skip-to-main">
+        Skip to main content
+      </a>
+
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100" role="navigation" aria-label="Main navigation">
         <div className="container-luxury">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
@@ -36,30 +59,97 @@ export default function HomePage() {
             </div>
 
             {/* Mobile Menu Button */}
-            <button className="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Open menu">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
+              onClick={toggleMobileMenu}
+            >
+              {mobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
             </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div
+              id="mobile-menu"
+              className="md:hidden border-t border-gray-100 bg-white py-4"
+              role="menu"
+              aria-orientation="vertical"
+            >
+              <div className="flex flex-col space-y-2 px-4">
+                <Link
+                  href="/how-it-works"
+                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  role="menuitem"
+                  onClick={closeMobileMenu}
+                >
+                  How It Works
+                </Link>
+                <Link
+                  href="/fleet"
+                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  role="menuitem"
+                  onClick={closeMobileMenu}
+                >
+                  Fleet
+                </Link>
+                <Link
+                  href="/requirements"
+                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  role="menuitem"
+                  onClick={closeMobileMenu}
+                >
+                  Requirements
+                </Link>
+                <Link
+                  href="/faq"
+                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  role="menuitem"
+                  onClick={closeMobileMenu}
+                >
+                  FAQ
+                </Link>
+                <Link
+                  href="/contact"
+                  className="btn btn-primary mt-2 text-center"
+                  role="menuitem"
+                  onClick={closeMobileMenu}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-luxury overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
-        </div>
+      {/* Hero Section - Main content landmark */}
+      <main id="main-content" role="main">
+        <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-luxury overflow-hidden" aria-labelledby="hero-title">
+          {/* Background Pattern - Decorative */}
+          <div className="absolute inset-0 opacity-10" aria-hidden="true">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+          </div>
 
-        <div className="container-luxury relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="heading-display text-white mb-6">
-              Drive Your Dream
-              <span className="block text-gradient">Pay Weekly</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl mx-auto">
+          <div className="container-luxury relative">
+            <div className="max-w-3xl mx-auto text-center">
+              <h1 id="hero-title" className="heading-display text-white mb-6">
+                Drive Your Dream
+                <span className="block text-gradient">Pay Weekly</span>
+              </h1>
+              {/* Improved contrast: text-gray-200 instead of text-gray-300 */}
+              <p className="text-xl md:text-2xl text-gray-200 mb-10 max-w-2xl mx-auto">
               Premium vehicles with flexible weekly payments. No long-term commitment.
               Professional fleet management for discerning customers.
             </p>
@@ -181,12 +271,13 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="section bg-gradient-luxury text-white">
+      <section className="section bg-gradient-luxury text-white" aria-labelledby="cta-heading">
         <div className="container-luxury text-center">
-          <h2 className="heading-section mb-4">
+          <h2 id="cta-heading" className="heading-section mb-4">
             Ready to Experience Premium Driving?
           </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          {/* Improved contrast: text-gray-200 instead of text-gray-300 */}
+          <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
             Join hundreds of satisfied customers who have discovered the smarter way to drive.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -199,9 +290,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
-      <footer className="bg-luxury-charcoal text-white py-12">
+      <footer className="bg-luxury-charcoal text-white py-12" role="contentinfo">
         <div className="container-luxury">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
@@ -209,7 +301,8 @@ export default function HomePage() {
               <Link href="/" className="text-2xl font-display font-bold">
                 FX<span className="text-gold-500">Weekly</span>
               </Link>
-              <p className="mt-4 text-gray-400">
+              {/* Improved contrast: text-gray-300 instead of text-gray-400 */}
+              <p className="mt-4 text-gray-300">
                 Premium vehicle leasing with flexible weekly payments.
               </p>
             </div>
@@ -217,30 +310,33 @@ export default function HomePage() {
             {/* Quick Links */}
             <div>
               <h4 className="font-bold mb-4">Company</h4>
+              {/* Improved contrast: text-gray-300 instead of text-gray-400 */}
               <ul className="space-y-2">
-                <li><Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</Link></li>
-                <li><Link href="/fleet" className="text-gray-400 hover:text-white transition-colors">Our Fleet</Link></li>
-                <li><Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">Requirements</Link></li>
-                <li><Link href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
+                <li><Link href="/how-it-works" className="text-gray-300 hover:text-white transition-colors focus:underline">How It Works</Link></li>
+                <li><Link href="/fleet" className="text-gray-300 hover:text-white transition-colors focus:underline">Our Fleet</Link></li>
+                <li><Link href="/requirements" className="text-gray-300 hover:text-white transition-colors focus:underline">Requirements</Link></li>
+                <li><Link href="/faq" className="text-gray-300 hover:text-white transition-colors focus:underline">FAQ</Link></li>
               </ul>
             </div>
 
             {/* Legal */}
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
+              {/* Improved contrast: text-gray-300 instead of text-gray-400 */}
               <ul className="space-y-2">
-                <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/gps-disclosure" className="text-gray-400 hover:text-white transition-colors">GPS Disclosure</Link></li>
+                <li><Link href="/terms" className="text-gray-300 hover:text-white transition-colors focus:underline">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="text-gray-300 hover:text-white transition-colors focus:underline">Privacy Policy</Link></li>
+                <li><Link href="/gps-disclosure" className="text-gray-300 hover:text-white transition-colors focus:underline">GPS Disclosure</Link></li>
               </ul>
             </div>
 
             {/* Contact */}
             <div>
               <h4 className="font-bold mb-4">Contact</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>support@fxweekly.com</li>
-                <li>(555) 123-4567</li>
+              {/* Improved contrast: text-gray-300 instead of text-gray-400 */}
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="mailto:support@fxweekly.com" className="hover:text-white focus:underline">support@fxweekly.com</a></li>
+                <li><a href="tel:+15551234567" className="hover:text-white focus:underline">(555) 123-4567</a></li>
               </ul>
               <Link href="/contact" className="btn btn-primary mt-4 w-full text-center">
                 Contact Us
@@ -248,11 +344,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
+          {/* Improved contrast: text-gray-300 instead of text-gray-400 */}
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-300 text-sm">
             <p>&copy; {new Date().getFullYear()} FX Weekly Lease. All rights reserved.</p>
           </div>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }

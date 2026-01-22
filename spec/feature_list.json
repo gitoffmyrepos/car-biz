@@ -1384,7 +1384,7 @@
       "Verify form labels associated with inputs",
       "Take screenshot of accessibility check"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
@@ -1398,7 +1398,7 @@
       "Verify images optimized (Next.js Image)",
       "Take screenshot of Lighthouse report"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
@@ -1488,7 +1488,7 @@
       "Verify images appear in Nexus UI",
       "Verify image naming follows FX convention"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1500,7 +1500,7 @@
       "Verify tag format: latest-ENV",
       "Verify branch-based tagging works"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
