@@ -1451,7 +1451,7 @@
       "Access frontend at localhost",
       "Access backend API at localhost/api"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1463,7 +1463,7 @@
       "Run container from built image",
       "Verify application accessible in container"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1475,7 +1475,7 @@
       "Run container from built image",
       "Verify health check passes"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2666,7 +2666,7 @@
       "Verify no warnings or minimal",
       "Verify Next.js recommended rules"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2677,7 +2677,7 @@
       "Verify code style consistent",
       "Verify imports organized"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

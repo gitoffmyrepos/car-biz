@@ -6,7 +6,6 @@ Email service using Resend for sending transactional emails.
 """
 
 import logging
-from typing import Optional
 
 import resend
 

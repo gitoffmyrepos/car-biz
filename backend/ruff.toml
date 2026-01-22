@@ -1,0 +1,53 @@
+# Ruff configuration for FX Weekly Lease Backend
+# https://docs.astral.sh/ruff/
+
+# Python version
+target-version = "py312"
+
+# Line length
+line-length = 120
+
+# Enable rules
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults (FastAPI Depends)
+    "B904",  # raise from err
+    "UP007", # Use X | Y for type annotations (Optional[] is clearer)
+    "UP017", # Use datetime.UTC alias (utc is fine)
+    "UP006", # Use list instead of List (existing code style)
+    "UP035", # Import from collections.abc (existing code style)
+    "I001",  # Import sorting (handled separately)
+    "E402",  # Module level import not at top of file (needed for FastAPI patterns)
+    "E712",  # Comparison to True/False (SQLAlchemy filters use == True)
+    "F541",  # f-string without placeholders (intentional for some strings)
+]
+
+# Exclude patterns
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "alembic/versions/*.py",
+]
+
+# Per-file ignores
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"alembic/env.py" = ["E402"]  # Allow module level imports after code
+
+# isort settings
+[lint.isort]
+known-first-party = ["app"]

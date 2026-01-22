@@ -50,11 +50,6 @@ from app.models.ban_record import (
     BanReason,
     BanStatus,
 )
-from app.models.notification import (
-    Notification,
-    NotificationType,
-    NotificationPriority,
-)
 from app.models.incident_report import (
     IncidentReport,
     IncidentType,

@@ -7,8 +7,7 @@ MinIO/S3 storage service for file uploads with local filesystem fallback for dev
 
 import hashlib
 import logging
-import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
 from uuid import uuid4
