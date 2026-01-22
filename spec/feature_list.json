@@ -953,7 +953,7 @@
       "Verify before/after states captured",
       "Take screenshot of recovery audit trail"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
