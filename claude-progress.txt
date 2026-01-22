@@ -4171,3 +4171,70 @@ email types and verifying existing email functionality through the Resend API.
 ================================================================================
 END SESSION 38
 ================================================================================
+
+================================================================================
+SESSION 39: API HEALTH CHECK ENDPOINT ENHANCEMENT
+================================================================================
+
+Date: 2026-01-22
+Status: COMPLETED
+Feature: API health check endpoint - Backend provides health check endpoint for K8s probes
+
+## Implementation Summary
+
+Enhanced the existing /health endpoint to include database and Redis connectivity checks
+for Kubernetes liveness and readiness probes.
+
+### Changes Made
+
+#### backend/app/main.py
+- Modified health_check() endpoint to perform actual connectivity checks
+- Added PostgreSQL database connectivity check using SELECT 1 query
+- Added Redis connectivity check using ping command
+- Returns component-level health status for each service
+- Returns overall healthy only when all components are healthy
+- Error details shown in debug mode only
+
+### Health Endpoint Response Format
+
+Response includes status, service name, version, environment, timestamp, and
+components object with database and redis health status.
+
+## Test Results
+
+All feature requirements verified:
+1. GET /health returns 200 OK
+2. Response includes status: healthy
+3. Database connectivity check present and healthy
+4. Redis connectivity check present and healthy
+
+## Regression Tests Passed
+
+- Backend health check: 200 OK with all components healthy
+- Frontend accessibility: 200 OK
+- API root endpoint: Returns welcome message
+- OpenAPI docs: 200 OK
+
+## Progress Update
+
+- Features Passing: 87/211 (41.2% complete)
+- Previous: 86/211 (40.8%)
+- Features Added: +1 (API health check endpoint)
+- No regressions detected
+- Baseline features intact (67 original + 20 enhancements)
+
+## Files Modified
+
+1. backend/app/main.py - Enhanced health_check() with DB and Redis checks
+2. spec/feature_list.json - Updated API health check endpoint to passes: true
+
+## Running Services
+
+- Frontend: http://localhost:3002
+- Backend: http://localhost:8100
+- PostgreSQL: localhost:5433
+- Redis: localhost:6380
+
+================================================================================
+END SESSION 39
+================================================================================

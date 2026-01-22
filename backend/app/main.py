@@ -79,14 +79,48 @@ app.add_middleware(
 async def health_check() -> dict[str, Any]:
     """
     Health check endpoint for container orchestration.
-    Returns application health status.
+    Returns application health status including database and Redis connectivity.
     """
+    from sqlalchemy import text
+    from app.core.database import async_session_maker
+
+    # Track component health statuses
+    components = {}
+    overall_healthy = True
+
+    # Check database connectivity
+    try:
+        async with async_session_maker() as session:
+            await session.execute(text("SELECT 1"))
+        components["database"] = {"status": "healthy", "type": "postgresql"}
+    except Exception as db_error:
+        components["database"] = {
+            "status": "unhealthy",
+            "type": "postgresql",
+            "error": str(db_error) if settings.DEBUG else "Connection failed",
+        }
+        overall_healthy = False
+
+    # Check Redis connectivity
+    try:
+        redis = await rate_limiter._get_redis()
+        await redis.ping()
+        components["redis"] = {"status": "healthy", "type": "redis"}
+    except Exception as redis_error:
+        components["redis"] = {
+            "status": "unhealthy",
+            "type": "redis",
+            "error": str(redis_error) if settings.DEBUG else "Connection failed",
+        }
+        overall_healthy = False
+
     return {
-        "status": "healthy",
+        "status": "healthy" if overall_healthy else "unhealthy",
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "environment": settings.APP_ENV,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "components": components,
     }
 
 

@@ -1329,7 +1329,7 @@
       "Verify database connectivity check",
       "Verify Redis connectivity check"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
