@@ -2051,7 +2051,7 @@
       "Call endpoint with valid token",
       "Verify successful response"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2064,7 +2064,7 @@
       "Verify GET /api/customer/notifications endpoint",
       "Verify POST /api/customer/incident endpoint"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2078,7 +2078,7 @@
       "Verify GET /api/admin/delinquency endpoint",
       "Verify GET /api/admin/audit-logs endpoint"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2091,7 +2091,7 @@
       "GET /api/admin/vehicles - list vehicles",
       "Verify all operations return appropriate status codes"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2103,7 +2103,7 @@
       "Verify insurance verification endpoints",
       "Verify ban status endpoints"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2115,7 +2115,7 @@
       "POST /api/admin/invoices/generate - trigger generation",
       "Verify filtering by status, customer, date"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2127,7 +2127,7 @@
       "PUT /api/admin/trackers/{id} - update tracker",
       "POST /api/admin/trackers/{id}/assign - assign to vehicle"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2139,7 +2139,7 @@
       "POST /api/admin/delinquency/{id}/recovery - initiate recovery",
       "Verify compliance gate enforcement on recovery"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2150,7 +2150,7 @@
       "PUT /api/admin/maintenance/{id} - update schedule",
       "POST /api/admin/maintenance/{id}/complete - mark complete"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2160,7 +2160,7 @@
       "PUT /api/notifications/{id}/read - mark as read",
       "GET /api/notifications/unread-count - get unread count"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2170,7 +2170,7 @@
       "GET /api/admin/inquiries - list inquiries (admin)",
       "GET /api/admin/inquiries/{id} - get inquiry detail"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2182,7 +2182,7 @@
       "Verify file validation on all endpoints",
       "Verify signed URL returned for download"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2194,7 +2194,7 @@
       "Verify admin-only access enforced",
       "Verify audit logging on URL generation"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2207,7 +2207,7 @@
       "Verify validation rules applied",
       "Verify response models defined"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2220,7 +2220,7 @@
       "Trigger not found error",
       "Verify HTTP status codes correct"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

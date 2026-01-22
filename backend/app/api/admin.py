@@ -461,6 +461,91 @@ async def get_customer_detail(
     }
 
 
+class CustomerUpdateRequest(BaseModel):
+    """Request body for admin customer update."""
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    drivers_license_number: Optional[str] = None
+    drivers_license_state: Optional[str] = None
+    notification_email: Optional[bool] = None
+    notification_sms: Optional[bool] = None
+    is_verified: Optional[bool] = None
+
+
+@router.put("/customers/{customer_id}")
+async def update_customer(
+    customer_id: int,
+    update_data: CustomerUpdateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update customer profile.
+
+    Requires admin role.
+    Updates only the fields that are provided (non-null).
+    """
+    result = await session.execute(
+        select(CustomerProfile).where(CustomerProfile.id == customer_id)
+    )
+    customer = result.scalar_one_or_none()
+
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer not found"
+        )
+
+    # Update only provided fields
+    update_fields = update_data.model_dump(exclude_unset=True)
+    for field, value in update_fields.items():
+        if value is not None:
+            setattr(customer, field, value)
+
+    customer.updated_at = datetime.now(timezone.utc)
+    await session.commit()
+    await session.refresh(customer)
+
+    # Log the update
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.ADMIN_ACTION,
+        target_type="CustomerProfile",
+        target_id=str(customer.id),
+        target_description=f"Updated customer {customer.email}",
+    )
+
+    return {
+        "id": customer.id,
+        "keycloak_id": customer.keycloak_id,
+        "email": customer.email,
+        "full_name": customer.full_name,
+        "phone": customer.phone,
+        "address_line1": customer.address_line1,
+        "address_line2": customer.address_line2,
+        "city": customer.city,
+        "state": customer.state,
+        "zip_code": customer.zip_code,
+        "drivers_license_number": customer.drivers_license_number,
+        "drivers_license_state": customer.drivers_license_state,
+        "insurance_status": customer.insurance_status.value,
+        "insurance_document_key": customer.insurance_document_key,
+        "insurance_expiration_date": customer.insurance_expiration_date.isoformat() if customer.insurance_expiration_date else None,
+        "is_verified": customer.is_verified,
+        "is_banned": customer.is_banned,
+        "notification_email": customer.notification_email,
+        "notification_sms": customer.notification_sms,
+        "created_at": customer.created_at.isoformat(),
+        "updated_at": customer.updated_at.isoformat(),
+    }
+
+
 class InsuranceAccessRequest(BaseModel):
     """Request to access insurance document (requires reason for audit)."""
     reason: str
