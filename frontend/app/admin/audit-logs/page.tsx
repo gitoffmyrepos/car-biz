@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, ReactNode } from 'react';
+import { DataTable, Column } from '@/components/ui/DataTable';
 
 interface AuditLogEntry {
   id: number;
@@ -16,6 +17,7 @@ interface AuditLogEntry {
   notes: string | null;
   success: boolean;
   timestamp: string;
+  [key: string]: unknown;
 }
 
 interface AuditLogDetail extends AuditLogEntry {
@@ -83,7 +85,7 @@ export default function AuditLogsPage() {
       const params = new URLSearchParams();
       if (actionFilter && !showInsuranceOnly) params.append('action_filter', actionFilter);
       if (targetTypeFilter && !showInsuranceOnly) params.append('target_type_filter', targetTypeFilter);
-      params.append('limit', '100');
+      params.append('limit', '500');
 
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}${endpoint}?${params}`;
 
@@ -147,7 +149,7 @@ export default function AuditLogsPage() {
     });
   };
 
-  const getActionBadge = (action: string) => {
+  const getActionBadge = (action: string): ReactNode => {
     const config = actionLabels[action] || { label: action, color: 'bg-gray-100 text-gray-800' };
     return (
       <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
@@ -155,6 +157,109 @@ export default function AuditLogsPage() {
       </span>
     );
   };
+
+  // Define columns for DataTable
+  const columns: Column<AuditLogEntry>[] = [
+    {
+      key: 'timestamp',
+      header: 'Timestamp',
+      sortable: true,
+      filterable: true,
+      render: (value) => formatTimestamp(value as string),
+    },
+    {
+      key: 'actor_email',
+      header: 'Actor',
+      sortable: true,
+      filterable: true,
+      render: (value, row) => (
+        <div>
+          <p className="text-sm font-medium text-gray-900">{value as string}</p>
+          <p className="text-xs text-gray-500 capitalize">{row.actor_role}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'action',
+      header: 'Action',
+      sortable: true,
+      filterable: true,
+      render: (value) => getActionBadge(value as string),
+    },
+    {
+      key: 'target_type',
+      header: 'Target',
+      sortable: true,
+      filterable: true,
+      render: (value, row) => (
+        <div>
+          <p className="text-sm text-gray-900">{value as string}</p>
+          <p className="text-xs text-gray-500">ID: {row.target_id}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'reason',
+      header: 'Reason',
+      sortable: false,
+      filterable: true,
+      render: (value, row) => {
+        if (value) {
+          return (
+            <p className="text-sm text-gray-700 truncate max-w-xs" title={value as string}>
+              {value as string}
+            </p>
+          );
+        } else if (row.requires_reason) {
+          return <span className="text-xs text-red-500">Required but not provided</span>;
+        }
+        return <span className="text-xs text-gray-400">N/A</span>;
+      },
+    },
+    {
+      key: 'success',
+      header: 'Status',
+      sortable: true,
+      filterable: false,
+      render: (value) => {
+        if (value) {
+          return (
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Success
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            Failed
+          </span>
+        );
+      },
+    },
+    {
+      key: 'id',
+      header: 'Actions',
+      sortable: false,
+      filterable: false,
+      render: (value) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            fetchLogDetail(value as number);
+          }}
+          className="text-gold-600 hover:text-gold-700 text-sm font-medium"
+        >
+          View Details
+        </button>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -177,7 +282,7 @@ export default function AuditLogsPage() {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* Advanced Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
           {/* Insurance Only Toggle */}
@@ -243,117 +348,31 @@ export default function AuditLogsPage() {
         </div>
       )}
 
-      {/* Audit Logs Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="w-8 h-8 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading audit logs...</p>
-          </div>
-        ) : logs.length === 0 ? (
-          <div className="p-8 text-center">
-            <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="text-gray-500">No audit logs found</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actor
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Target
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reason
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                      {formatTimestamp(log.timestamp)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{log.actor_email}</p>
-                        <p className="text-xs text-gray-500 capitalize">{log.actor_role}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {getActionBadge(log.action)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div>
-                        <p className="text-sm text-gray-900">{log.target_type}</p>
-                        <p className="text-xs text-gray-500">ID: {log.target_id}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 max-w-xs">
-                      {log.reason ? (
-                        <p className="text-sm text-gray-700 truncate" title={log.reason}>
-                          {log.reason}
-                        </p>
-                      ) : log.requires_reason ? (
-                        <span className="text-xs text-red-500">Required but not provided</span>
-                      ) : (
-                        <span className="text-xs text-gray-400">N/A</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {log.success ? (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Success
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                          Failed
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => fetchLogDetail(log.id)}
-                        className="text-gold-600 hover:text-gold-700 text-sm font-medium"
-                      >
-                        View Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Audit Logs DataTable with Pagination, Sorting, and Filtering */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <DataTable
+          data={logs}
+          columns={columns}
+          keyField="id"
+          sortable={true}
+          defaultSort={{ column: 'timestamp', direction: 'desc' }}
+          pagination={true}
+          pageSize={25}
+          pageSizeOptions={[10, 25, 50, 100]}
+          filterable={true}
+          filterPlaceholder="Search logs by email, action, target..."
+          loading={isLoading}
+          emptyMessage="No audit logs found"
+          striped={true}
+          hoverable={true}
+          onRowClick={(row) => fetchLogDetail(row.id)}
+        />
       </div>
 
       {/* Results count */}
       {!isLoading && logs.length > 0 && (
         <p className="mt-4 text-sm text-gray-500">
-          Showing {logs.length} audit log entries
+          Total: {logs.length} audit log entries
         </p>
       )}
 

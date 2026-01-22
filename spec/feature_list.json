@@ -2400,7 +2400,7 @@
       "Verify page indicator updates",
       "Select different page size if available"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2412,7 +2412,7 @@
       "Click again to sort descending",
       "Verify sort indicator visible"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2425,7 +2425,7 @@
       "Verify all results return",
       "Test multiple filter criteria if available"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
