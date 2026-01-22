@@ -21,7 +21,12 @@ class Settings(BaseSettings):
 
     # API
     API_BASE_URL: str = "http://localhost:8000"
-    CORS_ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:3002",
+        "http://localhost:8000",
+        "http://localhost:8100",
+    ]
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/weekly_lease"

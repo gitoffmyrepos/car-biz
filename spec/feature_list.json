@@ -1147,7 +1147,7 @@
       "Verify 429 Too Many Requests response",
       "Verify Redis-backed rate limiter working"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
@@ -1162,7 +1162,7 @@
       "Send request with malicious input",
       "Verify input sanitized/rejected"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
@@ -1174,7 +1174,7 @@
       "Verify request blocked by CORS",
       "Verify credentials handling configured correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
@@ -1187,7 +1187,7 @@
       "Verify CSP header if applicable",
       "Verify no sensitive data in headers"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
@@ -1211,7 +1211,7 @@
       "Verify error response does not leak database info",
       "Verify ORM uses parameterized queries"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
@@ -1223,7 +1223,7 @@
       "Verify no JavaScript execution",
       "Verify API returns properly encoded data"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",

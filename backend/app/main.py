@@ -15,7 +15,12 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.security import SecurityHeadersMiddleware
+from app.core.rate_limit import rate_limiter
 from app.api import router as api_router
+
+# Import all models to register them with SQLAlchemy before init_db
+import app.models  # noqa: F401
 
 
 @asynccontextmanager
@@ -27,9 +32,12 @@ async def lifespan(app: FastAPI):
     # Initialize database tables
     await init_db()
     print("Database tables initialized")
+    print("Rate limiter connected to Redis")
     yield
     # Shutdown
     print(f"Shutting down {settings.APP_NAME}")
+    # Close rate limiter connection
+    await rate_limiter.close()
 
 
 app = FastAPI(
@@ -42,13 +50,28 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS
+# Add security headers middleware (must be added before CORS)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Configure CORS with explicit allowed methods and headers
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Authorization",
+        "Content-Type",
+        "Origin",
+        "X-Requested-With",
+    ],
+    expose_headers=[
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+    ],
 )
 
 

@@ -7,7 +7,7 @@ Authentication endpoints for OIDC integration.
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
 from app.core.auth import (
@@ -17,6 +17,7 @@ from app.core.auth import (
     oidc_auth,
 )
 from app.core.config import settings
+from app.core.rate_limit import auth_rate_limit
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -125,12 +126,18 @@ async def get_current_user_info_optional(
 
 
 @router.post("/dev-login", response_model=DevLoginResponse)
-async def dev_login(request: DevLoginRequest):
+async def dev_login(
+    request: Request,
+    login_request: DevLoginRequest,
+    _: None = Depends(auth_rate_limit),
+):
     """
     Development-only login endpoint.
 
     Creates a dev token for testing without Keycloak.
     Only available when OIDC is not configured (dev mode).
+
+    Rate limited: 5 requests per 60 seconds per IP.
     """
     if not oidc_auth.is_dev_mode:
         raise HTTPException(
@@ -139,7 +146,7 @@ async def dev_login(request: DevLoginRequest):
         )
 
     # Create dev token
-    token = f"dev:{request.role}:{request.email}"
+    token = f"dev:{login_request.role}:{login_request.email}"
 
     # Validate it to get user info
     user = await oidc_auth.validate_token(token)
@@ -163,12 +170,16 @@ async def dev_login(request: DevLoginRequest):
 
 @router.post("/verify-token")
 async def verify_token(
+    request: Request,
     user: AuthenticatedUser = Depends(get_current_user),
+    _: None = Depends(auth_rate_limit),
 ):
     """
     Verify a token is valid.
 
     Returns basic user info if token is valid, 401 if invalid.
+
+    Rate limited: 5 requests per 60 seconds per IP.
     """
     return {
         "valid": True,
