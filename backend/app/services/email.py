@@ -1826,6 +1826,744 @@ For urgent matters: legal@fxweeklylease.com
                 "error": str(e),
             }
 
+    async def send_welcome_email(
+        self,
+        to_email: str,
+        customer_name: str,
+    ) -> dict:
+        """
+        Send welcome email to new customers after registration.
+
+        Args:
+            to_email: Customer's email address
+            customer_name: Customer's full name
+
+        Returns:
+            dict with success status and message/error
+        """
+        if not self.enabled:
+            logger.info(f"Email service disabled - would have sent welcome email to {to_email}")
+            return {
+                "success": True,
+                "message": "Email service disabled - email not sent",
+                "simulated": True
+            }
+
+        subject = "Welcome to FX Weekly Lease! 🚗"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #1A1A1A;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #1A1A1A, #2D2D2D);
+                    color: #C5A572;
+                    padding: 40px 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 28px;
+                    font-weight: 600;
+                }}
+                .header .subtitle {{
+                    color: #FFFFFF;
+                    margin-top: 10px;
+                    font-size: 16px;
+                }}
+                .content {{
+                    background: #F8F5F0;
+                    padding: 30px;
+                    border: 1px solid #E5E5E5;
+                }}
+                .highlight {{
+                    color: #C5A572;
+                    font-weight: 600;
+                }}
+                .welcome-box {{
+                    background: #FFFFFF;
+                    padding: 25px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                    text-align: center;
+                    border: 1px solid #E5E5E5;
+                }}
+                .welcome-icon {{
+                    font-size: 48px;
+                    margin-bottom: 15px;
+                }}
+                .steps {{
+                    background: #FFFFFF;
+                    padding: 20px;
+                    border-left: 4px solid #C5A572;
+                    margin: 20px 0;
+                }}
+                .step {{
+                    display: flex;
+                    align-items: flex-start;
+                    margin: 15px 0;
+                }}
+                .step-number {{
+                    background: #C5A572;
+                    color: #1A1A1A;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    margin-right: 15px;
+                    flex-shrink: 0;
+                }}
+                .footer {{
+                    background: #1A1A1A;
+                    color: #FFFFFF;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .footer a {{
+                    color: #C5A572;
+                    text-decoration: none;
+                }}
+                .cta-button {{
+                    display: inline-block;
+                    background: #C5A572;
+                    color: #1A1A1A;
+                    padding: 14px 35px;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    margin-top: 20px;
+                    font-size: 16px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Welcome to FX Weekly Lease!</h1>
+                <div class="subtitle">Premium Weekly Vehicle Leasing</div>
+            </div>
+            <div class="content">
+                <p>Dear <span class="highlight">{customer_name}</span>,</p>
+
+                <div class="welcome-box">
+                    <div class="welcome-icon">🎉</div>
+                    <h2 style="margin: 0; color: #1A1A1A;">Your Account is Ready!</h2>
+                    <p style="color: #666; margin: 10px 0 0 0;">
+                        Thank you for joining FX Weekly Lease. We're excited to help you find your perfect vehicle.
+                    </p>
+                </div>
+
+                <div class="steps">
+                    <h3 style="margin-top: 0; color: #1A1A1A;">Getting Started</h3>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <div>
+                            <strong>Complete Your Profile</strong><br>
+                            <span style="color: #666;">Add your contact information and preferences</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <div>
+                            <strong>Upload Insurance</strong><br>
+                            <span style="color: #666;">Submit your valid auto insurance for verification</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <div>
+                            <strong>Request a Vehicle</strong><br>
+                            <span style="color: #666;">Browse our fleet and submit your vehicle request</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <div>
+                            <strong>Drive Away</strong><br>
+                            <span style="color: #666;">Once approved, pick up your vehicle and enjoy!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <p><strong>Why FX Weekly?</strong></p>
+                <ul>
+                    <li><strong>Flexible Weekly Payments</strong> - Starting from just $150/week</li>
+                    <li><strong>No Long-Term Commitment</strong> - Week-to-week flexibility</li>
+                    <li><strong>Premium Vehicles</strong> - Quality, well-maintained fleet</li>
+                    <li><strong>Simple Process</strong> - Quick approval and pickup</li>
+                </ul>
+
+                <center>
+                    <a href="{settings.API_BASE_URL.replace('8100', '3002')}/dashboard" class="cta-button">
+                        Go to Your Dashboard
+                    </a>
+                </center>
+
+                <p style="margin-top: 25px; color: #666; font-size: 14px;">
+                    <strong>Need help?</strong> Our support team is here for you. Contact us at
+                    <a href="mailto:support@fxweeklylease.com" style="color: #C5A572;">support@fxweeklylease.com</a>
+                </p>
+            </div>
+            <div class="footer">
+                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
+                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+WELCOME TO FX WEEKLY LEASE! 🎉
+
+Dear {customer_name},
+
+Your account is ready! Thank you for joining FX Weekly Lease. We're excited to help you find your perfect vehicle.
+
+GETTING STARTED
+---------------
+1. Complete Your Profile - Add your contact information and preferences
+2. Upload Insurance - Submit your valid auto insurance for verification
+3. Request a Vehicle - Browse our fleet and submit your vehicle request
+4. Drive Away - Once approved, pick up your vehicle and enjoy!
+
+WHY FX WEEKLY?
+- Flexible Weekly Payments - Starting from just $150/week
+- No Long-Term Commitment - Week-to-week flexibility
+- Premium Vehicles - Quality, well-maintained fleet
+- Simple Process - Quick approval and pickup
+
+Visit your dashboard: {settings.API_BASE_URL.replace('8100', '3002')}/dashboard
+
+Need help? Contact us at support@fxweeklylease.com
+
+---
+FX Weekly Lease - Premium Weekly Vehicle Leasing
+© 2026 FX Weekly Lease. All rights reserved.
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+
+            response = resend.Emails.send(params)
+
+            logger.info(f"Welcome email sent to {to_email}, ID: {response.get('id', 'unknown')}")
+
+            return {
+                "success": True,
+                "message": "Email sent successfully",
+                "email_id": response.get("id"),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send welcome email to {to_email}: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
+    async def send_payment_approved_email(
+        self,
+        to_email: str,
+        customer_name: str,
+        invoice_number: str,
+        amount: float,
+        payment_date: str,
+        next_due_date: str | None = None,
+    ) -> dict:
+        """
+        Send payment approval email to customer when admin approves their payment.
+
+        Args:
+            to_email: Customer's email address
+            customer_name: Customer's full name
+            invoice_number: Invoice number
+            amount: Payment amount that was approved
+            payment_date: Date payment was verified
+            next_due_date: Optional next payment due date
+
+        Returns:
+            dict with success status and message/error
+        """
+        if not self.enabled:
+            logger.info(f"Email service disabled - would have sent payment approved email to {to_email}")
+            return {
+                "success": True,
+                "message": "Email service disabled - email not sent",
+                "simulated": True
+            }
+
+        subject = f"Payment Approved - ${amount:.2f} - FX Weekly Lease"
+
+        next_due_section = ""
+        next_due_text = ""
+        if next_due_date:
+            next_due_section = f"""
+                <div style="background: #FEF3C7; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                    <strong style="color: #92400E;">📅 Next Payment Due: {next_due_date}</strong>
+                    <p style="margin: 5px 0 0; color: #78350F; font-size: 14px;">
+                        Make sure to upload your next payment proof before the due date to avoid late fees.
+                    </p>
+                </div>
+            """
+            next_due_text = f"\n📅 NEXT PAYMENT DUE: {next_due_date}\nMake sure to upload your next payment proof before the due date to avoid late fees.\n"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #1A1A1A;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #166534, #15803D);
+                    color: #FFFFFF;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: 600;
+                }}
+                .content {{
+                    background: #F0FDF4;
+                    padding: 30px;
+                    border: 1px solid #86EFAC;
+                }}
+                .highlight {{
+                    color: #166534;
+                    font-weight: 600;
+                }}
+                .success-box {{
+                    background: #FFFFFF;
+                    border: 2px solid #22C55E;
+                    border-radius: 8px;
+                    padding: 25px;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                .success-icon {{
+                    font-size: 48px;
+                    margin-bottom: 10px;
+                }}
+                .amount {{
+                    font-size: 32px;
+                    font-weight: 700;
+                    color: #166534;
+                }}
+                .details-box {{
+                    background: #FFFFFF;
+                    padding: 20px;
+                    border-left: 4px solid #22C55E;
+                    margin: 20px 0;
+                }}
+                .detail-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 10px 0;
+                    border-bottom: 1px solid #E5E5E5;
+                }}
+                .detail-row:last-child {{
+                    border-bottom: none;
+                }}
+                .footer {{
+                    background: #1A1A1A;
+                    color: #FFFFFF;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .footer a {{
+                    color: #C5A572;
+                    text-decoration: none;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>✅ Payment Approved</h1>
+            </div>
+            <div class="content">
+                <p>Dear <span class="highlight">{customer_name}</span>,</p>
+
+                <div class="success-box">
+                    <div class="success-icon">✅</div>
+                    <h3 style="margin: 0; color: #166534;">Payment Verified Successfully!</h3>
+                    <div class="amount">${amount:.2f}</div>
+                    <p style="margin: 10px 0 0 0; color: #666;">Invoice {invoice_number}</p>
+                </div>
+
+                <p>Great news! Your payment has been verified and approved. Thank you for your continued trust in FX Weekly Lease.</p>
+
+                <div class="details-box">
+                    <h4 style="margin-top: 0; color: #166534;">Payment Details</h4>
+                    <div class="detail-row">
+                        <span>Invoice Number:</span>
+                        <span><strong>{invoice_number}</strong></span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Amount Paid:</span>
+                        <span><strong>${amount:.2f}</strong></span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Verification Date:</span>
+                        <span>{payment_date}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Status:</span>
+                        <span style="color: #166534; font-weight: bold;">✅ Paid</span>
+                    </div>
+                </div>
+
+                {next_due_section}
+
+                <p style="margin-top: 20px; color: #666; font-size: 14px;">
+                    You can view your complete payment history in your
+                    <a href="{settings.API_BASE_URL.replace('8100', '3002')}/dashboard" style="color: #166534;">dashboard</a>.
+                </p>
+            </div>
+            <div class="footer">
+                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
+                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+PAYMENT APPROVED ✅
+
+Dear {customer_name},
+
+Great news! Your payment has been verified and approved.
+
+PAYMENT DETAILS
+---------------
+Invoice Number: {invoice_number}
+Amount Paid: ${amount:.2f}
+Verification Date: {payment_date}
+Status: ✅ Paid
+{next_due_text}
+Thank you for your continued trust in FX Weekly Lease.
+
+View your payment history at: {settings.API_BASE_URL.replace('8100', '3002')}/dashboard
+
+---
+FX Weekly Lease - Premium Weekly Vehicle Leasing
+Questions? Contact us at support@fxweeklylease.com
+© 2026 FX Weekly Lease. All rights reserved.
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+
+            response = resend.Emails.send(params)
+
+            logger.info(f"Payment approved email sent to {to_email} for invoice {invoice_number}, ID: {response.get('id', 'unknown')}")
+
+            return {
+                "success": True,
+                "message": "Email sent successfully",
+                "email_id": response.get("id"),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send payment approved email to {to_email}: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
+    async def send_payment_rejected_email(
+        self,
+        to_email: str,
+        customer_name: str,
+        invoice_number: str,
+        amount: float,
+        rejection_reason: str,
+    ) -> dict:
+        """
+        Send payment rejection email to customer when admin rejects their payment.
+
+        Args:
+            to_email: Customer's email address
+            customer_name: Customer's full name
+            invoice_number: Invoice number
+            amount: Payment amount that was rejected
+            rejection_reason: Reason for rejection
+
+        Returns:
+            dict with success status and message/error
+        """
+        if not self.enabled:
+            logger.info(f"Email service disabled - would have sent payment rejected email to {to_email}")
+            return {
+                "success": True,
+                "message": "Email service disabled - email not sent",
+                "simulated": True
+            }
+
+        subject = f"Payment Requires Attention - {invoice_number} - FX Weekly Lease"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #1A1A1A;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #DC2626, #EF4444);
+                    color: #FFFFFF;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: 600;
+                }}
+                .content {{
+                    background: #FEF2F2;
+                    padding: 30px;
+                    border: 1px solid #FECACA;
+                }}
+                .highlight {{
+                    color: #DC2626;
+                    font-weight: 600;
+                }}
+                .rejected-box {{
+                    background: #FFFFFF;
+                    border: 2px solid #DC2626;
+                    border-radius: 8px;
+                    padding: 25px;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                .rejected-icon {{
+                    font-size: 48px;
+                    margin-bottom: 10px;
+                }}
+                .reason-box {{
+                    background: #FEE2E2;
+                    padding: 20px;
+                    border-left: 4px solid #DC2626;
+                    margin: 20px 0;
+                    border-radius: 0 8px 8px 0;
+                }}
+                .details-box {{
+                    background: #FFFFFF;
+                    padding: 20px;
+                    border-left: 4px solid #F59E0B;
+                    margin: 20px 0;
+                }}
+                .detail-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 10px 0;
+                    border-bottom: 1px solid #E5E5E5;
+                }}
+                .detail-row:last-child {{
+                    border-bottom: none;
+                }}
+                .footer {{
+                    background: #1A1A1A;
+                    color: #FFFFFF;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    border-radius: 0 0 8px 8px;
+                }}
+                .footer a {{
+                    color: #C5A572;
+                    text-decoration: none;
+                }}
+                .cta-button {{
+                    display: inline-block;
+                    background: #DC2626;
+                    color: #FFFFFF;
+                    padding: 14px 35px;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: 600;
+                    margin-top: 20px;
+                    font-size: 16px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>❌ Payment Requires Attention</h1>
+            </div>
+            <div class="content">
+                <p>Dear <span class="highlight">{customer_name}</span>,</p>
+
+                <div class="rejected-box">
+                    <div class="rejected-icon">❌</div>
+                    <h3 style="margin: 0; color: #DC2626;">Payment Proof Rejected</h3>
+                    <p style="margin: 10px 0 0 0; color: #666;">Invoice {invoice_number} - ${amount:.2f}</p>
+                </div>
+
+                <p>Unfortunately, we were unable to verify your payment proof for invoice <strong>{invoice_number}</strong>. Please review the reason below and submit a new payment proof.</p>
+
+                <div class="reason-box">
+                    <h4 style="margin-top: 0; color: #DC2626;">Rejection Reason</h4>
+                    <p style="margin: 0; color: #7F1D1D;">{rejection_reason}</p>
+                </div>
+
+                <div class="details-box">
+                    <h4 style="margin-top: 0; color: #92400E;">Invoice Details</h4>
+                    <div class="detail-row">
+                        <span>Invoice Number:</span>
+                        <span><strong>{invoice_number}</strong></span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Amount Due:</span>
+                        <span><strong>${amount:.2f}</strong></span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Status:</span>
+                        <span style="color: #DC2626; font-weight: bold;">❌ Rejected</span>
+                    </div>
+                </div>
+
+                <p><strong>What to do next:</strong></p>
+                <ol>
+                    <li>Review the rejection reason above</li>
+                    <li>Make sure your payment proof clearly shows the amount, date, and recipient</li>
+                    <li>Upload a new, clear payment proof screenshot</li>
+                    <li>Our team will review within 48 hours</li>
+                </ol>
+
+                <div style="background: #FEF3C7; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                    <strong style="color: #92400E;">⚠️ Important</strong>
+                    <p style="margin: 5px 0 0; color: #78350F; font-size: 14px;">
+                        Please submit your corrected payment proof as soon as possible to avoid late fees.
+                        If you believe this rejection was made in error, please contact our support team.
+                    </p>
+                </div>
+
+                <center>
+                    <a href="{settings.API_BASE_URL.replace('8100', '3002')}/payments" class="cta-button">
+                        Upload New Payment Proof
+                    </a>
+                </center>
+            </div>
+            <div class="footer">
+                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
+                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+PAYMENT REQUIRES ATTENTION ❌
+
+Dear {customer_name},
+
+Unfortunately, we were unable to verify your payment proof for invoice {invoice_number}.
+
+REJECTION REASON
+----------------
+{rejection_reason}
+
+INVOICE DETAILS
+---------------
+Invoice Number: {invoice_number}
+Amount Due: ${amount:.2f}
+Status: ❌ Rejected
+
+WHAT TO DO NEXT:
+1. Review the rejection reason above
+2. Make sure your payment proof clearly shows the amount, date, and recipient
+3. Upload a new, clear payment proof screenshot
+4. Our team will review within 48 hours
+
+⚠️ IMPORTANT: Please submit your corrected payment proof as soon as possible to avoid late fees.
+If you believe this rejection was made in error, please contact our support team.
+
+Upload new payment proof at: {settings.API_BASE_URL.replace('8100', '3002')}/payments
+
+---
+FX Weekly Lease - Premium Weekly Vehicle Leasing
+Questions? Contact us at support@fxweeklylease.com
+© 2026 FX Weekly Lease. All rights reserved.
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+
+            response = resend.Emails.send(params)
+
+            logger.info(f"Payment rejected email sent to {to_email} for invoice {invoice_number}, ID: {response.get('id', 'unknown')}")
+
+            return {
+                "success": True,
+                "message": "Email sent successfully",
+                "email_id": response.get("id"),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send payment rejected email to {to_email}: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
 
 # Singleton instance
 email_service = EmailService()

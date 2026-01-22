@@ -3536,6 +3536,8 @@ async def verify_payment(
 
     - If approved=true: Marks invoice as paid
     - If approved=false: Marks invoice as rejected with reason
+
+    Sends email notification to customer on approval/rejection.
     """
     try:
         invoice = await invoice_service.verify_payment(
@@ -3564,6 +3566,39 @@ async def verify_payment(
         )
 
         await session.commit()
+
+        # Send email notification to customer
+        try:
+            # Get customer profile for email
+            customer = await session.get(CustomerProfile, invoice.customer_profile_id)
+            if customer and customer.email:
+                customer_name = customer.full_name or "Valued Customer"
+                verification_date = datetime.now(timezone.utc).strftime("%B %d, %Y")
+
+                if request.approved:
+                    # Send payment approved email
+                    await email_service.send_payment_approved_email(
+                        to_email=customer.email,
+                        customer_name=customer_name,
+                        invoice_number=invoice.invoice_number,
+                        amount=float(invoice.total_amount),
+                        payment_date=verification_date,
+                    )
+                    logger.info(f"Payment approval email sent to {customer.email} for invoice {invoice.invoice_number}")
+                else:
+                    # Send payment rejected email
+                    rejection_reason = request.rejection_reason or "Payment proof could not be verified"
+                    await email_service.send_payment_rejected_email(
+                        to_email=customer.email,
+                        customer_name=customer_name,
+                        invoice_number=invoice.invoice_number,
+                        amount=float(invoice.total_amount),
+                        rejection_reason=rejection_reason,
+                    )
+                    logger.info(f"Payment rejection email sent to {customer.email} for invoice {invoice.invoice_number}")
+        except Exception as email_error:
+            # Log email error but don't fail the verification
+            logger.error(f"Failed to send payment verification email: {email_error}")
 
         return PaymentVerificationResponse(
             success=True,

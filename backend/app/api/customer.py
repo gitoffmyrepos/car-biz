@@ -91,6 +91,8 @@ async def get_or_create_profile(
 
     Handles race conditions where concurrent requests might try to create
     the same profile by catching IntegrityError and re-fetching.
+
+    Sends welcome email when a new profile is created.
     """
     # Try to find existing profile
     result = await db.execute(
@@ -98,6 +100,7 @@ async def get_or_create_profile(
     )
     profile = result.scalar_one_or_none()
 
+    is_new_profile = False
     if profile is None:
         try:
             # Create new profile
@@ -109,6 +112,7 @@ async def get_or_create_profile(
             db.add(profile)
             await db.flush()
             await db.refresh(profile)
+            is_new_profile = True
         except IntegrityError:
             # Race condition: another request created the profile
             # Rollback the failed insert and re-fetch
@@ -123,6 +127,19 @@ async def get_or_create_profile(
                     status_code=500,
                     detail="Failed to create or retrieve customer profile"
                 )
+
+    # Send welcome email for new profiles
+    if is_new_profile and profile.email:
+        try:
+            customer_name = profile.full_name or user.name or "Valued Customer"
+            await email_service.send_welcome_email(
+                to_email=profile.email,
+                customer_name=customer_name,
+            )
+            logger.info(f"Welcome email sent to new customer: {profile.email}")
+        except Exception as email_error:
+            # Log email error but don't fail profile creation
+            logger.error(f"Failed to send welcome email to {profile.email}: {email_error}")
 
     return profile
 

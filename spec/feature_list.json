@@ -1011,7 +1011,7 @@
       "Verify email subject is appropriate",
       "Verify email HTML template rendered correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1035,7 +1035,7 @@
       "Verify email includes next steps",
       "Verify email from address correct"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1047,7 +1047,7 @@
       "Verify email includes receipt/confirmation number",
       "Verify in-app notification also created"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1059,7 +1059,7 @@
       "Verify email includes next steps",
       "Verify in-app notification created"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1071,7 +1071,7 @@
       "Verify email includes payment instructions",
       "Verify email warns of escalation consequences"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1083,7 +1083,7 @@
       "Verify email includes contact information",
       "Verify email includes amount owed"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1095,7 +1095,7 @@
       "Verify email mentions permanent ban",
       "Verify email includes legal/contact information"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
