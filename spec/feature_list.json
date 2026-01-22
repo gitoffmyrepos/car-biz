@@ -1356,7 +1356,7 @@
       "Verify consistent branding across pages",
       "Take screenshot documenting aesthetic"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
@@ -1370,7 +1370,7 @@
       "Verify tablet layout appropriate",
       "Take screenshots at multiple breakpoints"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
@@ -1413,7 +1413,7 @@
       "Navigate to /robots.txt",
       "Verify robots.txt properly configured"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
@@ -1424,7 +1424,7 @@
       "Verify canonical URL is correct",
       "Verify no duplicate canonical tags"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
@@ -1436,7 +1436,7 @@
       "Verify consistent color usage",
       "Verify no conflicting custom styles"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
