@@ -73,6 +73,10 @@ class CustomerProfile(Base):
     notification_email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     notification_sms: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # GPS Tracking Consent
+    gps_consent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    gps_consent_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

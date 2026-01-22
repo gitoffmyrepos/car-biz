@@ -81,6 +81,7 @@ export default function VehicleRequestPage() {
   const [vehiclePreference, setVehiclePreference] = useState('any');
   const [notes, setNotes] = useState('');
   const [preferredStartDate, setPreferredStartDate] = useState('');
+  const [gpsConsent, setGpsConsent] = useState(false);
 
   // Redirect to login if not authenticated (unless logging out)
   useEffect(() => {
@@ -161,6 +162,7 @@ export default function VehicleRequestPage() {
           vehicle_preference: vehiclePreference,
           notes: notes || null,
           preferred_start_date: preferredStartDate || null,
+          gps_consent: gpsConsent,
         }),
       });
 
@@ -173,6 +175,7 @@ export default function VehicleRequestPage() {
         setVehiclePreference('any');
         setNotes('');
         setPreferredStartDate('');
+        setGpsConsent(false);
 
         // Update eligibility (now has active request)
         if (eligibility) {
@@ -430,6 +433,34 @@ export default function VehicleRequestPage() {
                 />
               </div>
 
+              {/* GPS Tracking Consent */}
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center h-6">
+                    <input
+                      type="checkbox"
+                      id="gps_consent"
+                      checked={gpsConsent}
+                      onChange={(e) => setGpsConsent(e.target.checked)}
+                      className="w-5 h-5 text-gold border-gray-300 rounded focus:ring-gold cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label htmlFor="gps_consent" className="block text-sm font-medium text-charcoal cursor-pointer">
+                      I consent to GPS tracking <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-sm text-gray-600 mt-1">
+                      I acknowledge that all leased vehicles are equipped with GPS tracking devices for asset protection and fleet management purposes.
+                      I have read and agree to the{' '}
+                      <Link href="/gps-disclosure" target="_blank" className="text-gold hover:underline font-medium">
+                        GPS Disclosure Policy
+                      </Link>
+                      .
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <div className="flex justify-end gap-4">
                 <Link
@@ -440,7 +471,7 @@ export default function VehicleRequestPage() {
                 </Link>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !gpsConsent}
                   className="px-6 py-3 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isSubmitting ? (

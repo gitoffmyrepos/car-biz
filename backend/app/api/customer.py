@@ -55,6 +55,8 @@ class ProfileResponse(BaseModel):
     ban_reason: Optional[str]
     notification_email: bool
     notification_sms: bool
+    gps_consent: bool
+    gps_consent_date: Optional[datetime]
     created_at: datetime
     updated_at: datetime
 
@@ -176,6 +178,8 @@ async def get_profile(
         ban_reason=profile.ban_reason,
         notification_email=profile.notification_email,
         notification_sms=profile.notification_sms,
+        gps_consent=profile.gps_consent,
+        gps_consent_date=profile.gps_consent_date,
         created_at=profile.created_at,
         updated_at=profile.updated_at,
     )
@@ -224,6 +228,8 @@ async def update_profile(
         ban_reason=profile.ban_reason,
         notification_email=profile.notification_email,
         notification_sms=profile.notification_sms,
+        gps_consent=profile.gps_consent,
+        gps_consent_date=profile.gps_consent_date,
         created_at=profile.created_at,
         updated_at=profile.updated_at,
     )
@@ -394,6 +400,7 @@ class VehicleRequestCreate(BaseModel):
     vehicle_preference: str = "any"
     notes: Optional[str] = None
     preferred_start_date: Optional[datetime] = None
+    gps_consent: bool = False  # Must consent to GPS tracking to request vehicle
 
 
 class VehicleRequestResponse(BaseModel):
@@ -448,6 +455,19 @@ async def create_vehicle_request(
             status_code=403,
             detail=f"Insurance verification required. Current status: {profile.insurance_status.value}. Only customers with approved insurance can request vehicles."
         )
+
+    # Verify GPS consent is provided
+    if not request_data.gps_consent:
+        raise HTTPException(
+            status_code=400,
+            detail="GPS tracking consent is required to request a vehicle. All leased vehicles are equipped with GPS tracking devices for asset protection. Please read our GPS Disclosure and check the consent checkbox."
+        )
+
+    # Record GPS consent on profile if not already recorded
+    if not profile.gps_consent:
+        profile.gps_consent = True
+        profile.gps_consent_date = datetime.now(timezone.utc)
+        logger.info(f"GPS consent recorded for customer {profile.email}")
 
     # Check for existing active requests
     existing_result = await db.execute(
@@ -703,6 +723,8 @@ async def can_request_vehicle(
         "active_request_status": existing_request.status.value if existing_request else None,
         "is_banned": is_banned,
         "reasons": reasons,
+        "gps_consent": profile.gps_consent,
+        "gps_consent_date": profile.gps_consent_date.isoformat() if profile.gps_consent_date else None,
     }
 
 

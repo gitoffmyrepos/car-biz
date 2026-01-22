@@ -1109,7 +1109,7 @@
       "Verify consent recorded in system",
       "Take screenshot of GPS consent"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "security",
