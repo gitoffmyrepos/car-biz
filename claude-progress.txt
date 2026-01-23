@@ -6379,3 +6379,87 @@ Focus: File upload UI and Printable invoice features
 ================================================================================
 END SESSION 64 (continued)
 ================================================================================
+
+================================================================================
+SESSION 65: FEATURES #150, #151 - INSURANCE RETENTION POLICY
+================================================================================
+
+Date: 2026-01-22
+Status: COMPLETED
+Focus: Insurance retention policy and document security headers
+
+## Objectives Completed
+
+### Feature #150: Insurance Retention Policy - VERIFIED
+
+**Backend Service:** backend/app/services/insurance_retention.py
+
+**InsuranceRetentionService Features:**
+1. Get retention settings (retention_days, auto_delete_enabled)
+2. Identify documents eligible for deletion based on policy
+3. Delete expired documents with audit trail
+4. Dry-run mode for safe preview
+5. Configurable retention period (default 365 days)
+
+**Admin API Endpoints Added:**
+1. GET /api/admin/insurance/retention-settings
+2. PUT /api/admin/insurance/retention-settings
+3. GET /api/admin/insurance/retention-preview
+4. POST /api/admin/insurance/delete-expired
+
+**Unit Tests:** backend/app/tests/test_insurance_retention.py (259 lines)
+
+### Feature #151: Insurance Document Security Headers - VERIFIED
+
+**Implementation Location:** backend/app/api/files.py
+
+**SecureFileResponse Class:**
+- Extends FileResponse
+- Applies Cache-Control, Pragma, Expires headers
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: DENY
+
+## Files Modified
+
+1. backend/app/api/admin.py (+194 lines)
+2. backend/app/api/files.py (+31 lines)
+3. backend/app/services/insurance_retention.py (NEW - 311 lines)
+4. backend/app/tests/test_insurance_retention.py (NEW - 259 lines)
+5. backend/app/models/system_settings.py (+24 lines)
+6. spec/feature_list.json
+
+## Progress Update
+
+- Features Passing: 203/211 (96.2% complete)
+- Previous: 201/211 (95.3%)
+- Features Added: +2 (Insurance retention, Security headers)
+- No regressions detected
+- Commit: a2f0e3a
+
+================================================================================
+END SESSION 65
+================================================================================
+
+=== Session: 2026-01-22 Enhancement Mode ===
+Feature Implemented: #152 - Customer historical access for banned customers
+
+Changes Made:
+1. Updated frontend/app/payments/page.tsx:
+   - Added CustomerProfile interface for banned status tracking
+   - Added fetchCustomerProfile function to get banned status from dashboard-summary API
+   - Updated canUploadProof function to return false for banned customers
+   - Added "Read-Only Access" banner (amber colored) for banned customers
+   - Banner displays ban reason and links to contact support
+
+Testing Performed:
+- Logged in as banned customer (customer@example.com)
+- Verified read-only access banner displays on payments page
+- Verified banned customer can view all historical invoices (5 invoices visible)
+- Verified "Upload Proof" button is hidden for banned customers
+- Verified invoice details modal shows no upload option for banned customers
+- Regression test: Non-banned customer (john.doe@example.com) does NOT see read-only banner
+
+Feature Status: PASSING
+Progress: 204/211 features (96.7%)
+Remaining: 7 features
+

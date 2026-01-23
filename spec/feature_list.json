@@ -2038,7 +2038,7 @@
       "Verify no new actions allowed",
       "Take screenshot of read-only access"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
