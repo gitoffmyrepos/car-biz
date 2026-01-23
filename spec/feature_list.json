@@ -2257,7 +2257,7 @@
       "Verify lazy loading enabled",
       "Verify image formats optimized"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
