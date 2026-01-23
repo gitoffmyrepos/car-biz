@@ -2748,7 +2748,7 @@
       "Make backend code change",
       "Verify backend reloads automatically"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
