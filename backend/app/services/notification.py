@@ -3,12 +3,15 @@ Weekly Vehicle Leasing Platform - Notification Service
 Salvage-to-Lux Fleet Management
 
 Service for creating and managing customer notifications.
+Includes real-time WebSocket broadcasting for live updates.
 """
 
+import asyncio
 import logging
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 
 from app.models.notification import Notification, NotificationType, NotificationPriority
 
@@ -69,7 +72,67 @@ class NotificationService:
             f"Created notification {notification.id} for customer {customer_profile_id}: {title}"
         )
 
+        # Broadcast via WebSocket (non-blocking)
+        asyncio.create_task(
+            self._broadcast_notification(
+                db=db,
+                notification=notification,
+                customer_profile_id=customer_profile_id,
+            )
+        )
+
         return notification
+
+    async def _broadcast_notification(
+        self,
+        db: AsyncSession,
+        notification: Notification,
+        customer_profile_id: int,
+    ) -> None:
+        """
+        Broadcast a new notification via WebSocket.
+
+        This runs as a background task to not block the main request.
+        """
+        try:
+            # Import here to avoid circular imports
+            from app.services.websocket_manager import websocket_manager
+
+            # Check if customer has active WebSocket connections
+            if not websocket_manager.is_customer_connected(customer_profile_id):
+                return
+
+            # Send the new notification
+            await websocket_manager.send_notification(
+                customer_profile_id=customer_profile_id,
+                notification_id=notification.id,
+                notification_type=notification.notification_type.value,
+                title=notification.title,
+                message=notification.message,
+                priority=notification.priority.value,
+                action_url=notification.action_url,
+                action_label=notification.action_label,
+            )
+
+            # Get updated unread count and send it
+            unread_count = await db.scalar(
+                select(func.count(Notification.id)).where(
+                    Notification.customer_profile_id == customer_profile_id,
+                    Notification.is_read == False,
+                )
+            )
+            await websocket_manager.send_notification_count_update(
+                customer_profile_id=customer_profile_id,
+                unread_count=unread_count or 0,
+            )
+
+            logger.debug(
+                f"Broadcasted notification {notification.id} via WebSocket to customer {customer_profile_id}"
+            )
+
+        except Exception as e:
+            # Log but don't fail - WebSocket broadcast is best-effort
+            logger.warning(f"Failed to broadcast notification via WebSocket: {e}")
 
     async def create_welcome_notification(
         self, db: AsyncSession, customer_profile_id: int, customer_name: str

@@ -56,3 +56,7 @@ export type { PrintableInvoiceProps, InvoiceData, InvoiceLineItem } from './Prin
 
 // Optimized images
 export { OptimizedImage, VehicleImage } from './OptimizedImage';
+
+// Theme toggle
+export { ThemeProvider, ThemeToggle, useTheme, ThemeContext } from './ThemeToggle';
+export type { Theme } from './ThemeToggle';

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useCallback } from 'react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,67 +30,71 @@ export default function HomePage() {
       </a>
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100" role="navigation" aria-label="Main navigation">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-luxury-charcoal/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800" role="navigation" aria-label="Main navigation">
         <div className="container-luxury">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-display font-bold text-luxury-charcoal">
+              <span className="text-2xl font-display font-bold text-luxury-charcoal dark:text-white">
                 FX<span className="text-gradient">Weekly</span>
               </span>
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/how-it-works" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/how-it-works" className="text-gray-600 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white transition-colors">
                 How It Works
               </Link>
-              <Link href="/fleet" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/fleet" className="text-gray-600 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white transition-colors">
                 Fleet
               </Link>
-              <Link href="/requirements" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/requirements" className="text-gray-600 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white transition-colors">
                 Requirements
               </Link>
-              <Link href="/faq" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/faq" className="text-gray-600 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white transition-colors">
                 FAQ
               </Link>
+              <ThemeToggle showDropdown />
               <Link href="/contact" className="btn btn-primary">
                 Get Started
               </Link>
             </div>
 
             {/* Mobile Menu Button */}
-            <button
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
-              aria-controls="mobile-menu"
-              onClick={toggleMobileMenu}
-            >
-              {mobileMenuOpen ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
+            <div className="md:hidden flex items-center space-x-2">
+              <ThemeToggle />
+              <button
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-luxury-charcoal dark:text-white"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
+                onClick={toggleMobileMenu}
+              >
+                {mobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div
               id="mobile-menu"
-              className="md:hidden border-t border-gray-100 bg-white py-4"
+              className="md:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-luxury-charcoal py-4"
               role="menu"
               aria-orientation="vertical"
             >
               <div className="flex flex-col space-y-2 px-4">
                 <Link
                   href="/how-it-works"
-                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  className="text-gray-700 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
                   role="menuitem"
                   onClick={closeMobileMenu}
                 >
@@ -97,7 +102,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/fleet"
-                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  className="text-gray-700 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
                   role="menuitem"
                   onClick={closeMobileMenu}
                 >
@@ -105,7 +110,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/requirements"
-                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  className="text-gray-700 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
                   role="menuitem"
                   onClick={closeMobileMenu}
                 >
@@ -113,7 +118,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/faq"
-                  className="text-gray-700 hover:text-luxury-charcoal hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  className="text-gray-700 dark:text-gray-300 hover:text-luxury-charcoal dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
                   role="menuitem"
                   onClick={closeMobileMenu}
                 >

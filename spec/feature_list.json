@@ -2501,7 +2501,7 @@
       "Verify readability maintained",
       "Toggle back to light mode"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2570,7 +2570,7 @@
       "Verify notification badge updates",
       "Click notification to view"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

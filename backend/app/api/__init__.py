@@ -14,6 +14,7 @@ from app.api.customer import router as customer_router
 from app.api.files import router as files_router
 from app.api.public import router as public_router
 from app.api.jobs import router as jobs_router
+from app.api.websocket import router as websocket_router
 
 router = APIRouter()
 
@@ -25,6 +26,7 @@ router.include_router(customer_router)
 router.include_router(files_router)
 router.include_router(public_router)
 router.include_router(jobs_router)
+router.include_router(websocket_router)
 
 
 @router.get("/status", tags=["Status"])

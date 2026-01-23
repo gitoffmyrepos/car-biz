@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 // Admin sidebar navigation items
 const adminNavItems = [
@@ -171,10 +172,10 @@ export default function AdminLayout({
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-luxury-charcoal flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     );
@@ -183,15 +184,15 @@ export default function AdminLayout({
   // Access denied state
   if (accessDenied) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-luxury-charcoal flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             You don&apos;t have permission to access the admin portal.
             This area is restricted to administrators and operations staff.
           </p>
@@ -204,7 +205,7 @@ export default function AdminLayout({
             </Link>
             <Link
               href="/"
-              className="block w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              className="block w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
               Back to Home
             </Link>
@@ -215,7 +216,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-luxury-charcoal">
       {/* Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-luxury-charcoal text-white h-16 flex items-center px-4 md:px-6">
         <div className="flex items-center justify-between w-full">
@@ -229,6 +230,9 @@ export default function AdminLayout({
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
+            {/* Theme Toggle */}
+            <ThemeToggle showDropdown />
+
             {/* Notifications */}
             <button className="p-2 rounded-lg hover:bg-gray-700 transition-colors relative">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,7 +264,7 @@ export default function AdminLayout({
       </header>
 
       {/* Sidebar */}
-      <aside className="fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 overflow-y-auto hidden md:block">
+      <aside className="fixed left-0 top-16 bottom-0 w-64 bg-white dark:bg-luxury-slate border-r border-gray-200 dark:border-gray-700 overflow-y-auto hidden md:block">
         <nav className="p-4 space-y-1">
           {adminNavItems.map((item) => {
             const isActive = isActiveRoute(item.href);
@@ -270,8 +274,8 @@ export default function AdminLayout({
                 href={item.href}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                   isActive
-                    ? 'bg-gold-50 text-gold-600 font-medium border-l-4 border-gold-500'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-luxury-charcoal'
+                    ? 'bg-gold-50 dark:bg-gold-900/30 text-gold-600 dark:text-gold-400 font-medium border-l-4 border-gold-500'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-luxury-charcoal dark:hover:text-white'
                 }`}
               >
                 {item.icon}
@@ -282,15 +286,15 @@ export default function AdminLayout({
         </nav>
 
         {/* Help section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-luxury-charcoal mb-2">Need Help?</h4>
-            <p className="text-xs text-gray-500 mb-3">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-luxury-slate">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-luxury-charcoal dark:text-white mb-2">Need Help?</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
               Contact support for assistance with the admin portal.
             </p>
             <a
               href="mailto:support@fxweekly.com"
-              className="text-xs text-gold-600 hover:text-gold-700 font-medium"
+              className="text-xs text-gold-600 dark:text-gold-400 hover:text-gold-700 dark:hover:text-gold-300 font-medium"
             >
               support@fxweekly.com
             </a>
@@ -299,7 +303,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Mobile bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-luxury-slate border-t border-gray-200 dark:border-gray-700 md:hidden z-50">
         <div className="flex justify-around items-center py-2">
           {adminNavItems.slice(0, 5).map((item) => {
             const isActive = isActiveRoute(item.href);
@@ -308,7 +312,7 @@ export default function AdminLayout({
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center px-3 py-1 ${
-                  isActive ? 'text-gold-600' : 'text-gray-500'
+                  isActive ? 'text-gold-600 dark:text-gold-400' : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
                 {item.icon}

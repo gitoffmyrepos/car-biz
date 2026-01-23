@@ -11,6 +11,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { useNotificationWebSocket, WebSocketNotification } from '@/hooks/useNotificationWebSocket';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8100/api';
 
@@ -72,12 +73,65 @@ export default function NotificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
+  // WebSocket for real-time updates
+  const {
+    isConnected: wsConnected,
+    unreadCount: wsUnreadCount,
+    setOnNotification,
+    setOnUnreadCountChange,
+    markAsRead: wsMarkAsRead,
+    markAllAsRead: wsMarkAllAsRead,
+  } = useNotificationWebSocket();
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isLoggingOut.current) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
+
+  // Handle new notifications from WebSocket
+  const handleNewNotification = useCallback((wsNotification: WebSocketNotification) => {
+    // Convert WebSocket notification to local notification format
+    const newNotification: Notification = {
+      id: wsNotification.id,
+      notification_type: wsNotification.notification_type,
+      title: wsNotification.title,
+      message: wsNotification.message,
+      priority: wsNotification.priority,
+      is_read: wsNotification.is_read,
+      read_at: null,
+      action_url: wsNotification.action_url,
+      action_label: wsNotification.action_label,
+      created_at: wsNotification.created_at,
+    };
+
+    // Add to the beginning of the list (newest first)
+    setNotifications((prev) => [newNotification, ...prev]);
+    setTotalCount((prev) => prev + 1);
+  }, []);
+
+  // Handle unread count updates from WebSocket
+  const handleUnreadCountChange = useCallback((count: number) => {
+    setUnreadCount(count);
+  }, []);
+
+  // Set up WebSocket callbacks
+  useEffect(() => {
+    setOnNotification(handleNewNotification);
+    setOnUnreadCountChange(handleUnreadCountChange);
+    return () => {
+      setOnNotification(null);
+      setOnUnreadCountChange(null);
+    };
+  }, [handleNewNotification, handleUnreadCountChange, setOnNotification, setOnUnreadCountChange]);
+
+  // Sync WebSocket unread count on initial connection
+  useEffect(() => {
+    if (wsConnected && wsUnreadCount !== undefined) {
+      setUnreadCount(wsUnreadCount);
+    }
+  }, [wsConnected, wsUnreadCount]);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
@@ -121,6 +175,9 @@ export default function NotificationsPage() {
   const markAsRead = async (notificationId: number) => {
     if (!token) return;
 
+    // Also notify via WebSocket for real-time sync
+    wsMarkAsRead(notificationId);
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/customer/notifications/${notificationId}/read`,
@@ -147,6 +204,9 @@ export default function NotificationsPage() {
   // Mark all as read
   const markAllAsRead = async () => {
     if (!token) return;
+
+    // Also notify via WebSocket for real-time sync
+    wsMarkAllAsRead();
 
     try {
       const response = await fetch(`${API_BASE_URL}/customer/notifications/read-all`, {
@@ -256,7 +316,25 @@ export default function NotificationsPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-charcoal">Notifications</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-charcoal">Notifications</h1>
+              {/* Real-time connection indicator */}
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${
+                  wsConnected
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}
+                title={wsConnected ? 'Real-time updates active' : 'Connecting...'}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    wsConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                  }`}
+                />
+                {wsConnected ? 'Live' : 'Offline'}
+              </span>
+            </div>
             <p className="text-charcoal/60 mt-1">
               {totalCount === 0
                 ? 'No notifications yet'
