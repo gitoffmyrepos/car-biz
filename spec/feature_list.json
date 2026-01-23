@@ -2452,7 +2452,7 @@
       "Verify success message on completion",
       "Verify file preview if applicable"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2513,7 +2513,7 @@
       "Verify unnecessary UI elements hidden",
       "Verify invoice details legible"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
