@@ -7029,3 +7029,197 @@ async def get_transit_key_info(
         )
 
     return key_info
+
+
+# =============================================================================
+# INSURANCE RETENTION MANAGEMENT
+# =============================================================================
+
+from app.services.insurance_retention import get_insurance_retention_service
+
+
+class InsuranceRetentionSettingsResponse(BaseModel):
+    """Response for insurance retention settings."""
+    retention_days: int
+    auto_delete_enabled: bool
+
+
+class InsuranceRetentionUpdateRequest(BaseModel):
+    """Request to update insurance retention settings."""
+    retention_days: Optional[int] = None
+    auto_delete_enabled: Optional[bool] = None
+
+
+class InsuranceDeletionRequest(BaseModel):
+    """Request to delete expired insurance documents."""
+    dry_run: bool = True
+
+
+@router.get("/insurance/retention-settings", response_model=InsuranceRetentionSettingsResponse)
+async def get_insurance_retention_settings(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Get current insurance document retention settings.
+
+    Requires admin role.
+
+    Returns:
+    - retention_days: Days to retain insurance documents after expiration
+    - auto_delete_enabled: Whether automatic deletion is enabled
+    """
+    service = get_insurance_retention_service(session)
+    settings_data = await service.get_retention_settings()
+
+    logger.info(f"Admin {user.email} retrieved insurance retention settings")
+
+    return settings_data
+
+
+@router.put("/insurance/retention-settings", response_model=InsuranceRetentionSettingsResponse)
+async def update_insurance_retention_settings(
+    request: InsuranceRetentionUpdateRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Update insurance document retention settings.
+
+    Requires admin role.
+
+    Parameters:
+    - retention_days: Days to retain documents (optional)
+    - auto_delete_enabled: Enable/disable auto-deletion (optional)
+    """
+    service = get_insurance_retention_service(session)
+
+    # Validate retention_days if provided
+    if request.retention_days is not None:
+        if request.retention_days < 30:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Retention period must be at least 30 days for compliance"
+            )
+        if request.retention_days > 3650:  # 10 years max
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Retention period cannot exceed 10 years"
+            )
+
+    result = await service.update_retention_settings(
+        retention_days=request.retention_days,
+        auto_delete_enabled=request.auto_delete_enabled,
+        updated_by=user.email,
+    )
+
+    # Log the setting change
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.SETTING_UPDATE,
+        target_type="InsuranceRetentionSettings",
+        target_id="retention_policy",
+        target_description="Insurance document retention policy",
+        before_state=None,
+        after_state={
+            "retention_days": result.get("retention_days"),
+            "auto_delete_enabled": result.get("auto_delete_enabled"),
+        },
+    )
+
+    logger.info(
+        f"Admin {user.email} updated insurance retention settings: "
+        f"retention_days={result.get('retention_days')}, "
+        f"auto_delete_enabled={result.get('auto_delete_enabled')}"
+    )
+
+    return {
+        "retention_days": result["retention_days"],
+        "auto_delete_enabled": result["auto_delete_enabled"],
+    }
+
+
+@router.get("/insurance/retention-preview")
+async def preview_expired_insurance_documents(
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Preview insurance documents eligible for deletion.
+
+    Requires admin role.
+
+    Returns list of documents that would be deleted based on current retention policy.
+    Does not perform any actual deletion.
+    """
+    service = get_insurance_retention_service(session)
+    result = await service.delete_expired_documents(dry_run=True)
+
+    logger.info(
+        f"Admin {user.email} previewed expired insurance documents: "
+        f"{result.get('would_delete', 0)} eligible for deletion"
+    )
+
+    return result
+
+
+@router.post("/insurance/delete-expired")
+async def delete_expired_insurance_documents(
+    request: InsuranceDeletionRequest,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Delete expired insurance documents based on retention policy.
+
+    Requires admin role.
+
+    Parameters:
+    - dry_run: If true, only preview what would be deleted (default: true)
+
+    When dry_run=false:
+    - Deletes documents from MinIO storage
+    - Clears document references in database
+    - Creates audit log entries for each deletion
+    - Returns deletion statistics
+
+    Deletion is permanent and cannot be undone.
+    """
+    service = get_insurance_retention_service(session)
+
+    if request.dry_run:
+        result = await service.delete_expired_documents(dry_run=True)
+        logger.info(
+            f"Admin {user.email} performed dry-run deletion preview: "
+            f"{result.get('would_delete', 0)} documents"
+        )
+    else:
+        # Actual deletion with audit trail
+        result = await service.delete_expired_documents(
+            dry_run=False,
+            actor_id=user.email,
+        )
+
+        # Log the deletion operation
+        await audit_service.log_action(
+            session=session,
+            user=user,
+            action=AuditAction.INSURANCE_DOCUMENT_DELETE,
+            target_type="InsuranceRetentionBatch",
+            target_id="batch_deletion",
+            target_description=f"Batch deletion of {result.get('deleted', 0)} expired insurance documents",
+            after_state={
+                "deleted_count": result.get("deleted"),
+                "error_count": result.get("errors"),
+                "retention_days": result.get("retention_days"),
+            },
+            notes="Batch deletion initiated by admin via retention policy",
+        )
+
+        logger.info(
+            f"Admin {user.email} deleted {result.get('deleted', 0)} expired insurance documents "
+            f"with {result.get('errors', 0)} errors"
+        )
+
+    return result

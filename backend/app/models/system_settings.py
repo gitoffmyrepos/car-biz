@@ -232,6 +232,30 @@ DEFAULT_SETTINGS = [
         "category": "insurance",
         "value_type": "number",
     },
+    {
+        "setting_key": "insurance_retention_days",
+        "setting_value": "365",
+        "display_name": "Insurance Document Retention (Days)",
+        "description": "Days to retain insurance documents after expiration or replacement",
+        "category": "insurance",
+        "value_type": "number",
+    },
+    {
+        "setting_key": "insurance_auto_delete_enabled",
+        "setting_value": "true",
+        "display_name": "Auto-Delete Expired Insurance",
+        "description": "Automatically delete insurance documents after retention period",
+        "category": "insurance",
+        "value_type": "boolean",
+    },
+    {
+        "setting_key": "banned_customer_history_access",
+        "setting_value": "true",
+        "display_name": "Banned Customer History Access",
+        "description": "Allow banned customers to view their historical lease and payment records",
+        "category": "security",
+        "value_type": "boolean",
+    },
     # Security
     {
         "setting_key": "signed_url_ttl_seconds",

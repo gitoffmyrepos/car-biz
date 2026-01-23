@@ -2013,7 +2013,7 @@
       "Verify database record updated",
       "Verify audit trail for deletion"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2025,7 +2025,7 @@
       "Verify Pragma: no-cache",
       "Verify no public caching enabled"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

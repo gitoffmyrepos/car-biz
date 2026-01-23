@@ -7,7 +7,7 @@ In production, files are served directly via S3/MinIO signed URLs.
 """
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import FileResponse
 
 from app.core.auth import get_current_user, AuthenticatedUser
@@ -17,6 +17,26 @@ from app.services.storage import storage_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/files", tags=["Files"])
+
+
+# Security headers for sensitive document responses
+SENSITIVE_DOCUMENT_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+}
+
+
+class SecureFileResponse(FileResponse):
+    """FileResponse with no-cache headers for sensitive documents."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add security headers
+        for header, value in SENSITIVE_DOCUMENT_HEADERS.items():
+            self.headers[header] = value
 
 
 @router.get("/{bucket}/{path:path}")
@@ -32,6 +52,11 @@ async def serve_file(
     This endpoint provides file serving for local development.
 
     Authentication is required to access files.
+
+    Security features:
+    - No-cache headers prevent browser/proxy caching of sensitive documents
+    - X-Content-Type-Options prevents MIME sniffing
+    - X-Frame-Options prevents clickjacking
     """
     # Validate bucket name to prevent path traversal
     allowed_buckets = [
@@ -78,7 +103,9 @@ async def serve_file(
 
     logger.info(f"Serving file: {bucket}/{path} for user {user.email}")
 
-    return FileResponse(
+    # Use SecureFileResponse with no-cache headers for sensitive documents
+    # Insurance, payment proofs, and incident reports are sensitive
+    return SecureFileResponse(
         path=str(file_path),
         media_type=content_type,
         filename=file_path.name,
