@@ -2558,7 +2558,7 @@
       "Verify navigation works",
       "Verify current page highlighted"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
