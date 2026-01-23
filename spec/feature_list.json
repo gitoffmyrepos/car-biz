@@ -2465,7 +2465,7 @@
       "Verify date populated in field",
       "Verify date format correct"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
