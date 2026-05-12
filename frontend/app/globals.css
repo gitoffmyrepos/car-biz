@@ -5,26 +5,26 @@
 @layer base {
   :root {
     --font-inter: 'Inter', system-ui, sans-serif;
-    --font-playfair: 'Playfair Display', serif;
-    /* Light mode colors */
-    --bg-primary: #FDFCFB;
-    --bg-secondary: #FAF7F2;
-    --text-primary: #1A1A1A;
-    --text-secondary: #4B5563;
-    --border-color: #E5E7EB;
+    /* Glossy black theme colors */
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #121212;
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1a1;
+    --border-color: #2a2a2a;
+    --orange-primary: #f97316;
   }
 
   .dark {
-    --bg-primary: #1A1A1A;
-    --bg-secondary: #2D2D2D;
-    --text-primary: #FDFCFB;
-    --text-secondary: #9CA3AF;
-    --border-color: #374151;
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #121212;
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1a1;
+    --border-color: #2a2a2a;
   }
 
   body {
-    @apply bg-luxury-pearl text-luxury-charcoal;
-    @apply dark:bg-luxury-charcoal dark:text-luxury-pearl;
+    @apply bg-glossy-black text-white;
+    @apply dark:bg-glossy-black dark:text-white;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -38,20 +38,20 @@
   select:focus-visible,
   textarea:focus-visible,
   [tabindex]:focus-visible {
-    @apply outline-none ring-2 ring-gold-500 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-orange-500 ring-offset-2 ring-offset-glossy-black;
   }
 
   /* High contrast focus for dark backgrounds */
-  .bg-gradient-luxury a:focus-visible,
-  .bg-gradient-luxury button:focus-visible,
-  .bg-luxury-charcoal a:focus-visible,
-  .bg-luxury-charcoal button:focus-visible {
-    @apply ring-white ring-offset-luxury-charcoal;
+  .bg-gradient-glossy a:focus-visible,
+  .bg-gradient-glossy button:focus-visible,
+  .bg-glossy-black a:focus-visible,
+  .bg-glossy-black button:focus-visible {
+    @apply ring-white ring-offset-glossy-black;
   }
 
   /* Skip to main content link */
   .skip-to-main {
-    @apply absolute -translate-y-full left-1/2 -translate-x-1/2 bg-gold-500 text-white px-4 py-2 rounded-b-lg z-[100] transition-transform duration-200;
+    @apply absolute -translate-y-full left-1/2 -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded-b-lg z-[100] transition-transform duration-200;
   }
 
   .skip-to-main:focus {
@@ -61,19 +61,19 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-glossy-black;
   }
 
   .btn-primary {
-    @apply bg-gradient-gold text-white hover:opacity-90 focus:ring-gold-500;
+    @apply bg-gradient-orange text-white shadow-orange-glow hover:shadow-orange-glow-lg hover:scale-105 focus:ring-orange-500;
   }
 
   .btn-secondary {
-    @apply bg-luxury-charcoal text-white hover:bg-luxury-slate focus:ring-luxury-charcoal;
+    @apply bg-glossy-light text-white hover:bg-glossy-border border border-glossy-border focus:ring-orange-500;
   }
 
   .btn-outline {
-    @apply border-2 border-luxury-charcoal text-luxury-charcoal hover:bg-luxury-charcoal hover:text-white focus:ring-luxury-charcoal;
+    @apply border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white focus:ring-orange-500;
   }
 
   .container-luxury {
@@ -93,21 +93,25 @@
   }
 
   .text-muted {
-    @apply text-gray-600 dark:text-gray-400;
+    @apply text-gray-400;
   }
 
   .card {
-    @apply bg-white dark:bg-luxury-slate rounded-xl shadow-lg dark:shadow-gray-900/20 p-6 md:p-8;
+    @apply bg-glossy-panel backdrop-blur-xl rounded-2xl shadow-glossy border border-glossy-border p-6 md:p-8;
   }
 
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-glossy-lg hover:-translate-y-2 hover:border-orange-500/30;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-gold;
+    @apply bg-clip-text text-transparent bg-gradient-orange;
+  }
+
+  .text-gradient-glow {
+    @apply bg-clip-text text-transparent bg-gradient-orange-glow;
   }
 }
 

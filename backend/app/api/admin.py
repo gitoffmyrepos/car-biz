@@ -5,10 +5,12 @@ Salvage-to-Lux Fleet Management
 Admin-only API endpoints with RBAC protection.
 """
 
+import csv
+import io
 import logging
 from typing import Any, Optional
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, status, UploadFile
 from pydantic import BaseModel
@@ -971,6 +973,8 @@ class VehicleResponse(BaseModel):
     repair_cost: Optional[float]
     current_lease_id: Optional[int]
     current_tracker_id: Optional[int]
+    image_key: Optional[str]
+    image_url: Optional[str]
     notes: Optional[str]
     admin_notes: Optional[str]
     is_active: bool
@@ -1036,6 +1040,11 @@ async def list_vehicles(
             repair_cost=float(v.repair_cost) if v.repair_cost else None,
             current_lease_id=v.current_lease_id,
             current_tracker_id=v.current_tracker_id,
+            image_key=v.image_key,
+            image_url=storage_service.generate_signed_url(
+                bucket=settings.S3_BUCKET_VEHICLES,
+                key=v.image_key,
+            ) if v.image_key else None,
             notes=v.notes,
             admin_notes=v.admin_notes,
             is_active=v.is_active,
@@ -1090,6 +1099,11 @@ async def get_vehicle(
         repair_cost=float(vehicle.repair_cost) if vehicle.repair_cost else None,
         current_lease_id=vehicle.current_lease_id,
         current_tracker_id=vehicle.current_tracker_id,
+        image_key=vehicle.image_key,
+        image_url=storage_service.generate_signed_url(
+            bucket=settings.S3_BUCKET_VEHICLES,
+            key=vehicle.image_key,
+        ) if vehicle.image_key else None,
         notes=vehicle.notes,
         admin_notes=vehicle.admin_notes,
         is_active=vehicle.is_active,
@@ -1190,6 +1204,11 @@ async def create_vehicle(
         repair_cost=float(vehicle.repair_cost) if vehicle.repair_cost else None,
         current_lease_id=vehicle.current_lease_id,
         current_tracker_id=vehicle.current_tracker_id,
+        image_key=vehicle.image_key,
+        image_url=storage_service.generate_signed_url(
+            bucket=settings.S3_BUCKET_VEHICLES,
+            key=vehicle.image_key,
+        ) if vehicle.image_key else None,
         notes=vehicle.notes,
         admin_notes=vehicle.admin_notes,
         is_active=vehicle.is_active,
@@ -1304,6 +1323,11 @@ async def update_vehicle(
         repair_cost=float(vehicle.repair_cost) if vehicle.repair_cost else None,
         current_lease_id=vehicle.current_lease_id,
         current_tracker_id=vehicle.current_tracker_id,
+        image_key=vehicle.image_key,
+        image_url=storage_service.generate_signed_url(
+            bucket=settings.S3_BUCKET_VEHICLES,
+            key=vehicle.image_key,
+        ) if vehicle.image_key else None,
         notes=vehicle.notes,
         admin_notes=vehicle.admin_notes,
         is_active=vehicle.is_active,
@@ -1364,6 +1388,414 @@ async def delete_vehicle(
         "deleted_by": user.email,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.post("/vehicles/{vehicle_id}/upload-image")
+async def upload_vehicle_image(
+    vehicle_id: int,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Upload an image for a vehicle.
+
+    Requires admin role.
+    - Validates file type (images only)
+    - Validates file size (max 10MB)
+    - Stores file in S3/MinIO
+    - Replaces existing image if present
+    - Updates vehicle with image key
+    """
+    # Verify vehicle exists
+    result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    # Read file content
+    file_content = await file.read()
+    original_filename = file.filename or "vehicle_image"
+
+    # Allowed image types
+    allowed_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+    }
+
+    # Validate file
+    is_valid, error_message, mime_type = storage_service.validate_file(
+        file_content, original_filename, allowed_types=allowed_types
+    )
+
+    if not is_valid or mime_type is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message or "Invalid file type"
+        )
+
+    # Delete old image if exists
+    if vehicle.image_key:
+        try:
+            await storage_service.delete_file(
+                bucket=settings.S3_BUCKET_VEHICLES,
+                key=vehicle.image_key,
+            )
+            logger.info(f"Deleted old image for vehicle {vehicle_id}: {vehicle.image_key}")
+        except Exception as e:
+            logger.warning(f"Failed to delete old image for vehicle {vehicle_id}: {e}")
+
+    # Generate storage key
+    storage_key = storage_service.generate_storage_key(
+        user_id=f"vehicle_{vehicle_id}",
+        document_type="vehicle_image",
+        original_filename=original_filename,
+        mime_type=mime_type,
+    )
+
+    # Upload file
+    upload_success = await storage_service.upload_file(
+        file_content=file_content,
+        bucket=settings.S3_BUCKET_VEHICLES,
+        key=storage_key,
+        content_type=mime_type,
+    )
+
+    if not upload_success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload file to storage"
+        )
+
+    # Update vehicle with new image key
+    vehicle.image_key = storage_key
+    vehicle.updated_at = datetime.now(timezone.utc)
+
+    await session.flush()
+    await session.refresh(vehicle)
+
+    # Log audit action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.ADMIN_ACTION,
+        target_type="vehicle",
+        target_id=str(vehicle_id),
+        target_description=f"{vehicle.year} {vehicle.make} {vehicle.model}",
+        after_state={"image_key": storage_key},
+        reason="Vehicle image uploaded"
+    )
+
+    logger.info(f"Admin {user.email} uploaded image for vehicle {vehicle_id}")
+
+    # Generate signed URL for preview
+    image_url = storage_service.generate_signed_url(
+        bucket=settings.S3_BUCKET_VEHICLES,
+        key=storage_key,
+    )
+
+    return {
+        "success": True,
+        "message": "Vehicle image uploaded successfully",
+        "vehicle_id": vehicle_id,
+        "image_key": storage_key,
+        "image_url": image_url,
+    }
+
+
+@router.delete("/vehicles/{vehicle_id}/image")
+async def delete_vehicle_image(
+    vehicle_id: int,
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Delete the image for a vehicle.
+
+    Requires admin role.
+    """
+    # Verify vehicle exists
+    result = await session.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle not found"
+        )
+
+    if not vehicle.image_key:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle has no image"
+        )
+
+    # Delete image from storage
+    old_image_key = vehicle.image_key
+    try:
+        await storage_service.delete_file(
+            bucket=settings.S3_BUCKET_VEHICLES,
+            key=vehicle.image_key,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to delete image for vehicle {vehicle_id}: {e}")
+
+    # Update vehicle
+    vehicle.image_key = None
+    vehicle.updated_at = datetime.now(timezone.utc)
+
+    await session.flush()
+    await session.refresh(vehicle)
+
+    # Log audit action
+    await audit_service.log_action(
+        session=session,
+        user=user,
+        action=AuditAction.ADMIN_ACTION,
+        target_type="vehicle",
+        target_id=str(vehicle_id),
+        target_description=f"{vehicle.year} {vehicle.make} {vehicle.model}",
+        before_state={"image_key": old_image_key},
+        after_state={"image_key": None},
+        reason="Vehicle image deleted"
+    )
+
+    logger.info(f"Admin {user.email} deleted image for vehicle {vehicle_id}")
+
+    return {
+        "success": True,
+        "message": "Vehicle image deleted successfully",
+        "vehicle_id": vehicle_id,
+    }
+
+
+class BulkImportError(BaseModel):
+    """Error details for a failed row in bulk import."""
+    row: int
+    vin: str
+    error: str
+
+
+class BulkImportResponse(BaseModel):
+    """Response for bulk vehicle import."""
+    success: bool
+    created: int
+    failed: int
+    errors: list[BulkImportError]
+
+
+@router.post("/vehicles/bulk-import", response_model=BulkImportResponse)
+async def bulk_import_vehicles(
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(require_admin),
+    session: AsyncSession = Depends(get_db),
+):
+    """
+    Bulk import vehicles from CSV file.
+
+    Requires admin role.
+
+    CSV Format:
+    vin,make,model,year,color,body_type,engine,transmission,mileage,status,condition,weekly_rate,notes
+
+    Required fields: vin, make, model, year
+    Optional fields: All others
+
+    Status values: available, leased, maintenance, unavailable, pending_inspection
+    Condition values: excellent, good, fair, needs_repair
+
+    Validates:
+    - File size (max 5MB)
+    - VIN uniqueness (within CSV and database)
+    - Enum values (status, condition)
+    - Year range (1900 to current year + 1)
+    - Weekly rate (positive decimal)
+
+    Returns:
+    - created: Number of vehicles successfully created
+    - failed: Number of vehicles that failed validation
+    - errors: Detailed error list for failed rows
+    """
+    # Validate file size (max 5MB)
+    file_content = await file.read()
+    if len(file_content) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="CSV file too large. Maximum size is 5MB."
+        )
+
+    # Parse CSV
+    try:
+        csv_text = file_content.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(csv_text))
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file encoding. Please use UTF-8."
+        )
+
+    # Validate CSV headers
+    required_headers = {'vin', 'make', 'model', 'year'}
+    if not csv_reader.fieldnames or not required_headers.issubset(set(csv_reader.fieldnames)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CSV must contain required headers: {', '.join(required_headers)}"
+        )
+
+    # Track VINs in CSV for duplicate detection
+    vins_in_csv = set()
+    valid_vehicles = []
+    errors = []
+    row_num = 1  # Start at 1 (header is row 0)
+
+    # Get all existing VINs from database
+    existing_vins_result = await session.execute(select(Vehicle.vin))
+    existing_vins = {row[0] for row in existing_vins_result.all()}
+
+    # Valid enum values
+    valid_statuses = {s.value for s in VehicleStatus}
+    valid_conditions = {c.value for c in VehicleCondition}
+    current_year = datetime.now(timezone.utc).year
+
+    for row in csv_reader:
+        row_num += 1
+
+        # Skip empty rows
+        if not row.get('vin', '').strip():
+            continue
+
+        vin = row['vin'].strip()
+        error_msg = None
+
+        # Validate required fields
+        if not vin:
+            error_msg = "VIN is required"
+        elif vin in vins_in_csv:
+            error_msg = "Duplicate VIN in CSV"
+        elif vin in existing_vins:
+            error_msg = "VIN already exists in database"
+        elif not row.get('make', '').strip():
+            error_msg = "Make is required"
+        elif not row.get('model', '').strip():
+            error_msg = "Model is required"
+        elif not row.get('year', '').strip():
+            error_msg = "Year is required"
+        else:
+            # Validate year
+            try:
+                year = int(row['year'])
+                if year < 1900 or year > current_year + 1:
+                    error_msg = f"Year must be between 1900 and {current_year + 1}"
+            except ValueError:
+                error_msg = "Year must be a valid integer"
+
+            # Validate status if provided
+            if not error_msg and row.get('status', '').strip():
+                status_val = row['status'].strip()
+                if status_val not in valid_statuses:
+                    error_msg = f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+
+            # Validate condition if provided
+            if not error_msg and row.get('condition', '').strip():
+                condition_val = row['condition'].strip()
+                if condition_val not in valid_conditions:
+                    error_msg = f"Invalid condition. Must be one of: {', '.join(valid_conditions)}"
+
+            # Validate weekly_rate if provided
+            if not error_msg and row.get('weekly_rate', '').strip():
+                try:
+                    weekly_rate = Decimal(row['weekly_rate'])
+                    if weekly_rate <= 0:
+                        error_msg = "Weekly rate must be positive"
+                except (ValueError, InvalidOperation):
+                    error_msg = "Weekly rate must be a valid decimal number"
+
+            # Validate mileage if provided
+            if not error_msg and row.get('mileage', '').strip():
+                try:
+                    mileage = int(row['mileage'])
+                    if mileage < 0:
+                        error_msg = "Mileage cannot be negative"
+                except ValueError:
+                    error_msg = "Mileage must be a valid integer"
+
+        if error_msg:
+            errors.append(BulkImportError(
+                row=row_num,
+                vin=vin,
+                error=error_msg
+            ))
+        else:
+            # Add to valid vehicles list
+            vins_in_csv.add(vin)
+            valid_vehicles.append({
+                'vin': vin,
+                'make': row['make'].strip(),
+                'model': row['model'].strip(),
+                'year': int(row['year']),
+                'color': row.get('color', '').strip() or None,
+                'body_type': row.get('body_type', '').strip() or None,
+                'engine': row.get('engine', '').strip() or None,
+                'transmission': row.get('transmission', '').strip() or None,
+                'mileage': int(row['mileage']) if row.get('mileage', '').strip() else None,
+                'status': VehicleStatus(row.get('status', 'available').strip() or 'available'),
+                'condition': VehicleCondition(row.get('condition', 'good').strip() or 'good'),
+                'weekly_rate': Decimal(row['weekly_rate']) if row.get('weekly_rate', '').strip() else Decimal('150.00'),
+                'notes': row.get('notes', '').strip() or None,
+            })
+
+    # Limit to 1000 vehicles per batch
+    if len(valid_vehicles) > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Too many vehicles in CSV. Maximum is 1000 per batch."
+        )
+
+    # Insert valid vehicles
+    created_count = 0
+    if valid_vehicles:
+        try:
+            # Create Vehicle objects
+            vehicle_objects = [Vehicle(**vehicle_data) for vehicle_data in valid_vehicles]
+            session.add_all(vehicle_objects)
+            await session.flush()
+            created_count = len(vehicle_objects)
+
+            # Log audit action
+            await audit_service.log_action(
+                session=session,
+                user=user,
+                action=AuditAction.ADMIN_ACTION,
+                target_type="vehicle",
+                target_id="bulk_import",
+                target_description=f"Bulk import: {created_count} vehicles",
+                after_state={"created": created_count, "failed": len(errors)},
+                reason="Bulk vehicle import"
+            )
+
+            logger.info(f"Admin {user.email} bulk imported {created_count} vehicles")
+        except Exception as e:
+            logger.error(f"Failed to bulk import vehicles: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to import vehicles. Please try again."
+            )
+
+    return BulkImportResponse(
+        success=True,
+        created=created_count,
+        failed=len(errors),
+        errors=errors
+    )
 
 
 # =============================================================================
@@ -2208,6 +2640,11 @@ async def list_available_vehicles(
             repair_cost=float(v.repair_cost) if v.repair_cost else None,
             current_lease_id=v.current_lease_id,
             current_tracker_id=v.current_tracker_id,
+            image_key=v.image_key,
+            image_url=storage_service.generate_signed_url(
+                bucket=settings.S3_BUCKET_VEHICLES,
+                key=v.image_key,
+            ) if v.image_key else None,
             notes=v.notes,
             admin_notes=v.admin_notes,
             is_active=v.is_active,

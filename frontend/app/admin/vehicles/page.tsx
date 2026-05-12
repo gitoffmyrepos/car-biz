@@ -18,6 +18,8 @@ interface Vehicle {
   status: string;
   condition: string;
   current_lease_id: number | null;
+  image_key: string | null;
+  image_url: string | null;
   is_active: boolean;
   show_on_fleet_page: boolean;
   created_at: string;
@@ -166,6 +168,21 @@ export default function AdminVehiclesPage() {
   // Condition reports state
   const [conditionReports, setConditionReports] = useState<ConditionReport[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
+
+  // Image upload state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Bulk import state
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [bulkImportFile, setBulkImportFile] = useState<File | null>(null);
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkImportResult, setBulkImportResult] = useState<{
+    created: number;
+    failed: number;
+    errors: Array<{ row: number; vin: string; error: string }>;
+  } | null>(null);
 
   const getAuthToken = () => {
     if (typeof window !== 'undefined') {
@@ -460,6 +477,149 @@ export default function AdminVehiclesPage() {
     setVehicleToDelete(null);
   };
 
+  // Image upload handlers
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageUpload = async (vehicleId: number) => {
+    if (!selectedImage) return;
+
+    setUploadingImage(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedImage);
+
+      const response = await fetch(
+        `http://localhost:8100/api/admin/vehicles/${vehicleId}/upload-image`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to upload image');
+      }
+
+      // Clear image selection
+      setSelectedImage(null);
+      setImagePreview(null);
+
+      // Refresh vehicles to show new image
+      await fetchVehicles();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleDeleteImage = async (vehicleId: number) => {
+    if (!confirm('Are you sure you want to delete this vehicle image?')) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8100/api/admin/vehicles/${vehicleId}/image`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete image');
+      }
+
+      await fetchVehicles();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete image');
+    }
+  };
+
+  // Bulk import handlers
+  const handleBulkImport = async () => {
+    if (!bulkImportFile) return;
+
+    setBulkImporting(true);
+    setError(null);
+    setBulkImportResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', bulkImportFile);
+
+      const response = await fetch(
+        'http://localhost:8100/api/admin/vehicles/bulk-import',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to import vehicles');
+      }
+
+      const result = await response.json();
+      setBulkImportResult(result);
+
+      // Refresh vehicles list
+      await fetchVehicles();
+
+      // Clear file if all succeeded
+      if (result.failed === 0) {
+        setBulkImportFile(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import vehicles');
+    } finally {
+      setBulkImporting(false);
+    }
+  };
+
+  const downloadCSVTemplate = () => {
+    const csvContent = 'vin,make,model,year,color,body_type,engine,transmission,mileage,status,condition,weekly_rate,notes\n' +
+      'ABC123,Toyota,Camry,2020,Silver,Sedan,2.5L,Automatic,45000,available,good,150.00,Clean vehicle\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'vehicle_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const closeBulkImportModal = () => {
+    setShowBulkImportModal(false);
+    setBulkImportFile(null);
+    setBulkImportResult(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -472,6 +632,15 @@ export default function AdminVehiclesPage() {
           <Link href="/admin" className="text-sm text-gold-600 hover:text-gold-700 font-medium py-2">
             &larr; Back to Dashboard
           </Link>
+          <button
+            onClick={() => setShowBulkImportModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Bulk Upload
+          </button>
           <button
             onClick={openAddModal}
             className="px-4 py-2 bg-gold-600 text-white rounded-lg hover:bg-gold-700 font-medium text-sm flex items-center gap-2"
@@ -522,6 +691,7 @@ export default function AdminVehiclesPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">VIN</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -533,17 +703,32 @@ export default function AdminVehiclesPage() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Loading vehicles...</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Loading vehicles...</td>
                 </tr>
               ) : vehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     No vehicles found. Click &quot;Add Vehicle&quot; to add your first vehicle.
                   </td>
                 </tr>
               ) : (
                 vehicles.map((vehicle) => (
                   <tr key={vehicle.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      {vehicle.image_url ? (
+                        <img
+                          src={vehicle.image_url}
+                          alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-sm font-medium text-luxury-charcoal">
@@ -1063,6 +1248,71 @@ export default function AdminVehiclesPage() {
                 </div>
               </div>
 
+              {/* Vehicle Image Section */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Vehicle Image</h4>
+                {selectedVehicle.image_url ? (
+                  <div className="space-y-3">
+                    <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                      <img
+                        src={selectedVehicle.image_url}
+                        alt={`${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`}
+                        className="w-full h-64 object-cover"
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleDeleteImage(selectedVehicle.id)}
+                      className="w-full px-3 py-2 bg-red-100 text-red-700 text-sm rounded-md hover:bg-red-200 font-medium"
+                    >
+                      Delete Image
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {imagePreview ? (
+                      <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-64 object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                        <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-sm text-gray-500">No image uploaded</p>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id={`vehicle-image-${selectedVehicle.id}`}
+                      />
+                      <label
+                        htmlFor={`vehicle-image-${selectedVehicle.id}`}
+                        className="flex-1 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 font-medium text-center cursor-pointer"
+                      >
+                        Choose Image
+                      </label>
+                      {selectedImage && (
+                        <button
+                          onClick={() => handleImageUpload(selectedVehicle.id)}
+                          disabled={uploadingImage}
+                          className="flex-1 px-3 py-2 bg-gold-600 text-white text-sm rounded-md hover:bg-gold-700 font-medium disabled:opacity-50"
+                        >
+                          {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {selectedVehicle.current_lease_id && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-700">
@@ -1315,6 +1565,105 @@ export default function AdminVehiclesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showBulkImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-luxury-charcoal">Bulk Import Vehicles</h2>
+                <button onClick={closeBulkImportModal} className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">Import Instructions</h3>
+                <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                  <li>Upload a CSV file with vehicle data</li>
+                  <li>Required fields: VIN, Make, Model, Year</li>
+                  <li>Maximum 1000 vehicles per import</li>
+                  <li>Download the template below for correct format</li>
+                </ul>
+                <button
+                  onClick={downloadCSVTemplate}
+                  className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                >
+                  Download CSV Template
+                </button>
+              </div>
+
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setBulkImportFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                  id="bulk-import-file"
+                />
+                <label htmlFor="bulk-import-file" className="cursor-pointer">
+                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {bulkImportFile ? bulkImportFile.name : 'Click to upload or drag and drop'}
+                  </p>
+                  <p className="text-xs text-gray-500">CSV file (max 5MB)</p>
+                </label>
+              </div>
+
+              {bulkImportResult && (
+                <div className={`rounded-lg p-4 ${bulkImportResult.failed === 0 ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+                  <h3 className="text-sm font-semibold mb-2">
+                    Import Results
+                  </h3>
+                  <div className="text-sm space-y-1">
+                    <p className="text-green-700">✓ Successfully created: {bulkImportResult.created} vehicles</p>
+                    {bulkImportResult.failed > 0 && (
+                      <>
+                        <p className="text-red-700">✗ Failed: {bulkImportResult.failed} rows</p>
+                        <div className="mt-3 max-h-40 overflow-y-auto">
+                          <p className="font-medium text-gray-700 mb-1">Errors:</p>
+                          {bulkImportResult.errors.map((err, idx) => (
+                            <div key={idx} className="text-xs bg-white p-2 rounded border border-gray-200 mb-1">
+                              <span className="font-mono text-red-600">Row {err.row}</span>: VIN {err.vin} - {err.error}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeBulkImportModal}
+                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  {bulkImportResult ? 'Close' : 'Cancel'}
+                </button>
+                {!bulkImportResult && (
+                  <button
+                    type="button"
+                    onClick={handleBulkImport}
+                    disabled={!bulkImportFile || bulkImporting}
+                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {bulkImporting ? 'Importing...' : 'Import Vehicles'}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

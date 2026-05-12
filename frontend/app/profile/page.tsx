@@ -11,6 +11,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/ui/Toast';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8100/api';
 
@@ -60,6 +61,7 @@ interface FormData {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, token, isAuthenticated, isLoading, logout } = useAuth();
+  const toast = useToast();
   const isLoggingOut = useRef(false);
 
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
@@ -178,14 +180,18 @@ export default function ProfilePage() {
         const data: CustomerProfile = await response.json();
         setProfile(data);
         setSuccessMessage('Profile updated successfully!');
+        toast.success('Profile Updated', 'Your profile has been saved successfully.');
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        setError(errorData.detail || 'Failed to update profile');
+        const errorMessage = errorData.detail || 'Failed to update profile';
+        setError(errorMessage);
+        toast.error('Update Failed', errorMessage);
       }
     } catch (err) {
       setError('Failed to update profile. Please try again.');
+      toast.error('Update Failed', 'Failed to update profile. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -238,7 +244,9 @@ export default function ProfilePage() {
       if (response.ok) {
         const data = await response.json();
         setUploadProgress(100);
-        setInsuranceUploadSuccess(data.message || 'Insurance document uploaded successfully!');
+        const successMsg = data.message || 'Insurance document uploaded successfully!';
+        setInsuranceUploadSuccess(successMsg);
+        toast.success('Document Uploaded', successMsg);
 
         // Update profile state
         if (profile) {
@@ -252,10 +260,13 @@ export default function ProfilePage() {
         setTimeout(() => setInsuranceUploadSuccess(null), 5000);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        setInsuranceUploadError(errorData.detail || 'Failed to upload document. Please try again.');
+        const errorMsg = errorData.detail || 'Failed to upload document. Please try again.';
+        setInsuranceUploadError(errorMsg);
+        toast.error('Upload Failed', errorMsg);
       }
     } catch (err) {
       setInsuranceUploadError('Network error. Please check your connection and try again.');
+      toast.error('Network Error', 'Please check your connection and try again.');
     } finally {
       setIsUploadingInsurance(false);
       setUploadProgress(0);
@@ -264,7 +275,7 @@ export default function ProfilePage() {
         fileInputRef.current.value = '';
       }
     }
-  }, [token, profile]);
+  }, [token, profile, toast]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();

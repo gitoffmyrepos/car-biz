@@ -25,10 +25,50 @@ from app.models.notification import Notification, NotificationType, Notification
 from app.services.email import email_service
 from app.models.incident_report import IncidentReport, IncidentType, IncidentSeverity, IncidentStatus
 from app.models.weekly_invoice import WeeklyInvoice, InvoiceStatus
+from app.models.system_settings import SystemSettings
 from app.services.storage import storage_service
 from app.services.vault import vault_service
 
 logger = logging.getLogger(__name__)
+
+
+async def check_banned_customer_access(
+    profile: CustomerProfile,
+    db: AsyncSession,
+    access_type: str = "history"
+) -> None:
+    """
+    Check if a banned customer should have access to historical data.
+
+    Raises HTTPException 403 if access is denied.
+
+    Args:
+        profile: Customer profile
+        db: Database session
+        access_type: Type of access being requested (for error message)
+    """
+    if not profile.is_banned:
+        return  # Not banned, access allowed
+
+    # Check system setting for banned customer history access
+    result = await db.execute(
+        select(SystemSettings).where(
+            SystemSettings.setting_key == "banned_customer_history_access"
+        )
+    )
+    setting = result.scalar_one_or_none()
+
+    # Default to True if setting not found
+    allow_history_access = True
+    if setting:
+        allow_history_access = setting.get_typed_value()
+
+    if not allow_history_access:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Your account has been suspended. Access to {access_type} is currently restricted. "
+                   f"Please contact support for assistance."
+        )
 
 
 router = APIRouter(prefix="/customer", tags=["Customer"])
@@ -773,8 +813,13 @@ async def get_customer_leases(
     Get all leases for the current customer.
 
     Returns a list of all leases (active and historical).
+    Banned customers may access their history if the
+    banned_customer_history_access setting is enabled.
     """
     profile = await get_or_create_profile(user, db)
+
+    # Check if banned customer can access history
+    await check_banned_customer_access(profile, db, "lease history")
 
     result = await db.execute(
         select(Lease)
@@ -858,8 +903,13 @@ async def get_dashboard_summary(
 
     Returns counts of active leases, pending requests, and total leases,
     plus details of active lease and pending request if they exist.
+    Banned customers may access their history if the
+    banned_customer_history_access setting is enabled.
     """
     profile = await get_or_create_profile(user, db)
+
+    # Check if banned customer can access history
+    await check_banned_customer_access(profile, db, "dashboard")
 
     # Count active leases
     active_leases_result = await db.execute(
@@ -1698,8 +1748,13 @@ async def get_invoices(
     Get all weekly invoices for the current customer.
 
     Returns a paginated list of invoices with summary statistics.
+    Banned customers may access their history if the
+    banned_customer_history_access setting is enabled.
     """
     profile = await get_or_create_profile(user, db)
+
+    # Check if banned customer can access history
+    await check_banned_customer_access(profile, db, "payment history")
 
     # Build base query
     query = select(WeeklyInvoice).where(

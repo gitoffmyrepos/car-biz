@@ -23,6 +23,7 @@ class AuditAction(str, PyEnum):
     INSURANCE_VERIFICATION_APPROVE = "insurance_verification_approve"
     INSURANCE_VERIFICATION_REJECT = "insurance_verification_reject"
     INSURANCE_BREAK_GLASS_ACCESS = "insurance_break_glass_access"
+    INSURANCE_DOCUMENT_DELETE = "insurance_document_delete"
 
     # Payment related
     PAYMENT_PROOF_VIEW = "payment_proof_view"

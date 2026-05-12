@@ -6,34 +6,34 @@ export default function TermsPage() {
   const lastUpdated = 'January 15, 2026';
 
   return (
-    <div className="min-h-screen bg-[#F8F5F0]">
+    <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
+      <nav className="bg-glossy-black/90 shadow-sm sticky top-0 z-50 border-b border-glossy-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="text-2xl font-bold">
-              <span className="text-[#1A1A1A]">FX</span>
-              <span className="text-[#C5A572]">Weekly</span>
+              <span className="text-white">FX</span>
+              <span className="text-gradient-glow">Weekly</span>
             </Link>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/fleet" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/fleet" className="text-gray-400 hover:text-white transition-colors">
                 Our Fleet
               </Link>
-              <Link href="/how-it-works" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">
                 How It Works
               </Link>
-              <Link href="/requirements" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">
                 Requirements
               </Link>
-              <Link href="/faq" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/faq" className="text-gray-400 hover:text-white transition-colors">
                 FAQ
               </Link>
-              <Link href="/contact" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
                 Contact
               </Link>
             </div>
-            <button className="md:hidden text-gray-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button className="md:hidden text-white hover:bg-glossy-light">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -42,10 +42,10 @@ export default function TermsPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#1A1A1A] to-[#2D2D2D] text-white py-16 sm:py-20">
+      <section className="bg-gradient-glossy text-white py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-            Terms of <span className="text-[#C5A572]">Service</span>
+            Terms of <span className="text-gradient-glow">Service</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Please read these terms carefully before using our weekly vehicle leasing services.
@@ -57,11 +57,11 @@ export default function TermsPage() {
       {/* Terms Content */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
+          <div className="bg-glossy-dark rounded-2xl shadow-lg p-8 sm:p-12">
             {/* Table of Contents */}
-            <div className="mb-12 p-6 bg-[#F8F5F0] rounded-xl">
-              <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Table of Contents</h2>
-              <ul className="space-y-2 text-[#C5A572]">
+            <div className="mb-12 p-6 bg-glossy-black rounded-xl">
+              <h2 className="text-xl font-bold text-white mb-4">Table of Contents</h2>
+              <ul className="space-y-2 text-orange-500">
                 <li><a href="#acceptance" className="hover:underline">1. Acceptance of Terms</a></li>
                 <li><a href="#eligibility" className="hover:underline">2. Eligibility Requirements</a></li>
                 <li><a href="#leasing" className="hover:underline">3. Vehicle Leasing Agreement</a></li>
@@ -78,11 +78,11 @@ export default function TermsPage() {
 
             {/* Section 1 */}
             <section id="acceptance" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
                 Acceptance of Terms
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   By accessing or using FX Weekly Lease services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.
                 </p>
@@ -97,11 +97,11 @@ export default function TermsPage() {
 
             {/* Section 2 */}
             <section id="eligibility" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
                 Eligibility Requirements
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>To be eligible for our weekly vehicle leasing services, you must meet the following requirements:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Be at least 21 years of age</li>
@@ -120,11 +120,11 @@ export default function TermsPage() {
 
             {/* Section 3 */}
             <section id="leasing" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
                 Vehicle Leasing Agreement
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   Our weekly leasing model provides flexible, short-term vehicle access without long-term commitments. Key terms include:
                 </p>
@@ -143,11 +143,11 @@ export default function TermsPage() {
 
             {/* Section 4 */}
             <section id="payments" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
                 Payment Terms
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>Payment for our services is structured as follows:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Initial Payment:</strong> First week's lease payment plus security deposit due at vehicle pickup</li>
@@ -169,11 +169,11 @@ export default function TermsPage() {
 
             {/* Section 5 */}
             <section id="insurance" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">5</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">5</span>
                 Insurance Requirements
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>All lessees must maintain auto insurance meeting the following minimum requirements:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Bodily Injury Liability:</strong> $100,000 per person / $300,000 per accident</li>
@@ -192,19 +192,19 @@ export default function TermsPage() {
 
             {/* Section 6 */}
             <section id="vehicle-use" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">6</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">6</span>
                 Vehicle Use and Care
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>As a lessee, you agree to the following vehicle use policies:</p>
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">Permitted Use:</h3>
+                <h3 className="font-semibold text-white mt-4">Permitted Use:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Personal transportation within the continental United States</li>
                   <li>Only licensed drivers listed on the lease agreement may operate the vehicle</li>
                   <li>Vehicle must be used in accordance with all traffic laws and regulations</li>
                 </ul>
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">Prohibited Use:</h3>
+                <h3 className="font-semibold text-white mt-4">Prohibited Use:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Commercial purposes including ride-sharing services (Uber, Lyft, etc.)</li>
                   <li>Racing, stunts, or reckless driving</li>
@@ -214,7 +214,7 @@ export default function TermsPage() {
                   <li>Smoking in the vehicle</li>
                   <li>Transporting pets without prior approval</li>
                 </ul>
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">Maintenance Responsibilities:</h3>
+                <h3 className="font-semibold text-white mt-4">Maintenance Responsibilities:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Regular fuel fill-ups with appropriate fuel grade</li>
                   <li>Checking and maintaining fluid levels</li>
@@ -226,11 +226,11 @@ export default function TermsPage() {
 
             {/* Section 7 */}
             <section id="termination" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">7</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">7</span>
                 Termination and Returns
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p><strong>Customer-Initiated Termination:</strong></p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>You may terminate your lease at any time with 48 hours' notice</li>
@@ -259,11 +259,11 @@ export default function TermsPage() {
 
             {/* Section 8 */}
             <section id="liability" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">8</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">8</span>
                 Limitation of Liability
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   To the maximum extent permitted by law, FX Weekly Lease shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of our services or vehicles.
                 </p>
@@ -284,11 +284,11 @@ export default function TermsPage() {
 
             {/* Section 9 */}
             <section id="disputes" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">9</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">9</span>
                 Dispute Resolution
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   Any disputes arising from these terms or your use of our services shall be resolved as follows:
                 </p>
@@ -306,11 +306,11 @@ export default function TermsPage() {
 
             {/* Section 10 */}
             <section id="changes" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">10</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">10</span>
                 Changes to Terms
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   We reserve the right to modify these Terms of Service at any time. Changes will be effective immediately upon posting to our website.
                 </p>
@@ -325,16 +325,16 @@ export default function TermsPage() {
 
             {/* Section 11 */}
             <section id="contact" className="mb-6">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">11</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">11</span>
                 Contact Information
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   If you have any questions about these Terms of Service, please contact us:
                 </p>
-                <div className="bg-[#F8F5F0] rounded-lg p-6 mt-4">
-                  <p className="font-semibold text-[#1A1A1A]">FX Weekly Lease</p>
+                <div className="bg-glossy-black rounded-lg p-6 mt-4">
+                  <p className="font-semibold text-white">FX Weekly Lease</p>
                   <p>123 Main Street</p>
                   <p>City, State 12345</p>
                   <p className="mt-4">
@@ -351,20 +351,20 @@ export default function TermsPage() {
             </section>
 
             {/* Acceptance Footer */}
-            <div className="border-t border-gray-200 pt-8 mt-8 text-center">
-              <p className="text-gray-600 mb-6">
+            <div className="border-t border-glossy-border pt-8 mt-8 text-center">
+              <p className="text-gray-300 mb-6">
                 By using FX Weekly Lease services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/contact"
-                  className="bg-[#C5A572] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#B39562] transition-colors"
+                  className="bg-orange-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
                 >
                   Contact Us
                 </Link>
                 <Link
                   href="/privacy"
-                  className="bg-white text-[#1A1A1A] px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors border border-gray-200"
+                  className="bg-glossy-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-glossy-light transition-colors border border-glossy-border"
                 >
                   Privacy Policy
                 </Link>
@@ -375,13 +375,13 @@ export default function TermsPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#1A1A1A] text-white py-16">
+      <footer className="bg-glossy-black text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <Link href="/" className="text-2xl font-bold inline-block mb-4">
                 <span className="text-white">FX</span>
-                <span className="text-[#C5A572]">Weekly</span>
+                <span className="text-orange-500">Weekly</span>
               </Link>
               <p className="text-gray-400 text-sm">
                 Premium weekly vehicle leasing made simple and accessible.
@@ -390,18 +390,18 @@ export default function TermsPage() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/fleet" className="hover:text-[#C5A572] transition-colors">Our Fleet</Link></li>
-                <li><Link href="/how-it-works" className="hover:text-[#C5A572] transition-colors">How It Works</Link></li>
-                <li><Link href="/requirements" className="hover:text-[#C5A572] transition-colors">Requirements</Link></li>
-                <li><Link href="/faq" className="hover:text-[#C5A572] transition-colors">FAQ</Link></li>
+                <li><Link href="/fleet" className="hover:text-orange-500 transition-colors">Our Fleet</Link></li>
+                <li><Link href="/how-it-works" className="hover:text-orange-500 transition-colors">How It Works</Link></li>
+                <li><Link href="/requirements" className="hover:text-orange-500 transition-colors">Requirements</Link></li>
+                <li><Link href="/faq" className="hover:text-orange-500 transition-colors">FAQ</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-lg font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/privacy" className="hover:text-[#C5A572] transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="text-[#C5A572]">Terms of Service</Link></li>
-                <li><Link href="/contact" className="hover:text-[#C5A572] transition-colors">Contact Us</Link></li>
+                <li><Link href="/privacy" className="hover:text-orange-500 transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-orange-500">Terms of Service</Link></li>
+                <li><Link href="/contact" className="hover:text-orange-500 transition-colors">Contact Us</Link></li>
               </ul>
             </div>
             <div>

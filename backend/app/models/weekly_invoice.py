@@ -92,6 +92,11 @@ class WeeklyInvoice(Base):
     late_fee_applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     days_late: Mapped[int] = mapped_column(Integer, default=0)
 
+    # Duplicate detection
+    is_duplicate_flagged: Mapped[bool] = mapped_column(Boolean, default=False)
+    duplicate_of_invoice_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # ID of original invoice with same hash
+    duplicate_flagged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Reminder tracking
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reminder_count: Mapped[int] = mapped_column(Integer, default=0)

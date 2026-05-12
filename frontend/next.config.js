@@ -6,12 +6,19 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
     // Modern image formats for better compression
     formats: ['image/avif', 'image/webp'],
     // Minimize image sizes
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    // Allow unoptimized images for local development
+    unoptimized: process.env.NODE_ENV === 'development',
   },
   // Enable experimental features for performance
   experimental: {

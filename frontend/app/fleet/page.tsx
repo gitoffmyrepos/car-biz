@@ -190,33 +190,33 @@ export default function FleetPage() {
   return (
     <main className="min-h-screen">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-glossy-black/90 backdrop-blur-md border-b border-glossy-border">
         <div className="container-luxury">
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-display font-bold text-luxury-charcoal">
-                FX<span className="text-gradient">Weekly</span>
+              <span className="text-2xl font-display font-bold text-white">
+                FX<span className="text-gradient-glow">Weekly</span>
               </span>
             </Link>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/how-it-works" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">
                 How It Works
               </Link>
-              <Link href="/fleet" className="text-luxury-charcoal font-medium transition-colors">
+              <Link href="/fleet" className="text-orange-500 font-medium transition-colors">
                 Fleet
               </Link>
-              <Link href="/requirements" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">
                 Requirements
               </Link>
-              <Link href="/faq" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/faq" className="text-gray-400 hover:text-white transition-colors">
                 FAQ
               </Link>
               <Link href="/contact" className="btn btn-primary">
                 Get Started
               </Link>
             </div>
-            <button className="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Open menu">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button className="md:hidden p-2 rounded-lg hover:bg-glossy-light" aria-label="Open menu">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -225,15 +225,15 @@ export default function FleetPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 bg-gradient-luxury overflow-hidden">
+      <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 bg-gradient-glossy overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+          <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
         </div>
         <div className="container-luxury relative">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="heading-display text-white mb-6">
-              Our <span className="text-gradient">Fleet</span>
+              Our <span className="text-gradient-glow">Fleet</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
               Explore our diverse collection of premium vehicles. From elegant sedans to powerful trucks,
@@ -244,31 +244,31 @@ export default function FleetPage() {
       </section>
 
       {/* Fleet Info Banner */}
-      <section className="bg-gold-50 py-8 border-b border-gold-200">
+      <section className="py-8 border-b border-orange-200">
         <div className="container-luxury">
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
             <div>
-              <div className="text-3xl font-bold text-luxury-charcoal">
+              <div className="text-3xl font-bold text-white">
                 {loading ? '...' : hasRealData ? totalVehicles : '50+'}
               </div>
-              <div className="text-sm text-muted">Total Vehicles</div>
+              <div className="text-sm text-gray-300">Total Vehicles</div>
             </div>
-            <div className="hidden md:block w-px h-12 bg-gold-300"></div>
+            <div className="hidden md:block w-px h-12 bg-orange-300"></div>
             <div>
-              <div className="text-3xl font-bold text-luxury-charcoal">
+              <div className="text-3xl font-bold text-white">
                 {loading ? '...' : hasRealData ? availableVehicles : totalCategories}
               </div>
-              <div className="text-sm text-muted">{hasRealData ? 'Available Now' : 'Vehicle Categories'}</div>
+              <div className="text-sm text-gray-300">{hasRealData ? 'Available Now' : 'Vehicle Categories'}</div>
             </div>
-            <div className="hidden md:block w-px h-12 bg-gold-300"></div>
+            <div className="hidden md:block w-px h-12 bg-orange-300"></div>
             <div>
-              <div className="text-3xl font-bold text-luxury-charcoal">100%</div>
-              <div className="text-sm text-muted">Inspected & Serviced</div>
+              <div className="text-3xl font-bold text-white">100%</div>
+              <div className="text-sm text-gray-300">Inspected & Serviced</div>
             </div>
-            <div className="hidden md:block w-px h-12 bg-gold-300"></div>
+            <div className="hidden md:block w-px h-12 bg-orange-300"></div>
             <div>
-              <div className="text-3xl font-bold text-luxury-charcoal">48hr</div>
-              <div className="text-sm text-muted">Quick Approval</div>
+              <div className="text-3xl font-bold text-white">48hr</div>
+              <div className="text-sm text-gray-300">Quick Approval</div>
             </div>
           </div>
         </div>
@@ -276,11 +276,11 @@ export default function FleetPage() {
 
       {/* Real Vehicles Section - Only shown when real data exists */}
       {hasRealData && vehicles.length > 0 && (
-        <section className="section bg-white">
+        <section className="section">
           <div className="container-luxury">
             <div className="text-center mb-12">
-              <h2 className="heading-section text-luxury-charcoal mb-4">Our Fleet</h2>
-              <p className="text-xl text-muted max-w-2xl mx-auto">
+              <h2 className="heading-section text-white mb-4">Our Fleet</h2>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
                 Browse our current selection of premium vehicles available for weekly lease.
               </p>
             </div>
@@ -297,7 +297,7 @@ export default function FleetPage() {
                   {/* Content */}
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xl font-bold text-luxury-charcoal group-hover:text-gold-600 transition-colors">
+                      <h3 className="text-xl font-bold text-white group-hover:text-orange-600 transition-colors">
                         {vehicle.year} {vehicle.make} {vehicle.model}
                       </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -346,11 +346,11 @@ export default function FleetPage() {
 
       {/* Vehicle Categories Grid - Fallback when no real data */}
       {!hasRealData && (
-        <section className="section bg-white">
+        <section className="section">
           <div className="container-luxury">
             <div className="text-center mb-12">
-              <h2 className="heading-section text-luxury-charcoal mb-4">Vehicle Categories</h2>
-              <p className="text-xl text-muted max-w-2xl mx-auto">
+              <h2 className="heading-section text-white mb-4">Vehicle Categories</h2>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
                 Browse our selection of professionally maintained vehicles ready for weekly lease.
               </p>
             </div>
@@ -368,7 +368,7 @@ export default function FleetPage() {
                   {/* Content */}
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xl font-bold text-luxury-charcoal group-hover:text-gold-600 transition-colors">
+                      <h3 className="text-xl font-bold text-white group-hover:text-orange-600 transition-colors">
                         {category.name}
                       </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -380,7 +380,7 @@ export default function FleetPage() {
                       </span>
                     </div>
 
-                    <p className="text-muted mb-4">
+                    <p className="text-gray-300 mb-4">
                       {category.description}
                     </p>
 
@@ -413,14 +413,14 @@ export default function FleetPage() {
       )}
 
       {/* Quality Assurance Section */}
-      <section className="section bg-luxury-cream">
+      <section className="section">
         <div className="container-luxury">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="heading-section text-luxury-charcoal mb-6">
+              <h2 className="heading-section text-white mb-6">
                 Quality You Can Trust
               </h2>
-              <p className="text-lg text-muted mb-8">
+              <p className="text-lg text-gray-300 mb-8">
                 Every vehicle in our fleet undergoes a rigorous inspection and reconditioning process
                 before being made available for lease. We believe in providing exceptional value without
                 compromising on quality or safety.
@@ -428,50 +428,50 @@ export default function FleetPage() {
 
               <div className="space-y-4">
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <div>
-                    <h4 className="font-bold text-luxury-charcoal">Multi-Point Inspection</h4>
-                    <p className="text-muted">Comprehensive inspection of all mechanical and safety systems</p>
+                    <h4 className="font-bold text-white">Multi-Point Inspection</h4>
+                    <p className="text-gray-300">Comprehensive inspection of all mechanical and safety systems</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <div>
-                    <h4 className="font-bold text-luxury-charcoal">Professional Detailing</h4>
-                    <p className="text-muted">Interior and exterior detailing to showroom standards</p>
+                    <h4 className="font-bold text-white">Professional Detailing</h4>
+                    <p className="text-gray-300">Interior and exterior detailing to showroom standards</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <div>
-                    <h4 className="font-bold text-luxury-charcoal">Monthly Maintenance</h4>
-                    <p className="text-muted">Regular servicing included at no extra cost</p>
+                    <h4 className="font-bold text-white">Monthly Maintenance</h4>
+                    <p className="text-gray-300">Regular servicing included at no extra cost</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-gold-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <div>
-                    <h4 className="font-bold text-luxury-charcoal">Full Documentation</h4>
-                    <p className="text-muted">Complete service history and vehicle records available</p>
+                    <h4 className="font-bold text-white">Full Documentation</h4>
+                    <p className="text-gray-300">Complete service history and vehicle records available</p>
                   </div>
                 </div>
               </div>
@@ -479,8 +479,8 @@ export default function FleetPage() {
 
             <div className="bg-gradient-to-br from-slate-800 to-slate-600 rounded-2xl p-8 text-white">
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gold-500/20 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-20 h-20 mx-auto mb-6 bg-orange-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
@@ -501,7 +501,7 @@ export default function FleetPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="section bg-gradient-luxury text-white">
+      <section className="section bg-gradient-glossy text-white">
         <div className="container-luxury text-center">
           <h2 className="heading-section mb-4">Ready to Find Your Perfect Vehicle?</h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
@@ -511,7 +511,7 @@ export default function FleetPage() {
             <Link href="/contact" className="btn btn-primary text-lg px-8 py-4 w-full sm:w-auto">
               Start Your Application
             </Link>
-            <Link href="/requirements" className="btn btn-outline border-white text-white hover:bg-white hover:text-luxury-charcoal text-lg px-8 py-4 w-full sm:w-auto">
+            <Link href="/requirements" className="btn btn-outline border-white text-white hover:bg-white hover:text-glossy-black text-lg px-8 py-4 w-full sm:w-auto">
               View Requirements
             </Link>
           </div>
@@ -519,12 +519,12 @@ export default function FleetPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-luxury-charcoal text-white py-12">
+      <footer className="bg-glossy-black text-white py-12">
         <div className="container-luxury">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-1">
               <Link href="/" className="text-2xl font-display font-bold">
-                FX<span className="text-gold-500">Weekly</span>
+                FX<span className="text-orange-500">Weekly</span>
               </Link>
               <p className="mt-4 text-gray-400">
                 Premium vehicle leasing with flexible weekly payments.

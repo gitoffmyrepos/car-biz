@@ -145,33 +145,33 @@ export default function FAQPage() {
   return (
     <main className="min-h-screen">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-glossy-black/90 backdrop-blur-md border-b border-glossy-border">
         <div className="container-luxury">
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-display font-bold text-luxury-charcoal">
-                FX<span className="text-gradient">Weekly</span>
+              <span className="text-2xl font-display font-bold text-white">
+                FX<span className="text-gradient-glow">Weekly</span>
               </span>
             </Link>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/how-it-works" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">
                 How It Works
               </Link>
-              <Link href="/fleet" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/fleet" className="text-gray-400 hover:text-white transition-colors">
                 Fleet
               </Link>
-              <Link href="/requirements" className="text-gray-600 hover:text-luxury-charcoal transition-colors">
+              <Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">
                 Requirements
               </Link>
-              <Link href="/faq" className="text-luxury-charcoal font-medium transition-colors">
+              <Link href="/faq" className="text-orange-500 font-medium transition-colors">
                 FAQ
               </Link>
               <Link href="/contact" className="btn btn-primary">
                 Get Started
               </Link>
             </div>
-            <button className="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Open menu">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button className="md:hidden p-2 rounded-lg hover:bg-glossy-light" aria-label="Open menu">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -180,15 +180,15 @@ export default function FAQPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 bg-gradient-luxury overflow-hidden">
+      <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 bg-gradient-glossy overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+          <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
         </div>
         <div className="container-luxury relative">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="heading-display text-white mb-6">
-              Frequently Asked <span className="text-gradient">Questions</span>
+              Frequently Asked <span className="text-gradient-glow">Questions</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
               Find answers to common questions about our weekly vehicle leasing service.
@@ -198,15 +198,15 @@ export default function FAQPage() {
       </section>
 
       {/* Category Filter */}
-      <section className="bg-white border-b border-gray-100 sticky top-16 md:top-20 z-40">
+      <section className="border-b border-glossy-border sticky top-16 md:top-20 z-40">
         <div className="container-luxury py-4">
           <div className="flex flex-wrap items-center gap-2 justify-center">
             <button
               onClick={() => setActiveCategory(null)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 activeCategory === null
-                  ? 'bg-gold-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}
             >
               All Questions
@@ -217,8 +217,8 @@ export default function FAQPage() {
                 onClick={() => setActiveCategory(category)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeCategory === category
-                    ? 'bg-gold-500 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
                 {category}
@@ -229,16 +229,16 @@ export default function FAQPage() {
       </section>
 
       {/* FAQ Items */}
-      <section className="section bg-luxury-cream">
+      <section className="section">
         <div className="container-luxury">
           <div className="max-w-3xl mx-auto">
             {activeCategory && (
-              <h2 className="text-2xl font-bold text-luxury-charcoal mb-6 text-center">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">
                 {activeCategory}
               </h2>
             )}
             <div className="space-y-4">
-              {filteredFAQs.map((item, index) => {
+              {filteredFAQs.map((item) => {
                 const globalIndex = faqItems.indexOf(item);
                 const isOpen = openItems.has(globalIndex);
 
@@ -249,21 +249,21 @@ export default function FAQPage() {
                   >
                     <button
                       onClick={() => toggleItem(globalIndex)}
-                      className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      className="w-full p-6 text-left flex items-center justify-between hover:bg-glossy-light transition-colors"
                       aria-expanded={isOpen}
                     >
                       <div className="flex items-start space-x-4 flex-1">
                         {!activeCategory && (
-                          <span className="px-2 py-1 bg-gold-100 text-gold-700 text-xs font-medium rounded flex-shrink-0">
+                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded flex-shrink-0">
                             {item.category}
                           </span>
                         )}
-                        <span className="font-medium text-luxury-charcoal pr-4">
+                        <span className="font-medium text-white pr-4">
                           {item.question}
                         </span>
                       </div>
                       <svg
-                        className={`w-5 h-5 text-gold-500 transform transition-transform flex-shrink-0 ${
+                        className={`w-5 h-5 text-orange-500 transform transition-transform flex-shrink-0 ${
                           isOpen ? 'rotate-180' : ''
                         }`}
                         fill="none"
@@ -278,7 +278,7 @@ export default function FAQPage() {
                         isOpen ? 'max-h-96' : 'max-h-0'
                       }`}
                     >
-                      <div className="px-6 pb-6 text-gray-600 border-t border-gray-100 pt-4">
+                      <div className="px-6 pb-6 text-gray-300 border-t border-glossy-border pt-4">
                         {!activeCategory && <div className="mb-2"></div>}
                         {item.answer}
                       </div>
@@ -290,7 +290,7 @@ export default function FAQPage() {
 
             {filteredFAQs.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-500">No questions found in this category.</p>
+                <p className="text-gray-400">No questions found in this category.</p>
               </div>
             )}
           </div>
@@ -298,16 +298,16 @@ export default function FAQPage() {
       </section>
 
       {/* Still Have Questions */}
-      <section className="section bg-white">
+      <section className="section">
         <div className="container-luxury">
           <div className="max-w-2xl mx-auto text-center">
-            <div className="w-16 h-16 mx-auto mb-6 bg-gold-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 mx-auto mb-6 bg-orange-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="heading-section text-luxury-charcoal mb-4">Still Have Questions?</h2>
-            <p className="text-lg text-muted mb-8">
+            <h2 className="heading-section text-white mb-4">Still Have Questions?</h2>
+            <p className="text-lg text-gray-300 mb-8">
               Can&apos;t find what you&apos;re looking for? Our team is here to help.
               Reach out to us directly and we&apos;ll get back to you as soon as possible.
             </p>
@@ -324,7 +324,7 @@ export default function FAQPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="section bg-gradient-luxury text-white">
+      <section className="section bg-gradient-glossy text-white">
         <div className="container-luxury text-center">
           <h2 className="heading-section mb-4">Ready to Get Started?</h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
@@ -334,7 +334,7 @@ export default function FAQPage() {
             <Link href="/contact" className="btn btn-primary text-lg px-8 py-4 w-full sm:w-auto">
               Start Your Application
             </Link>
-            <Link href="/fleet" className="btn btn-outline border-white text-white hover:bg-white hover:text-luxury-charcoal text-lg px-8 py-4 w-full sm:w-auto">
+            <Link href="/fleet" className="btn btn-outline border-white text-white hover:bg-white hover:text-glossy-black text-lg px-8 py-4 w-full sm:w-auto">
               Browse Our Fleet
             </Link>
           </div>
@@ -342,12 +342,12 @@ export default function FAQPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-luxury-charcoal text-white py-12">
+      <footer className="bg-glossy-black text-white py-12">
         <div className="container-luxury">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-1">
               <Link href="/" className="text-2xl font-display font-bold">
-                FX<span className="text-gold-500">Weekly</span>
+                FX<span className="text-orange-500">Weekly</span>
               </Link>
               <p className="mt-4 text-gray-400">
                 Premium vehicle leasing with flexible weekly payments.

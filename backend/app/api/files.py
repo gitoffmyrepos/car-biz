@@ -63,6 +63,7 @@ async def serve_file(
         "fx-weekly-lease-insurance",
         "fx-weekly-lease-payments",
         "fx-weekly-lease-incidents",
+        "fx-weekly-lease-vehicles",
     ]
 
     if bucket not in allowed_buckets:

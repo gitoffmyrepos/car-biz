@@ -6,34 +6,34 @@ export default function PrivacyPage() {
   const lastUpdated = 'January 15, 2026';
 
   return (
-    <div className="min-h-screen bg-[#F8F5F0]">
+    <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
+      <nav className="bg-glossy-black/90 shadow-sm sticky top-0 z-50 border-b border-glossy-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="text-2xl font-bold">
-              <span className="text-[#1A1A1A]">FX</span>
-              <span className="text-[#C5A572]">Weekly</span>
+              <span className="text-white">FX</span>
+              <span className="text-gradient-glow">Weekly</span>
             </Link>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/fleet" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/fleet" className="text-gray-400 hover:text-white transition-colors">
                 Our Fleet
               </Link>
-              <Link href="/how-it-works" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">
                 How It Works
               </Link>
-              <Link href="/requirements" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">
                 Requirements
               </Link>
-              <Link href="/faq" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/faq" className="text-gray-400 hover:text-white transition-colors">
                 FAQ
               </Link>
-              <Link href="/contact" className="text-gray-600 hover:text-[#C5A572] transition-colors">
+              <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
                 Contact
               </Link>
             </div>
-            <button className="md:hidden text-gray-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button className="md:hidden text-white hover:bg-glossy-light">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -42,10 +42,10 @@ export default function PrivacyPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#1A1A1A] to-[#2D2D2D] text-white py-16 sm:py-20">
+      <section className="bg-gradient-glossy text-white py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-            Privacy <span className="text-[#C5A572]">Policy</span>
+            Privacy <span className="text-gradient-glow">Policy</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Your privacy is important to us. This policy explains how we collect, use, and protect your personal information.
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
       {/* Privacy Content */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
+          <div className="bg-glossy-dark rounded-2xl shadow-lg p-8 sm:p-12">
             {/* Quick Summary */}
             <div className="mb-12 p-6 bg-blue-50 rounded-xl border border-blue-200">
               <h2 className="text-xl font-bold text-[#1A1A1A] mb-4 flex items-center">
@@ -95,9 +95,9 @@ export default function PrivacyPage() {
             </div>
 
             {/* Table of Contents */}
-            <div className="mb-12 p-6 bg-[#F8F5F0] rounded-xl">
-              <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Table of Contents</h2>
-              <ul className="space-y-2 text-[#C5A572]">
+            <div className="mb-12 p-6 bg-glossy-black rounded-xl">
+              <h2 className="text-xl font-bold text-white mb-4">Table of Contents</h2>
+              <ul className="space-y-2 text-orange-500">
                 <li><a href="#information-collected" className="hover:underline">1. Information We Collect</a></li>
                 <li><a href="#how-we-use" className="hover:underline">2. How We Use Your Information</a></li>
                 <li><a href="#information-sharing" className="hover:underline">3. Information Sharing and Disclosure</a></li>
@@ -114,14 +114,14 @@ export default function PrivacyPage() {
 
             {/* Section 1 */}
             <section id="information-collected" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
                 Information We Collect
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>We collect several types of information to provide and improve our services:</p>
 
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">Personal Information You Provide:</h3>
+                <h3 className="font-semibold text-white mt-4">Personal Information You Provide:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Contact Information:</strong> Name, email address, phone number, mailing address</li>
                   <li><strong>Identity Verification:</strong> Driver's license number, government ID, date of birth</li>
@@ -130,14 +130,14 @@ export default function PrivacyPage() {
                   <li><strong>Employment Information:</strong> Employer name, work address (if provided)</li>
                 </ul>
 
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">Information Collected Automatically:</h3>
+                <h3 className="font-semibold text-white mt-4">Information Collected Automatically:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Device Information:</strong> IP address, browser type, operating system</li>
                   <li><strong>Usage Data:</strong> Pages visited, time spent on site, referral source</li>
                   <li><strong>Vehicle Telematics:</strong> GPS location, mileage, driving data (see Section 8)</li>
                 </ul>
 
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">Information from Third Parties:</h3>
+                <h3 className="font-semibold text-white mt-4">Information from Third Parties:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>DMV records for license verification</li>
                   <li>Insurance verification from your provider</li>
@@ -148,11 +148,11 @@ export default function PrivacyPage() {
 
             {/* Section 2 */}
             <section id="how-we-use" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
                 How We Use Your Information
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>We use the information we collect for the following purposes:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Service Delivery:</strong> Processing applications, managing leases, and providing customer support</li>
@@ -169,11 +169,11 @@ export default function PrivacyPage() {
 
             {/* Section 3 */}
             <section id="information-sharing" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
                 Information Sharing and Disclosure
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
                   <p className="text-green-800 font-medium">
                     We never sell your personal information to third parties for marketing purposes.
@@ -195,11 +195,11 @@ export default function PrivacyPage() {
 
             {/* Section 4 */}
             <section id="data-security" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
                 Data Security
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>We implement robust security measures to protect your personal information:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Encryption:</strong> All sensitive data is encrypted in transit and at rest using industry-standard protocols</li>
@@ -218,11 +218,11 @@ export default function PrivacyPage() {
 
             {/* Section 5 */}
             <section id="data-retention" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">5</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">5</span>
                 Data Retention
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>We retain your personal information for as long as necessary to:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Provide our services to you</li>
@@ -241,11 +241,11 @@ export default function PrivacyPage() {
 
             {/* Section 6 */}
             <section id="your-rights" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">6</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">6</span>
                 Your Privacy Rights
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>You have the following rights regarding your personal information:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Access:</strong> Request a copy of the personal information we hold about you</li>
@@ -268,11 +268,11 @@ export default function PrivacyPage() {
 
             {/* Section 7 */}
             <section id="cookies" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">7</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">7</span>
                 Cookies and Tracking
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>We use cookies and similar tracking technologies to:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Remember your preferences and settings</li>
@@ -280,7 +280,7 @@ export default function PrivacyPage() {
                   <li>Improve our website functionality</li>
                   <li>Provide personalized content</li>
                 </ul>
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">Types of Cookies We Use:</h3>
+                <h3 className="font-semibold text-white mt-4">Types of Cookies We Use:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Essential Cookies:</strong> Required for basic website functionality</li>
                   <li><strong>Analytical Cookies:</strong> Help us understand website usage patterns</li>
@@ -294,48 +294,48 @@ export default function PrivacyPage() {
 
             {/* Section 8 */}
             <section id="gps-tracking" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">8</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">8</span>
                 GPS and Vehicle Tracking
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-4">
                   <p className="text-orange-800 font-medium">
                     All leased vehicles are equipped with GPS tracking devices. By leasing a vehicle from us, you consent to this tracking.
                   </p>
                 </div>
-                <h3 className="font-semibold text-[#1A1A1A]">What We Track:</h3>
+                <h3 className="font-semibold text-white">What We Track:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Real-time vehicle location</li>
                   <li>Mileage and trip data</li>
                   <li>Vehicle diagnostics and maintenance alerts</li>
                 </ul>
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">How We Use This Data:</h3>
+                <h3 className="font-semibold text-white mt-4">How We Use This Data:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>Fleet Management:</strong> Scheduling maintenance and managing vehicle availability</li>
                   <li><strong>Security:</strong> Locating vehicles in case of theft or unauthorized use</li>
                   <li><strong>Mileage Verification:</strong> Ensuring compliance with lease terms</li>
                   <li><strong>Emergency Response:</strong> Assisting in accidents or emergencies</li>
                 </ul>
-                <h3 className="font-semibold text-[#1A1A1A] mt-4">We Do NOT:</h3>
+                <h3 className="font-semibold text-white mt-4">We Do NOT:</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Share your location data with third parties for marketing</li>
                   <li>Monitor your driving behavior for insurance scoring</li>
                   <li>Use tracking data for any purpose other than fleet management and security</li>
                 </ul>
                 <p className="mt-4">
-                  For more details, please see our <Link href="/gps-disclosure" className="text-[#C5A572] hover:underline">GPS/Telematics Disclosure</Link>.
+                  For more details, please see our <Link href="/gps-disclosure" className="text-orange-500 hover:underline">GPS/Telematics Disclosure</Link>.
                 </p>
               </div>
             </section>
 
             {/* Section 9 */}
             <section id="children" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">9</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">9</span>
                 Children's Privacy
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   Our services are not intended for individuals under the age of 21. We do not knowingly collect personal information from anyone under 21 years of age.
                 </p>
@@ -347,11 +347,11 @@ export default function PrivacyPage() {
 
             {/* Section 10 */}
             <section id="changes" className="mb-10">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">10</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">10</span>
                 Changes to This Policy
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   We may update this Privacy Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons.
                 </p>
@@ -371,16 +371,16 @@ export default function PrivacyPage() {
 
             {/* Section 11 */}
             <section id="contact" className="mb-6">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4 flex items-center">
-                <span className="w-8 h-8 bg-[#C5A572] text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">11</span>
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <span className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">11</span>
                 Contact Us
               </h2>
-              <div className="text-gray-600 space-y-4 pl-11">
+              <div className="text-gray-300 space-y-4 pl-11">
                 <p>
                   If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
                 </p>
-                <div className="bg-[#F8F5F0] rounded-lg p-6 mt-4">
-                  <p className="font-semibold text-[#1A1A1A]">FX Weekly Lease - Privacy Team</p>
+                <div className="bg-glossy-black rounded-lg p-6 mt-4">
+                  <p className="font-semibold text-white">FX Weekly Lease - Privacy Team</p>
                   <p>123 Main Street</p>
                   <p>City, State 12345</p>
                   <p className="mt-4">
@@ -400,20 +400,20 @@ export default function PrivacyPage() {
             </section>
 
             {/* Footer Actions */}
-            <div className="border-t border-gray-200 pt-8 mt-8 text-center">
-              <p className="text-gray-600 mb-6">
+            <div className="border-t border-glossy-border pt-8 mt-8 text-center">
+              <p className="text-gray-300 mb-6">
                 By using FX Weekly Lease services, you acknowledge that you have read and understood this Privacy Policy.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/contact"
-                  className="bg-[#C5A572] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#B39562] transition-colors"
+                  className="bg-orange-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
                 >
                   Contact Us
                 </Link>
                 <Link
                   href="/terms"
-                  className="bg-white text-[#1A1A1A] px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors border border-gray-200"
+                  className="bg-glossy-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-glossy-light transition-colors border border-glossy-border"
                 >
                   Terms of Service
                 </Link>
@@ -424,13 +424,13 @@ export default function PrivacyPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#1A1A1A] text-white py-16">
+      <footer className="bg-glossy-black text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <Link href="/" className="text-2xl font-bold inline-block mb-4">
                 <span className="text-white">FX</span>
-                <span className="text-[#C5A572]">Weekly</span>
+                <span className="text-orange-500">Weekly</span>
               </Link>
               <p className="text-gray-400 text-sm">
                 Premium weekly vehicle leasing made simple and accessible.
@@ -439,19 +439,19 @@ export default function PrivacyPage() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/fleet" className="hover:text-[#C5A572] transition-colors">Our Fleet</Link></li>
-                <li><Link href="/how-it-works" className="hover:text-[#C5A572] transition-colors">How It Works</Link></li>
-                <li><Link href="/requirements" className="hover:text-[#C5A572] transition-colors">Requirements</Link></li>
-                <li><Link href="/faq" className="hover:text-[#C5A572] transition-colors">FAQ</Link></li>
+                <li><Link href="/fleet" className="hover:text-orange-500 transition-colors">Our Fleet</Link></li>
+                <li><Link href="/how-it-works" className="hover:text-orange-500 transition-colors">How It Works</Link></li>
+                <li><Link href="/requirements" className="hover:text-orange-500 transition-colors">Requirements</Link></li>
+                <li><Link href="/faq" className="hover:text-orange-500 transition-colors">FAQ</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-lg font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/privacy" className="text-[#C5A572]">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-[#C5A572] transition-colors">Terms of Service</Link></li>
-                <li><Link href="/gps-disclosure" className="hover:text-[#C5A572] transition-colors">GPS Disclosure</Link></li>
-                <li><Link href="/contact" className="hover:text-[#C5A572] transition-colors">Contact Us</Link></li>
+                <li><Link href="/privacy" className="text-orange-500">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-orange-500 transition-colors">Terms of Service</Link></li>
+                <li><Link href="/gps-disclosure" className="hover:text-orange-500 transition-colors">GPS Disclosure</Link></li>
+                <li><Link href="/contact" className="hover:text-orange-500 transition-colors">Contact Us</Link></li>
               </ul>
             </div>
             <div>
