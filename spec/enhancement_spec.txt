@@ -1,0 +1,855 @@
+<project_specification>
+  <project_name>Weekly Vehicle Leasing Platform - Salvage-to-Lux Fleet Management (Next.js + FastAPI)</project_name>
+
+  <critical_instructions>
+    <security_first>
+      CRITICAL:
+      - Do NOT build custom authentication.
+      - Use OIDC with the existing Keycloak instance in my homelab.
+      - Enforce RBAC on every API route and in every UI route (admin vs customer vs ops).
+      - Store highly sensitive user documents (driver insurance) securely so they cannot leak.
+      - Treat uploads as hostile input (validate, limit size, scan if possible).
+      - Implement audit logging for all admin actions and all sensitive-document access.
+      - Use Vault for secrets and encryption keys; do not hardcode secrets into code, images, or repos.
+      - Apply OWASP best practices: input validation, rate limiting, secure headers, safe file handling,
+        least privilege, and secure defaults.
+    </security_first>
+
+    <latest_versions>
+      Use the latest stable versions of:
+      - Next.js (App Router)
+      - React
+      - TypeScript
+      - FastAPI
+      - SQLAlchemy (async) + Alembic
+      - PostgreSQL (recent major version)
+      - Redis (recent major version)
+      - Container base images (slim, patched)
+    </latest_versions>
+
+    <absolute_requirements>
+      - Build and run as Docker containers during development on my local system.
+      - Upon completion, deploy to my Kubernetes cluster in my homelab.
+      - Reuse my existing homelab services: MinIO, Vault, Keycloak, Nexus.
+      - Container images must be built and stored in my existing Nexus registry.
+      - Application must accept configuration as variables so it can use existing MinIO/Vault/Keycloak.
+      - Claude Harness MUST read and analyze /home/kelvin/SB-HomeLAb/FX to mirror existing patterns for:
+        * Jenkins pipelines (Jenkinsfiles)
+        * Docker build + push processes
+        * Vault secret management patterns
+        * MinIO usage patterns
+      NOTE: The harness running on my machine can read this directory. Implementations must follow the same conventions found there.
+    </absolute_requirements>
+
+    <deployment_context>
+      Development/Build:
+      - Use Docker Compose to run frontend + backend locally.
+      - Postgres and Redis can be local containers.
+      - MinIO/Vault/Keycloak will be external (existing homelab instances) by default, configured via variables.
+      - Optional: allow dev-only local MinIO/Vault/Keycloak containers (not required).
+
+      Production (Homelab Kubernetes):
+      - Deploy frontend + backend as Docker images pulled from Nexus.
+      - Use Kubernetes-native patterns:
+        * ConfigMaps/Secrets (prefer sourced from Vault)
+        * Ingress with TLS
+        * Health checks (liveness/readiness)
+        * Resource requests/limits
+        * Horizontal scaling where appropriate
+        * NetworkPolicies to isolate namespaces
+      - App connects to existing homelab MinIO, Vault, Keycloak, and uses Nexus for container images.
+    </deployment_context>
+  </critical_instructions>
+
+  <project_overview>
+    This platform supports a business that buys body-damaged vehicles from auctions (e.g., Copart/IAAI),
+    repairs them, and leases/rents them to customers with a weekly payment plan.
+
+    Weekly payment model example:
+    - $150/week
+    - Vehicle is serviced by admin at end of month
+    - Payments are made externally via Zelle/CashApp; no payment processor integration
+    - Payments are recorded manually after customer uploads proof (screenshot)
+
+    Customer experience:
+    - Marketing/SEO website to learn about service
+    - Contact/inquiry form -> autoresponse email via Resend
+    - Signup + secure authentication via Keycloak
+    - Customer profile + verification
+    - Upload driver insurance documentation (highly sensitive)
+    - Request a vehicle, see availability/status
+    - Upload payment proof (screenshot)
+    - Get notified: "verification takes 48 hours"
+    - After admin verifies, customer notified: "payment confirmed"
+
+    Admin experience:
+    - Admin portal to manage customers, vehicles, trackers, payments, due dates
+    - Track each customer’s weekly due date and payment history
+    - Manual payment verification workflow
+    - Vehicle tracker inventory and assignment to vehicles
+    - Delinquency workflow (late fees + escalation)
+    - Recovery/tow workflow (compliance-gated) and permanent ban on final recovery action
+  </project_overview>
+
+  <existing_homelab_resources>
+    <note>
+      The following infrastructure already exists in the homelab and MUST be reused.
+      The application must not create new instances of these services.
+    </note>
+
+    <minio>
+      <status>already_running</status>
+      <usage>
+        - Use existing MinIO endpoint and buckets (configured via variables).
+        - User-uploaded documents (payment screenshots, incident photos, insurance docs) must be stored in MinIO private buckets.
+        - Use short-lived signed URLs for any viewing/download.
+        - Prefer credentials sourced from Vault.
+      </usage>
+    </minio>
+
+    <vault>
+      <status>already_running</status>
+      <usage>
+        - Vault is the source of truth for secrets and encryption keys.
+        - Prefer Vault Transit for application-level encryption of sensitive metadata.
+        - Prefer Vault KV for config secrets (DB credentials, Resend key, Nexus creds if needed, etc.).
+      </usage>
+    </vault>
+
+    <keycloak>
+      <status>already_running</status>
+      <usage>
+        - Use existing Keycloak via OIDC.
+        - Enforce roles: admin, ops, customer.
+        - MFA required for admin (configured in Keycloak).
+      </usage>
+    </keycloak>
+
+    <nexus>
+      <status>already_running</status>
+      <usage>
+        - All container images for this project MUST be built and pushed to the existing Nexus container registry.
+        - Local builds must tag images using Nexus registry host/repo naming convention.
+        - Kubernetes deployment must pull images from Nexus (use imagePullSecrets if needed).
+      </usage>
+    </nexus>
+  </existing_homelab_resources>
+
+  <local_reference_codebase_requirement>
+    <priority>CRITICAL</priority>
+
+    <instruction_to_claude_harness>
+      Claude Harness MUST read and analyze the entire directory:
+      /home/kelvin/SB-HomeLAb/FX
+
+      Purpose:
+      - Understand how MinIO is configured/used today (endpoints, buckets, credential sourcing).
+      - Understand how Vault is used today (KV paths, policies, auth patterns, transit patterns if any).
+      - Understand Jenkins pipelines (Jenkinsfile patterns, stages, environment conventions).
+      - Understand Docker build/push patterns (registry naming, tags, build args).
+      - Mirror existing conventions and patterns in this new application.
+    </instruction_to_claude_harness>
+
+    <files_and_locations_to_prioritize>
+      <jenkins>
+        - /home/kelvin/SB-HomeLAb/FX/**/Jenkinsfile
+        - /home/kelvin/SB-HomeLAb/FX/**/jenkinsfile*
+        - /home/kelvin/SB-HomeLAb/FX/**/.jenkins/*
+      </jenkins>
+
+      <docker_and_registry>
+        - /home/kelvin/SB-HomeLAb/FX/**/Dockerfile
+        - /home/kelvin/SB-HomeLAb/FX/**/docker-compose*.yml
+        - /home/kelvin/SB-HomeLAb/FX/**/.docker/*
+        - /home/kelvin/SB-HomeLAb/FX/**/build*.sh
+      </docker_and_registry>
+
+      <vault_patterns>
+        - /home/kelvin/SB-HomeLAb/FX/**/vault*.sh
+        - /home/kelvin/SB-HomeLAb/FX/**/secrets*
+        - /home/kelvin/SB-HomeLAb/FX/**/.env*
+        - /home/kelvin/SB-HomeLAb/FX/**/values*.yaml
+      </vault_patterns>
+
+      <minio_patterns>
+        - /home/kelvin/SB-HomeLAb/FX/**/minio*
+        - /home/kelvin/SB-HomeLAb/FX/**/s3*
+      </minio_patterns>
+    </files_and_locations_to_prioritize>
+
+    <required_output_from_analysis>
+      After reading /home/kelvin/SB-HomeLAb/FX, Claude Harness must:
+      - Summarize detected conventions (naming, env vars, Jenkins stages, image tagging strategy).
+      - Reuse the same patterns for:
+        * Docker build/push
+        * Nexus registry paths
+        * Vault secret paths and naming
+        * MinIO bucket naming and access patterns
+      - Produce a compatibility/config module that aligns to those conventions.
+    </required_output_from_analysis>
+  </local_reference_codebase_requirement>
+
+  <high_level_architecture>
+    <frontend>
+      <stack>
+        - Next.js (App Router) + React + TypeScript
+        - Tailwind CSS (or modern CSS system) + component library
+      </stack>
+      <design_requirements>
+        - Modern, professional, rich, luxurious, glam aesthetic
+        - Mobile-first responsive design
+        - Accessible UI (keyboard nav, contrast)
+        - Fast loads (Lighthouse 90+ where feasible)
+        - SEO-optimized public pages (metadata, sitemap, structured data where applicable)
+      </design_requirements>
+      <pages_public>
+        - Home
+        - How It Works
+        - Fleet Preview (no sensitive info)
+        - Requirements
+        - FAQ
+        - Contact / Inquiry
+        - Terms + Privacy + GPS/Telematics disclosure
+      </pages_public>
+      <pages_authenticated_customer>
+        - Dashboard
+        - Profile & Verification (including insurance status)
+        - Vehicle Request / Assigned Vehicle Details
+        - Payments (weekly invoices, upload proof, status timeline)
+        - Notifications
+        - Incident Report
+      </pages_authenticated_customer>
+      <pages_authenticated_admin>
+        - Admin Dashboard
+        - Customers
+        - Vehicles
+        - Trackers
+        - Weekly Invoices & Payments
+        - Maintenance
+        - Delinquency & Recovery
+        - Audit Logs
+        - Settings
+      </pages_authenticated_admin>
+    </frontend>
+
+    <backend>
+      <stack>
+        - Python FastAPI (async)
+        - PostgreSQL (primary datastore)
+        - Redis (cache/rate limit/background queue if needed)
+        - MinIO (uploads/object storage)
+        - Vault (secrets + encryption keys)
+      </stack>
+      <api_patterns>
+        - REST API with OpenAPI docs
+        - Pydantic models for validation
+        - Background jobs for email notifications and reminders
+      </api_patterns>
+    </backend>
+
+    <authentication>
+      <provider>Existing Keycloak (OIDC)</provider>
+      <requirements>
+        - Use Keycloak issuer URL/realm/client configured via variables.
+        - Backend validates JWT and enforces RBAC at route-level.
+        - Frontend uses secure session handling (server-side where appropriate).
+        - Admin MFA enforced in Keycloak policy.
+      </requirements>
+    </authentication>
+
+    <email_delivery>
+      <provider>Resend</provider>
+      <events>
+        - Inquiry auto-response ("We received your inquiry")
+        - Signup welcome email
+        - Payment uploaded -> "Verification in progress (48 hours)"
+        - Payment approved -> "Payment confirmed"
+        - Payment rejected -> "Action needed"
+        - Due date reminders
+        - Late escalation notices
+        - Termination/ban notice (when applicable)
+      </events>
+    </email_delivery>
+
+    <container_registry_and_images>
+      <registry>
+        <provider>Existing Nexus Container Registry</provider>
+        <requirements>
+          - Use Nexus registry host as a variable.
+          - Image naming/tagging must match FX directory conventions discovered by harness.
+          - Support branch-based tags and immutable release tags (git sha).
+        </requirements>
+      </registry>
+      <images>
+        <frontend_image>fx-weekly-lease-frontend</frontend_image>
+        <backend_image>fx-weekly-lease-backend</backend_image>
+      </images>
+    </container_registry_and_images>
+
+    <development_runtime>
+      <docker_compose>
+        - frontend (Next.js)
+        - backend (FastAPI)
+        - postgres (local)
+        - redis (local)
+        - NOTE: MinIO/Vault/Keycloak are external by default (existing homelab instances), accessed via variables.
+      </docker_compose>
+    </development_runtime>
+
+    <production_runtime>
+      <kubernetes>
+        - Deploy frontend/backend images pulled from Nexus.
+        - Ingress TLS required.
+        - NetworkPolicies required.
+        - Secrets sourced from Vault (preferred) or injected securely.
+      </kubernetes>
+    </production_runtime>
+  </high_level_architecture>
+
+  <core_entities>
+    <entity>User</entity>
+    <entity>CustomerProfile</entity>
+    <entity>Vehicle</entity>
+    <entity>VehicleConditionReport</entity>
+    <entity>TrackerDevice</entity>
+    <entity>LeaseContract</entity>
+    <entity>WeeklyInvoice</entity>
+    <entity>PaymentProofUpload</entity>
+    <entity>PaymentVerification</entity>
+    <entity>MaintenanceSchedule</entity>
+    <entity>IncidentReport</entity>
+    <entity>DriverInsuranceDocument</entity>
+    <entity>DelinquencyCase</entity>
+    <entity>RecoveryAction</entity>
+    <entity>BanRecord</entity>
+    <entity>Notification</entity>
+    <entity>AuditLog</entity>
+  </core_entities>
+
+  <functional_requirements>
+    <inquiry_flow>
+      <steps>
+        1) Visitor submits inquiry form (name, phone/email, desired vehicle, timeframe, notes)
+        2) System stores Inquiry
+        3) Resend sends auto-response acknowledging receipt
+        4) Admin sees inquiry in admin dashboard
+      </steps>
+    </inquiry_flow>
+
+    <signup_and_auth>
+      <requirements>
+        - Signup/login handled via Keycloak.
+        - Customer role assigned on signup; admin roles assigned manually.
+        - Account verification fields stored in CustomerProfile.
+      </requirements>
+    </signup_and_onboarding>
+
+    <customer_onboarding>
+      <requirements>
+        - Customer uploads driver insurance documentation and enters basic insurance metadata (optional).
+        - Admin verifies insurance status: Pending/Approved/Rejected/Expired.
+        - Only Approved customers can request vehicle assignment (configurable).
+      </requirements>
+    </customer_onboarding>
+
+    <vehicle_request_and_assignment>
+      <customer_side>
+        - Customer can request a vehicle (request record).
+        - Customer can see availability/status and assigned vehicle details once assigned.
+      </customer_side>
+      <admin_side>
+        - Admin creates/updates vehicles and sets availability states.
+        - Admin assigns vehicles to customers (creates LeaseContract).
+      </admin_side>
+    </vehicle_request_and_assignment>
+
+    <weekly_payments_no_processor>
+      <notes>
+        - No payment processor integration.
+        - Payments are external via Zelle/CashApp or cash.
+      </notes>
+      <workflow>
+        1) WeeklyInvoice generated for active LeaseContract on schedule.
+        2) Customer pays externally.
+        3) Customer uploads payment proof screenshot.
+        4) System marks invoice status: "Verification in progress" and notifies customer (48 hours).
+        5) Admin reviews and marks Approved/Rejected.
+        6) Customer notified of final status; ledger updated.
+      </workflow>
+      <proof_handling_rules>
+        - Store proof files in MinIO private bucket.
+        - Display only via short-lived signed URL.
+        - Prevent re-use fraud: hash uploaded content and detect duplicates (flag for admin).
+      </proof_handling_rules>
+    </weekly_payments_no_processor>
+
+    <notifications>
+      <channels>
+        - Email via Resend
+        - In-app notifications center
+      </channels>
+      <types>
+        - Inquiry acknowledgement
+        - Payment status changes
+        - Due date reminders
+        - Late notices
+        - Recovery/tow notices (if used)
+        - Maintenance appointment reminders (optional)
+      </types>
+    </notifications>
+
+    <trackers_and_fleet_control>
+      <trackers>
+        - Admin manages tracker inventory (TrackerDevice).
+        - Admin assigns tracker to Vehicle.
+        - Store tracker identifiers and last check-in metadata.
+        - Optional: store last known location if available via provider integration (not required initially).
+      </trackers>
+      <gps_disclosure>
+        - Public/legal pages must disclose the existence and purpose of tracking.
+        - Customer must consent via agreement and/or checkbox where required.
+      </gps_disclosure>
+    </trackers_and_fleet_control>
+
+    <late_payment_and_recovery_policy>
+      <policy_intent>
+        - If a user does not pay after two days beyond late fee addition, a tow/recovery will be initiated
+          and the customer will be banned permanently from using services.
+      </policy_intent>
+
+      <compliance_guardrail>
+        IMPORTANT:
+        - Vehicle recovery/tow actions can be legally sensitive (repossession/recovery laws).
+        - The system MUST implement a compliance gate:
+          * Admin must confirm compliance authorization (checkbox)
+          * Admin must enter reason, contract version, and supporting notes
+          * System records an immutable RecoveryAuthorization event in AuditLog
+        - System must allow disabling recovery workflow via configuration if not legally permitted.
+      </compliance_guardrail>
+
+      <workflow>
+        - Day 0: Payment due date.
+        - Day 1: Mark Late; apply late fee; notify customer; create DelinquencyCase.
+        - Day 2: Escalation notice; notify customer.
+        - Day 3: If still unpaid:
+          * Admin reviews case
+          * Admin completes compliance gate (authorization + reason)
+          * Admin records tow vendor details (manual entry)
+          * Create RecoveryAction = "Tow Requested"
+          * Terminate lease (per contract policy)
+          * Create BanRecord = permanent ban
+          * Notify customer of termination and next steps
+      </workflow>
+
+      <ban_rules>
+        - Banned customers cannot request vehicles or create new leases.
+        - Banned customers retain read-only access to their historical invoices/receipts (configurable).
+      </ban_rules>
+    </late_payment_and_recovery_policy>
+
+    <maintenance_and_monthly_service>
+      <requirements>
+        - Admin can define monthly service schedule per vehicle/lease.
+        - Admin can record completed service events and notes.
+        - Optional notifications to customer for service appointment.
+      </requirements>
+    </maintenance_and_monthly_service>
+
+    <incident_reporting>
+      <customer>
+        - Customer can submit an incident report with photos and details.
+      </customer>
+      <admin>
+        - Admin can view/triage incidents and attach notes.
+      </admin>
+      <storage>
+        - Incident photos stored in MinIO private bucket with signed URLs.
+      </storage>
+    </incident_reporting>
+  </functional_requirements>
+
+  <security_requirements>
+    <authentication_and_sessions>
+      - OIDC (Keycloak) required.
+      - Backend validates JWT, enforces RBAC and per-tenant/ownership checks.
+      - Admin MFA required.
+      - Rate limit auth endpoints and sensitive endpoints.
+    </authentication_and_sessions>
+
+    <sensitive_data_protection_driver_insurance>
+      <priority>HIGHEST</priority>
+
+      <data_classification>
+        - Driver insurance documents are PII/Confidential.
+        - Treat as high sensitivity; prevent leakage.
+      </data_classification>
+
+      <storage_model>
+        - Do NOT store raw insurance images/blobs inside PostgreSQL.
+        - Store insurance files in MinIO private bucket (separate from payment proofs).
+        - Store only metadata in PostgreSQL:
+          * object_key (encrypted)
+          * checksum/hash
+          * uploader_id
+          * verification status (pending/approved/rejected/expired)
+          * timestamps
+          * optional: policy expiration date (store minimally; encrypt if stored)
+      </storage_model>
+
+      <vault_transit_encryption>
+        - Use Vault Transit where possible to encrypt:
+          * object keys/paths
+          * extracted sensitive metadata (if stored at all)
+        - Store only ciphertext in PostgreSQL for sensitive fields.
+        - Support key rotation strategy (Vault-managed) and re-encryption plan if needed.
+      </vault_transit_encryption>
+
+      <access_controls>
+        - Only admin/ops with explicit permission can view/download insurance files.
+        - Implement break-glass access:
+          * admin must provide reason
+          * signed access is time-limited
+          * every access recorded in AuditLog
+        - Customers can see only:
+          * insurance status
+          * submitted timestamp
+          * expiration date (if collected)
+        - Optional strict mode: customers cannot re-download original after submission.
+      </access_controls>
+
+      <delivery_to_frontend>
+        - Use signed MinIO URLs with short TTL.
+        - Never expose bucket/object as permanent public URL.
+        - Ensure response headers disable caching for sensitive content.
+      </delivery_to_frontend>
+
+      <retention_and_deletion>
+        - Define retention policy (configurable).
+        - Allow admin secure delete workflow with audit trail.
+      </retention_and_deletion>
+
+      <logging_redaction>
+        - Never log raw document data.
+        - Redact sensitive fields by default.
+      </logging_redaction>
+    </sensitive_data_protection_driver_insurance>
+
+    <upload_security>
+      - Allow only safe file types: images (jpeg/png/webp); optionally PDF if required.
+      - Enforce max file size.
+      - Validate content-type and magic bytes.
+      - Optionally scan files (malware scanning job/service).
+      - Store uploads in MinIO private buckets only.
+      - Signed URL access only (short TTL).
+    </upload_security>
+
+    <api_security>
+      - Strict input validation with Pydantic.
+      - Rate limiting with Redis-backed limiter.
+      - Proper CORS configuration.
+      - Secure headers (HSTS in prod, CSP, X-Frame-Options, etc.).
+      - Prevent IDOR: ownership checks on every customer resource.
+    </api_security>
+
+    <kubernetes_security>
+      - Run containers as non-root where possible.
+      - Read-only root filesystem where feasible.
+      - NetworkPolicies enforced.
+      - Least privilege service accounts.
+      - Separate namespaces for app components if appropriate.
+    </kubernetes_security>
+
+    <auditability>
+      - AuditLog required for:
+        * payment approval/rejection
+        * invoice updates
+        * vehicle assignment changes
+        * tracker assignment changes
+        * insurance document access (view/download) + break-glass reason
+        * delinquency escalations
+        * recovery authorization and tow actions
+      - Log actor_id, role, timestamp, request_id, before/after, reason fields, and target entity.
+    </auditability>
+  </security_requirements>
+
+  <performance_and_seo_targets>
+    <frontend>
+      - Public pages optimized for SEO:
+        * metadata
+        * sitemap.xml
+        * robots.txt
+        * canonical URLs
+        * fast LCP (Next image optimization)
+      - Target Lighthouse 90+ where feasible.
+    </frontend>
+    <backend>
+      - Common endpoints p95 < 200ms (local network baseline).
+      - Background jobs for email notifications should run within 60 seconds of event.
+    </backend>
+  </performance_and_seo_targets>
+
+  <observability>
+    <logging>
+      - Structured JSON logs
+      - Correlation/request IDs
+      - Sensitive field redaction
+    </logging>
+    <metrics>
+      - API latency/error rate
+      - Background job success/failure
+      - Upload counts/failures
+      - Past-due counts, delinquency cases
+      - Payment verification throughput
+    </metrics>
+  </observability>
+
+  <configuration_and_environment>
+    <principles>
+      - All environment-specific values provided via variables.
+      - In Kubernetes, sensitive values must come from Vault or a Vault-backed secrets injection mechanism.
+      - Frontend must not receive secrets; only public config exposed to browser.
+      - Follow env var naming patterns found in /home/kelvin/SB-HomeLAb/FX.
+    </principles>
+
+    <required_variables_backend>
+      <app>
+        - APP_ENV=dev|staging|prod
+        - API_BASE_URL
+        - CORS_ALLOWED_ORIGINS
+        - RATE_LIMITS_CONFIG
+        - AUDIT_LOG_RETENTION_DAYS
+      </app>
+
+      <database>
+        - DATABASE_URL (prefer single URL)
+      </database>
+
+      <redis>
+        - REDIS_URL
+      </redis>
+
+      <keycloak_oidc>
+        - OIDC_ISSUER_URL
+        - OIDC_CLIENT_ID
+        - OIDC_AUDIENCE (if needed)
+        - OIDC_JWKS_URL (optional if derived from issuer)
+        - OIDC_REQUIRED_ROLES=admin,ops,customer
+      </keycloak_oidc>
+
+      <minio_s3>
+        - S3_ENDPOINT
+        - S3_REGION (even if dummy)
+        - S3_ACCESS_KEY (prefer fetched from Vault)
+        - S3_SECRET_KEY (prefer fetched from Vault)
+        - S3_USE_SSL=true|false
+        - S3_BUCKET_PAYMENTS
+        - S3_BUCKET_INSURANCE
+        - S3_BUCKET_INCIDENTS
+        - S3_SIGNED_URL_TTL_SECONDS
+      </minio_s3>
+
+      <vault>
+        - VAULT_ADDR
+        - VAULT_AUTH_METHOD (k8s preferred in prod; token allowed in dev)
+        - VAULT_ROLE (for k8s auth)
+        - VAULT_TRANSIT_KEY_NAME
+        - VAULT_KV_PATH_PREFIX
+      </vault>
+
+      <resend>
+        - RESEND_API_KEY (prefer fetched from Vault)
+        - RESEND_FROM_EMAIL
+      </resend>
+
+      <nexus_registry>
+        - NEXUS_REGISTRY_HOST
+        - NEXUS_REPOSITORY_PREFIX
+        - NEXUS_USERNAME (prefer from Vault)
+        - NEXUS_PASSWORD (prefer from Vault)
+      </nexus_registry>
+
+      <integration_mode>
+        - USE_EXISTING_HOMELAB_MINIO=true
+        - USE_EXISTING_HOMELAB_VAULT=true
+        - USE_EXISTING_HOMELAB_KEYCLOAK=true
+      </integration_mode>
+
+      <fx_reference_path>
+        - FX_REFERENCE_ROOT=/home/kelvin/SB-HomeLAb/FX
+      </fx_reference_path>
+    </required_variables_backend>
+
+    <required_variables_frontend_public>
+      <public_config>
+        - NEXT_PUBLIC_API_BASE_URL
+        - NEXT_PUBLIC_OIDC_PROVIDER_LABEL (optional)
+      </public_config>
+    </required_variables_frontend_public>
+  </configuration_and_environment>
+
+  <vault_secrets_management_script>
+    <priority>CRITICAL</priority>
+
+    <script_path>/home/kelvin/SB-HomeLAb/FX/scripts/vault-secrets-manager.sh</script_path>
+
+    <purpose>
+      Provide a standardized CLI to manage (create/update/list/rotate/validate) application secrets
+      in the existing Vault instance, following conventions discovered in FX directory.
+    </purpose>
+
+    <requirements>
+      - Must be idempotent (safe to re-run).
+      - Must support environment scoping: dev/qa/prod (or your existing convention).
+      - Must not print secret values to stdout in normal operation.
+      - Must support:
+        * KV put/get/list for app secrets
+        * Transit key validation (encrypt/decrypt test) to confirm key exists
+        * Optional init/bootstrap of missing paths/keys ONLY if your policies allow it
+      - Must support non-interactive mode for Jenkins.
+      - Must follow patterns found in existing FX scripts and Jenkinsfiles.
+    </requirements>
+
+    <suggested_commands>
+      <command>./vault-secrets-manager.sh init --env dev</command>
+      <command>./vault-secrets-manager.sh put --env dev --key RESEND_API_KEY --value '...'</command>
+      <command>./vault-secrets-manager.sh put-file --env dev --key OIDC_PUBLIC_CONFIG --file ./config.json</command>
+      <command>./vault-secrets-manager.sh list --env dev</command>
+      <command>./vault-secrets-manager.sh rotate-transit --env dev --key fx-weekly-lease-dev-transit</command>
+      <command>./vault-secrets-manager.sh validate --env dev</command>
+    </suggested_commands>
+
+    <expected_vault_structure>
+      Claude Harness must detect the convention from FX. If none exists, default to:
+      - KV: secret/fx-weekly-lease/<env>/*
+      - Transit key: fx-weekly-lease-<env>-transit
+    </expected_vault_structure>
+  </vault_secrets_management_script>
+
+  <directory_structure>
+    <frontend>
+      - frontend/app/
+      - frontend/components/
+      - frontend/lib/
+      - frontend/styles/
+    </frontend>
+
+    <backend>
+      - backend/app/main.py
+      - backend/app/api/
+      - backend/app/core/
+      - backend/app/models/
+      - backend/app/schemas/
+      - backend/app/services/
+      - backend/app/workers/
+      - backend/app/tests/
+    </backend>
+
+    <infra>
+      - docker-compose.yml
+      - docker/
+      - k8s/manifests/
+      - scripts/
+      - ci/ (if needed)
+    </infra>
+  </directory_structure>
+
+  <ci_cd_requirements>
+    <jenkins_alignment>
+      - CI/CD must follow patterns discovered in /home/kelvin/SB-HomeLAb/FX.
+      - Use similar stage naming, env variable patterns, and artifact/image tagging conventions.
+      - Build Docker images, push to Nexus, and deploy to k8s (if your existing pattern does).
+    </jenkins_alignment>
+
+    <image_tagging>
+      - Support tags: dev, staging, prod (or branch-based).
+      - Use git sha for immutable tags for releases.
+    </image_tagging>
+  </ci_cd_requirements>
+
+  <implementation_phases>
+    <phase_0>
+      <name>FX Pattern Discovery</name>
+      <tasks>
+        - Read and analyze /home/kelvin/SB-HomeLAb/FX.
+        - Extract conventions for Vault, MinIO, Jenkins, Docker, Nexus usage.
+        - Produce a short summary and configuration compatibility plan.
+      </tasks>
+    </phase_0>
+
+    <phase_1>
+      <name>Foundation &amp; Security</name>
+      <tasks>
+        - Repo structure (frontend/backend/infra).
+        - Docker Compose for local dev (frontend/backend/postgres/redis).
+        - Wire OIDC against existing Keycloak.
+        - Create Postgres schema + Alembic migrations.
+        - Implement RBAC + ownership checks.
+        - Implement MinIO upload framework with signed URLs.
+        - Implement Vault integration for secrets + Transit encryption.
+        - Implement audit logging framework.
+        - Create /home/kelvin/SB-HomeLAb/FX/scripts/vault-secrets-manager.sh per requirements.
+      </tasks>
+    </phase_1>
+
+    <phase_2>
+      <name>Customer Experience</name>
+      <tasks>
+        - Public marketing pages (SEO).
+        - Inquiry workflow + Resend auto-response.
+        - Customer onboarding incl. insurance upload + status.
+        - Customer dashboard: vehicle request, invoices, proof upload, notifications.
+        - Incident reporting workflow.
+      </tasks>
+    </phase_2>
+
+    <phase_3>
+      <name>Admin Operations</name>
+      <tasks>
+        - Admin dashboard and CRUD for vehicles/customers/trackers.
+        - Weekly invoice generation and due date tracking.
+        - Manual payment verification + notifications.
+        - Maintenance scheduling.
+        - Delinquency queue + escalation workflow.
+        - Recovery/tow workflow with compliance gate + permanent ban.
+        - Audit log search UI.
+      </tasks>
+    </phase_3>
+
+    <phase_4>
+      <name>Hardening, Observability, Deployment</name>
+      <tasks>
+        - Rate limiting, secure headers, upload scanning (if available).
+        - Metrics and structured logs.
+        - Build/push images to Nexus in alignment with FX patterns.
+        - Kubernetes manifests and TLS ingress.
+        - NetworkPolicies and non-root runtime.
+        - Load tests for key endpoints.
+        - SEO/Lighthouse optimization.
+      </tasks>
+    </phase_4>
+  </implementation_phases>
+
+  <success_criteria>
+    - Customers can:
+      * inquire and receive auto-response
+      * sign up/login securely
+      * upload insurance docs securely
+      * request a vehicle
+      * upload payment proof
+      * see payment verification status and confirmations
+    - Admin can:
+      * manage fleet, trackers, customers
+      * generate and verify weekly invoices
+      * view delinquency queue and escalate
+      * authorize recovery actions with compliance gate
+      * ban users permanently after recovery
+      * review audit logs for every sensitive action
+    - Driver insurance data is protected:
+      * stored only in MinIO private bucket
+      * metadata encrypted using Vault Transit
+      * access limited with RBAC + break-glass + audit
+      * never exposed publicly or cached
+    - Dev runs in Docker locally; production runs in Kubernetes and pulls images from Nexus
+    - System follows patterns from /home/kelvin/SB-HomeLAb/FX and reuses existing homelab MinIO/Vault/Keycloak
+  </success_criteria>
+</project_specification>

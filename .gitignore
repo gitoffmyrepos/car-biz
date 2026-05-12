@@ -195,3 +195,7 @@ uploads/
 # ----------------------------------------------------------------------------
 !.env.example
 !.gitkeep
+graphify-out/
+.claude/verification/
+test_results_logging.json
+frontend/images/
