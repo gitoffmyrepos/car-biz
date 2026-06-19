@@ -61,6 +61,20 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database tables initialized")
 
+    # Ensure the public-read vehicle-images bucket exists (marketing photos)
+    from app.services.storage import storage_service
+
+    if not storage_service.ensure_public_bucket(settings.S3_BUCKET_VEHICLE_IMAGES):
+        logger.error(
+            "Failed to ensure public vehicle-images bucket: %s",
+            settings.S3_BUCKET_VEHICLE_IMAGES,
+        )
+    else:
+        logger.info(
+            "Public vehicle-images bucket ready: %s",
+            settings.S3_BUCKET_VEHICLE_IMAGES,
+        )
+
     # Redis rate limiter ready
     logger.info("Rate limiter connected to Redis")
 

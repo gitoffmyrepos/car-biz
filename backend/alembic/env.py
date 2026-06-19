@@ -36,6 +36,7 @@ from app.models import (  # noqa: F401
     IncidentReport,
     WeeklyInvoice,
     Vehicle,
+    VehicleImage,
     VehicleConditionReport,
     TrackerDevice,
     MaintenanceSchedule,
@@ -48,7 +49,7 @@ from app.models import (  # noqa: F401
 # Suppress unused import warnings - models must be imported for metadata
 __models__ = [
     Inquiry, CustomerProfile, AuditLog, VehicleRequest, Lease,
-    Notification, IncidentReport, WeeklyInvoice, Vehicle,
+    Notification, IncidentReport, WeeklyInvoice, Vehicle, VehicleImage,
     VehicleConditionReport, TrackerDevice, MaintenanceSchedule,
     DelinquencyCase, RecoveryAction, SystemSettings, BanRecord,
 ]

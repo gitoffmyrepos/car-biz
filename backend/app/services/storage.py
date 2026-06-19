@@ -30,6 +30,16 @@ ALLOWED_INSURANCE_TYPES = {
 # Maximum file size: 10MB
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
+# Allowed MIME types for public vehicle gallery images (marketing photos)
+ALLOWED_VEHICLE_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+
+# Maximum size for a vehicle gallery image: 8MB
+MAX_VEHICLE_IMAGE_SIZE = 8 * 1024 * 1024
+
 
 class StorageService:
     """
@@ -77,10 +87,95 @@ class StorageService:
             settings.S3_BUCKET_PAYMENTS,
             settings.S3_BUCKET_INCIDENTS,
             settings.S3_BUCKET_CONDITION_REPORTS,
+            settings.S3_BUCKET_VEHICLE_IMAGES,
         ]:
             bucket_path = self._local_storage_path / bucket
             bucket_path.mkdir(parents=True, exist_ok=True)
             logger.info(f"Created local storage directory: {bucket_path}")
+
+    def ensure_public_bucket(self, bucket: str) -> bool:
+        """
+        Ensure a bucket exists with a public-read policy.
+
+        Used for marketing/gallery photos (unlike the private KYC buckets).
+        For local storage this just creates the directory. For S3/MinIO it
+        creates the bucket if missing and applies an anonymous read policy
+        so the objects can be served publicly without presigning.
+
+        Returns True if the bucket is ready, False on failure. Fails loud
+        (logs an error) rather than silently swallowing — callers decide
+        whether a failure is fatal at startup.
+        """
+        if not self.use_s3:
+            bucket_path = self._local_storage_path / bucket
+            bucket_path.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Ensured local public bucket directory: {bucket_path}")
+            return True
+
+        import json
+
+        from botocore.exceptions import ClientError
+
+        try:
+            try:
+                self._s3_client.head_bucket(Bucket=bucket)
+            except ClientError:
+                self._s3_client.create_bucket(Bucket=bucket)
+                logger.info(f"Created public S3 bucket: {bucket}")
+
+            public_read_policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {"AWS": ["*"]},
+                        "Action": ["s3:GetObject"],
+                        "Resource": [f"arn:aws:s3:::{bucket}/*"],
+                    }
+                ],
+            }
+            self._s3_client.put_bucket_policy(
+                Bucket=bucket, Policy=json.dumps(public_read_policy)
+            )
+            logger.info(f"Applied public-read policy to bucket: {bucket}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to ensure public bucket {bucket}: {e}")
+            return False
+
+    def generate_public_url(self, bucket: str, key: str) -> str:
+        """
+        Build a publicly-readable URL for an object in a public bucket.
+
+        Resolution order:
+        1. S3_PUBLIC_BASE_URL (CDN / public MinIO host) -> direct path-style URL.
+        2. S3 configured -> path-style URL against the S3 endpoint.
+        3. Local storage -> the local file-serving route.
+        """
+        if settings.S3_PUBLIC_BASE_URL:
+            base = settings.S3_PUBLIC_BASE_URL.rstrip("/")
+            return f"{base}/{bucket}/{key}"
+
+        if self.use_s3 and settings.S3_ENDPOINT:
+            base = settings.S3_ENDPOINT.rstrip("/")
+            return f"{base}/{bucket}/{key}"
+
+        return f"/api/files/{bucket}/{key}"
+
+    def generate_vehicle_image_key(
+        self,
+        vehicle_id: int,
+        original_filename: str,
+        mime_type: str,
+    ) -> str:
+        """Generate a unique storage key for a vehicle gallery image."""
+        extension = ALLOWED_VEHICLE_IMAGE_TYPES.get(mime_type, "")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        unique_id = uuid4().hex[:8]
+        safe_name = "".join(
+            c for c in original_filename if c.isalnum() or c in "._-"
+        )[:50]
+        return f"vehicles/{vehicle_id}/{timestamp}_{unique_id}_{safe_name}{extension}"
 
     def validate_file(
         self,

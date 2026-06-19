@@ -9,10 +9,15 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum as PyEnum
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import DateTime, Enum, Integer, String, Text, Boolean, Numeric
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.vehicle_image import VehicleImage
 
 
 class VehicleStatus(str, PyEnum):
@@ -94,8 +99,16 @@ class Vehicle(Base):
     current_lease_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     current_tracker_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
-    # Image (stored in MinIO)
+    # Image (stored in MinIO) - denormalized primary key for back-compat
     image_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Multi-image gallery (ordered, with a primary flag). Cascade-deletes with the vehicle.
+    images: Mapped[list["VehicleImage"]] = relationship(
+        "VehicleImage",
+        back_populates="vehicle",
+        cascade="all, delete-orphan",
+        order_by="VehicleImage.sort_order",
+    )
 
     # Notes
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)

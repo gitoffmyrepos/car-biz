@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     S3_BUCKET_INCIDENTS: str = "fx-weekly-lease-incidents"
     S3_BUCKET_CONDITION_REPORTS: str = "fx-weekly-lease-condition-reports"
     S3_BUCKET_VEHICLES: str = "fx-weekly-lease-vehicles"
+    # Public-read bucket for marketing vehicle gallery photos (not KYC/private docs)
+    S3_BUCKET_VEHICLE_IMAGES: str = "car-biz-vehicle-images"
+    # Optional public base URL for the vehicle-images bucket (e.g. CDN / MinIO public host).
+    # When set, public gallery URLs are built as f"{S3_PUBLIC_BASE_URL}/{bucket}/{key}".
+    # When empty, the storage service falls back to presigned GETs or the local file route.
+    S3_PUBLIC_BASE_URL: str = ""
     S3_SIGNED_URL_TTL_SECONDS: int = 300
 
     # Vault
