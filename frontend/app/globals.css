@@ -115,6 +115,145 @@
   }
 }
 
+/* ============================================================
+   Champagne-Gold Editorial System (overhaul/fleet-redesign)
+   Dark, near-black, sharp corners, Helvetica body + display serif.
+   Scoped to public-facing surfaces via the .editorial root class so
+   the existing orange admin/dashboard theme is untouched.
+   ============================================================ */
+@layer base {
+  :root {
+    --ed-background: #0d0d0d;
+    --ed-card: #111111;
+    --ed-gold: #b8963e;
+    --ed-gold-light: #d4af6a;
+    --ed-text: #ffffff;
+    --ed-muted: rgba(255, 255, 255, 0.55);
+    --ed-border: rgba(255, 255, 255, 0.12);
+    --ed-radius: 0px;
+  }
+
+  .editorial {
+    background: var(--ed-background);
+    color: var(--ed-text);
+    font-family: 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
+    letter-spacing: 0.005em;
+  }
+}
+
+@layer components {
+  /* Section wrapper */
+  .ed-section {
+    @apply py-20 md:py-28;
+  }
+  .ed-container {
+    @apply max-w-6xl mx-auto px-5 sm:px-8;
+  }
+
+  /* 10px uppercase wide-tracked gold eyebrow: "NN — Label" */
+  .ed-eyebrow {
+    @apply inline-block text-[10px] font-semibold uppercase tracking-eyebrow;
+    color: var(--ed-gold);
+  }
+
+  /* Display headings */
+  .ed-h1 {
+    @apply font-display font-semibold leading-[1.02] tracking-tight;
+    font-size: clamp(2.75rem, 7vw, 5.25rem);
+  }
+  .ed-h2 {
+    @apply font-display font-semibold leading-[1.05] tracking-tight;
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+  }
+  .ed-gold-word {
+    color: var(--ed-gold-light);
+  }
+  .ed-muted {
+    color: var(--ed-muted);
+  }
+
+  /* Cards — sharp corners, hairline border, gold hover */
+  .ed-card {
+    background: var(--ed-card);
+    border: 1px solid var(--ed-border);
+    border-radius: var(--ed-radius);
+    transition: border-color 0.3s ease, transform 0.3s ease;
+  }
+  .ed-card:hover {
+    border-color: rgba(184, 150, 62, 0.5);
+  }
+
+  /* CTAs */
+  .ed-cta {
+    @apply inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm font-semibold uppercase tracking-wider transition-all duration-200;
+    border-radius: var(--ed-radius);
+  }
+  .ed-cta-primary {
+    @apply bg-white text-black hover:bg-[#e8e8e8];
+  }
+  .ed-cta-ghost {
+    color: var(--ed-gold-light);
+    border: 1px solid rgba(184, 150, 62, 0.55);
+  }
+  .ed-cta-ghost:hover {
+    border-color: var(--ed-gold-light);
+    background: rgba(184, 150, 62, 0.08);
+  }
+
+  /* Chips */
+  .ed-chip {
+    @apply inline-flex items-center px-2.5 py-1 text-[11px] uppercase tracking-wide;
+    color: var(--ed-muted);
+    border: 1px solid var(--ed-border);
+    border-radius: var(--ed-radius);
+  }
+
+  /* Fixed nav */
+  .ed-nav {
+    @apply fixed top-0 left-0 right-0 z-50;
+    background: rgba(13, 13, 13, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ed-border);
+  }
+  .ed-navlink {
+    @apply text-sm transition-colors;
+    color: var(--ed-muted);
+  }
+  .ed-navlink:hover,
+  .ed-navlink[data-active='true'] {
+    color: var(--ed-text);
+  }
+  .ed-navlink[data-active='true'] {
+    color: var(--ed-gold-light);
+  }
+}
+
+@layer utilities {
+  /* CSS scroll-reveal (used when JS/Framer not desired). */
+  .ed-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .ed-reveal[data-shown='true'] {
+    opacity: 1;
+    transform: none;
+  }
+  .ed-hairline {
+    border-color: var(--ed-border);
+  }
+}
+
+/* Respect reduced-motion across the editorial surfaces. */
+@media (prefers-reduced-motion: reduce) {
+  .ed-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
 /* Print Styles */
 @media print {
   /* Hide non-essential UI elements when printing */

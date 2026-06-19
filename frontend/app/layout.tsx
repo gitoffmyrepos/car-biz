@@ -1,14 +1,23 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Fraunces } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { CarBackgroundCarousel } from '@/components/ui/CarBackgroundCarousel';
+import { SiteJsonLd } from '@/components/site/SiteJsonLd';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
   weight: ['300', '400', '500', '600', '700', '800', '900'],
+});
+
+// Single self-served (Google subset) display family for editorial H1/H2.
+const display = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
@@ -57,8 +66,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${display.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased bg-glossy-black text-white min-h-screen relative" suppressHydrationWarning>
+        <SiteJsonLd />
         <CarBackgroundCarousel />
         <Providers>{children}</Providers>
       </body>

@@ -6,11 +6,13 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   images: {
+    // Marketing/fleet photos are served from MinIO/S3 (public bucket) and a
+    // CDN; the host varies by environment. Allow both schemes broadly for these
+    // public-read images. KYC/private buckets are never rendered via next/image.
     remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'http', hostname: '**' },
+      { protocol: 'https', hostname: '**' },
     ],
     // Modern image formats for better compression
     formats: ['image/avif', 'image/webp'],

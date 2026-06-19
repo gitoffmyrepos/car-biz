@@ -42,10 +42,24 @@ const config: Config = {
           light: '#1a1a1a',
           border: '#2a2a2a',
         },
+        // Champagne-gold editorial system (overhaul/fleet-redesign)
+        ink: {
+          DEFAULT: '#0D0D0D',
+          card: '#111111',
+        },
+        gold: {
+          DEFAULT: '#B8963E',
+          light: '#D4AF6A',
+        },
+        hairline: 'rgba(255,255,255,0.12)',
+        faint: 'rgba(255,255,255,0.55)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Georgia', 'serif'],
+      },
+      letterSpacing: {
+        eyebrow: '0.22em',
       },
       backgroundImage: {
         'gradient-glossy': 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)',

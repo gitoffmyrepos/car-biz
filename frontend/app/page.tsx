@@ -1,582 +1,248 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { useInView } from 'react-intersection-observer';
-import {
-  DollarSign,
-  Car,
-  Clock,
-  CheckCircle,
-  ArrowRight,
-  Users,
-  Sparkles,
-  Zap,
-  Shield,
-  Smartphone,
-} from 'lucide-react';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { ArrowRight } from 'lucide-react';
+import { SiteNav } from '@/components/site/SiteNav';
+import { SiteFooter } from '@/components/site/SiteFooter';
+import { Hero3D } from '@/components/site/Hero3D';
+import { Reveal } from '@/components/site/Reveal';
+import { FleetPreview } from '@/components/site/FleetPreview';
+import { FaqAccordion } from '@/components/site/FaqAccordion';
+import { GoldEyebrow, Section, PrimaryCta, GhostCta } from '@/components/site/primitives';
+
+const STATS = [
+  { value: '2,500+', label: 'Drivers helped' },
+  { value: '$150', label: 'Starting weekly' },
+  { value: '24h', label: 'Approval time' },
+  { value: '100%', label: 'Inspected fleet' },
+];
+
+const VALUES = [
+  {
+    title: 'Published weekly prices',
+    body: 'Every car shows its real weekly rate up front. No quotes, no haggling, no surprises at pickup.',
+  },
+  {
+    title: 'Built for gig work',
+    body: 'DoorDash, Uber, Lyft, delivery — our fleet is approved for rideshare and gig platforms out of the gate.',
+  },
+  {
+    title: 'No credit checks',
+    body: 'Approval is based on eligibility, not your credit score. Flexible terms, return the car when you are done.',
+  },
+];
+
+const PROCESS = [
+  { step: '01', title: 'Apply online', body: 'A short form with your basics. Under five minutes, no paperwork.' },
+  { step: '02', title: 'Get approved', body: 'We verify eligibility and approve within 24 hours. No credit check.' },
+  { step: '03', title: 'Pick up & drive', body: 'Choose your car, sign, and start earning the same day.' },
+];
+
+const REQUIREMENTS = [
+  'Valid driver license (1+ year)',
+  'Proof of gig / income source',
+  'Clean recent driving record',
+  'Refundable security deposit',
+];
+
+const FAQ = [
+  {
+    q: 'How much does it cost per week?',
+    a: 'Rates start at $150/week and vary by vehicle. Every car on the fleet page shows its exact weekly rate and security deposit.',
+  },
+  {
+    q: 'Do you run a credit check?',
+    a: 'No. Approval is based on your license, driving record, and gig/income eligibility — not your credit score.',
+  },
+  {
+    q: 'Can I use the car for DoorDash or Uber?',
+    a: 'Yes. The fleet is intended for rideshare and delivery work. Vehicles are maintained and inspected for gig use.',
+  },
+  {
+    q: 'Is there a long-term contract?',
+    a: 'No long-term commitment. Keep the car as long as you need it and return it whenever you are done.',
+  },
+  {
+    q: 'How fast can I get on the road?',
+    a: 'Most drivers are approved within 24 hours and can pick up the same day approval clears.',
+  },
+];
 
 export default function HomePage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const toggleMobileMenu = useCallback(() => {
-    setMobileMenuOpen((prev) => !prev);
-  }, []);
-
-  const closeMobileMenu = useCallback(() => {
-    setMobileMenuOpen(false);
-  }, []);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape' && mobileMenuOpen) {
-        setMobileMenuOpen(false);
-      }
-    },
-    [mobileMenuOpen]
-  );
-
-  // Animation hooks
-  const [statsRef, statsInView] = useInView({ threshold: 0.3, triggerOnce: true });
-  const [featuresRef, featuresInView] = useInView({ threshold: 0.2, triggerOnce: true });
-
   return (
-    <div className="min-h-screen text-white" onKeyDown={handleKeyDown} suppressHydrationWarning>
-      {/* Skip to main content */}
-      <a href="#main-content" className="skip-to-main">
-        Skip to main content
-      </a>
+    <div className="editorial min-h-screen">
+      <a href="#main" className="skip-to-main">Skip to main content</a>
+      <SiteNav />
 
-      {/* Glossy Navigation */}
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-glossy-dark/80 backdrop-blur-xl border-b border-glossy-border shadow-glossy"
-        role="navigation"
-        aria-label="Main navigation"
-        suppressHydrationWarning
-      >
-        <div className="container-luxury">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 group">
-              <motion.span
-                whileHover={{ scale: 1.05 }}
-                className="text-2xl md:text-3xl font-bold text-white"
-              >
-                FX<span className="text-gradient-glow">Weekly</span>
-              </motion.span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link
-                href="/how-it-works"
-                className="text-gray-300 hover:text-orange-500 transition-colors font-medium"
-              >
-                How It Works
-              </Link>
-              <Link
-                href="/fleet"
-                className="text-gray-300 hover:text-orange-500 transition-colors font-medium"
-              >
-                Available Cars
-              </Link>
-              <Link
-                href="/requirements"
-                className="text-gray-300 hover:text-orange-500 transition-colors font-medium"
-              >
-                Requirements
-              </Link>
-              <Link
-                href="/faq"
-                className="text-gray-300 hover:text-orange-500 transition-colors font-medium"
-              >
-                FAQ
-              </Link>
-              <ThemeToggle showDropdown />
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  href="/contact"
-                  className="btn btn-primary"
-                >
-                  Get Started
-                </Link>
-              </motion.div>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center space-x-2">
-              <ThemeToggle />
-              <button
-                className="p-2 rounded-lg hover:bg-glossy-light text-white transition-colors"
-                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-                aria-expanded={mobileMenuOpen}
-                aria-controls="mobile-menu"
-                onClick={toggleMobileMenu}
-              >
-                {mobileMenuOpen ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              id="mobile-menu"
-              className="md:hidden border-t border-glossy-border bg-glossy-dark/90 backdrop-blur-xl py-4"
-            >
-              <div className="flex flex-col space-y-2 px-4">
-                {['How It Works', 'Available Cars', 'Requirements', 'FAQ'].map((item, idx) => (
-                  <Link
-                    key={item}
-                    href={idx === 1 ? '/fleet' : `/${item.toLowerCase().replace(/ /g, '-')}`}
-                    className="text-gray-300 hover:text-orange-500 hover:bg-glossy-light px-3 py-2 rounded-lg transition-colors"
-                    onClick={closeMobileMenu}
-                  >
-                    {item}
-                  </Link>
-                ))}
-                <Link
-                  href="/contact"
-                  className="btn btn-primary mt-2 text-center"
-                  onClick={closeMobileMenu}
-                >
-                  Get Started
-                </Link>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </motion.nav>
-
-      {/* Hero Section */}
-      <main id="main-content" role="main">
-        <section className="relative pt-32 pb-20 md:pt-48 md:pb-40 overflow-hidden" suppressHydrationWarning>
-          {/* Animated Background with Orange Glow */}
-          <div className="absolute inset-0 bg-gradient-glossy" suppressHydrationWarning>
-            {/* Animated Orange Orbs */}
-            <motion.div
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.15, 0.25, 0.15],
-              }}
-              transition={{ duration: 8, repeat: Infinity }}
-              className="absolute top-0 left-0 w-[600px] h-[600px] bg-orange-500/30 rounded-full blur-[120px]"
-              suppressHydrationWarning
-            />
-            <motion.div
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.2, 0.3, 0.2],
-              }}
-              transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-              className="absolute bottom-0 right-0 w-[700px] h-[700px] bg-orange-600/20 rounded-full blur-[120px]"
-              suppressHydrationWarning
-            />
-          </div>
-
-          {/* Content */}
-          <div className="container-luxury relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                {/* Badge */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 backdrop-blur-sm rounded-full border border-orange-500/30 text-orange-500 mb-8"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span className="text-sm font-semibold">Affordable Weekly Car Leasing</span>
-                </motion.div>
-
-                <h1 className="heading-display text-white mb-6">
-                  <motion.span
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="block"
-                  >
-                    Get a Car Today.
-                  </motion.span>
-                  <motion.span
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="block text-gradient-glow mt-2"
-                  >
-                    Pay Weekly.
-                  </motion.span>
+      <main id="main">
+        {/* 3D Hero */}
+        <section className="relative min-h-[88vh] flex items-center overflow-hidden">
+          <Hero3D />
+          <div
+            className="absolute inset-0 z-[1] pointer-events-none"
+            style={{ background: 'linear-gradient(90deg, #0d0d0d 0%, rgba(13,13,13,0.65) 45%, rgba(13,13,13,0) 100%)' }}
+          />
+          <div className="ed-container relative z-10 pt-24 pb-16">
+            <div className="max-w-2xl">
+              <Reveal>
+                <GoldEyebrow index="01" label="Weekly car leasing" />
+              </Reveal>
+              <Reveal delay={0.05}>
+                <h1 className="ed-h1 mt-5 mb-6">
+                  Get a car today.<br />
+                  Pay <span className="ed-gold-word">weekly.</span>
                 </h1>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <p className="ed-muted text-lg max-w-xl mb-9 leading-relaxed">
+                  Reliable vehicles for gig and delivery drivers from $150/week. Published prices,
+                  real fleet, approval in 24 hours — no credit check.
+                </p>
+              </Reveal>
+              <Reveal delay={0.15}>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <PrimaryCta href="/contact">
+                    Apply now <ArrowRight className="w-4 h-4" />
+                  </PrimaryCta>
+                  <GhostCta href="/fleet">Browse the fleet</GhostCta>
+                </div>
+              </Reveal>
 
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  className="text-xl md:text-2xl text-gray-300 mb-4 max-w-3xl mx-auto leading-relaxed"
-                >
-                  Can't afford to buy a car? No problem. Lease a reliable vehicle and pay <span className="text-orange-500 font-bold">just $150/week</span>.
-                </motion.p>
-
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.9 }}
-                  className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto"
-                >
-                  Perfect for DoorDash, Uber, delivery drivers, and anyone who needs a car to work. No credit checks. No long-term commitment.
-                </motion.p>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.1 }}
-                  className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                >
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      href="/contact"
-                      className="group btn btn-primary text-lg px-8 py-4 w-full sm:w-auto inline-flex items-center gap-2"
-                    >
-                      Start Earning Today
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      href="/fleet"
-                      className="btn btn-outline text-lg px-8 py-4 w-full sm:w-auto"
-                    >
-                      See Available Cars
-                    </Link>
-                  </motion.div>
-                </motion.div>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Scroll Indicator */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.3 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-6 h-10 border-2 border-orange-500/50 rounded-full p-1"
-            >
-              <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mx-auto" />
-            </motion.div>
-          </motion.div>
-        </section>
-
-        {/* Stats Section */}
-        <section ref={statsRef} className="section relative overflow-hidden border-y border-glossy-border">
-          <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 to-transparent" />
-          <div className="container-luxury relative z-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[
-                { label: 'Drivers Helped', value: 2500, suffix: '+', icon: Users },
-                { label: 'Cars Available', value: 150, suffix: '+', icon: Car },
-                { label: 'Starting Weekly', value: 150, prefix: '$', icon: DollarSign },
-                { label: 'Same-Day Approval', value: 24, suffix: 'h', icon: Clock },
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={statsInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: index * 0.1 }}
-                  className="text-center group"
-                >
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-orange-500/10 rounded-2xl mb-4 group-hover:bg-orange-500/20 group-hover:scale-110 transition-all border border-orange-500/20">
-                    <stat.icon className="w-7 h-7 text-orange-500" />
-                  </div>
-                  <div className="text-4xl md:text-5xl font-bold text-gradient-glow mb-2">
-                    <AnimatedCounter end={stat.value} suffix={stat.suffix} prefix={stat.prefix} />
-                  </div>
-                  <div className="text-sm md:text-base text-gray-400 font-medium">
-                    {stat.label}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Why Choose Us */}
-        <section ref={featuresRef} className="section">
-          <div className="container-luxury">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="heading-section text-white mb-4">
-                Why Drivers Choose FX Weekly
-              </h2>
-              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                We make it easy for you to get on the road and start earning money
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                  icon: DollarSign,
-                  title: 'Just $150/Week',
-                  description:
-                    'Affordable weekly payments that fit your budget. No huge upfront costs. Pay as you drive and earn.',
-                  color: 'from-green-500 to-emerald-500',
-                },
-                {
-                  icon: Zap,
-                  title: 'Quick Approval',
-                  description:
-                    'Get approved in 24 hours and start driving today. No complicated credit checks or long waits.',
-                  color: 'from-orange-500 to-yellow-500',
-                },
-                {
-                  icon: Shield,
-                  title: 'Flexible Terms',
-                  description:
-                    'No long-term contracts. Keep the car as long as you need it. Return it whenever you want.',
-                  color: 'from-blue-500 to-cyan-500',
-                },
-              ].map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={featuresInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: index * 0.2 }}
-                  whileHover={{ y: -8 }}
-                  className="relative group"
-                >
-                  <div className="card card-hover text-center relative overflow-hidden">
-                    {/* Glow Effect on Hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    <div className="relative z-10">
-                      <div className={`w-16 h-16 mx-auto mb-6 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center shadow-orange-glow group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                        <feature.icon className="w-8 h-8 text-white" />
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 text-white">
-                        {feature.title}
-                      </h3>
-                      <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+              {/* Credibility strip */}
+              <Reveal delay={0.2}>
+                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px mt-14 border ed-hairline">
+                  {STATS.map((s) => (
+                    <div key={s.label} className="bg-ink-card p-5">
+                      <dd className="font-display text-2xl md:text-3xl font-semibold text-gold-light">{s.value}</dd>
+                      <dt className="ed-muted text-xs uppercase tracking-wide mt-1">{s.label}</dt>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  ))}
+                </dl>
+              </Reveal>
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section className="section">
-          <div className="container-luxury">
-            <div className="text-center mb-16">
-              <h2 className="heading-section text-white mb-4">
-                Get On The Road in 3 Easy Steps
-              </h2>
-              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                Start earning money with your own car in less than 24 hours
-              </p>
+        {/* 01 — Why */}
+        <Section className="border-t ed-hairline">
+          <Reveal><GoldEyebrow index="01" label="Why FX Weekly" /></Reveal>
+          <Reveal delay={0.05}>
+            <h2 className="ed-h2 mt-5 mb-14 max-w-2xl">Everything vznrentals lacks, plus a real fleet.</h2>
+          </Reveal>
+          <div className="grid md:grid-cols-3 gap-px border ed-hairline">
+            {VALUES.map((v, i) => (
+              <Reveal key={v.title} delay={i * 0.08}>
+                <div className="ed-card h-full p-8" style={{ border: 'none' }}>
+                  <h3 className="font-display text-xl font-medium mb-3">{v.title}</h3>
+                  <p className="ed-muted text-sm leading-relaxed">{v.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </Section>
+
+        {/* 02 — Process */}
+        <Section className="border-t ed-hairline">
+          <Reveal><GoldEyebrow index="02" label="Process" /></Reveal>
+          <Reveal delay={0.05}>
+            <h2 className="ed-h2 mt-5 mb-14 max-w-2xl">On the road in three steps.</h2>
+          </Reveal>
+          <div className="grid md:grid-cols-3 gap-10">
+            {PROCESS.map((p, i) => (
+              <Reveal key={p.step} delay={i * 0.08}>
+                <div className="border-t-2 pt-6" style={{ borderColor: 'var(--ed-gold)' }}>
+                  <span className="font-display text-4xl font-semibold text-gold-light">{p.step}</span>
+                  <h3 className="font-display text-xl font-medium mt-3 mb-2">{p.title}</h3>
+                  <p className="ed-muted text-sm leading-relaxed">{p.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </Section>
+
+        {/* 03 — Fleet preview */}
+        <Section className="border-t ed-hairline">
+          <div className="flex items-end justify-between mb-12 gap-6 flex-wrap">
+            <div>
+              <Reveal><GoldEyebrow index="03" label="The fleet" /></Reveal>
+              <Reveal delay={0.05}>
+                <h2 className="ed-h2 mt-5 max-w-xl">Real cars. Real weekly prices.</h2>
+              </Reveal>
             </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                { step: 1, title: 'Apply Online', description: 'Fill out a simple form with your basic info. Takes less than 5 minutes.', icon: Smartphone },
-                { step: 2, title: 'Get Approved', description: 'We review your application and approve you within 24 hours. No credit check needed.', icon: CheckCircle },
-                { step: 3, title: 'Start Driving', description: 'Pick up your car and start working immediately. Begin earning money the same day.', icon: Car },
-              ].map((item, index) => (
-                <motion.div
-                  key={item.step}
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.2 }}
-                  className="relative"
-                >
-                  {/* Connecting Line */}
-                  {index < 2 && (
-                    <div className="hidden md:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-orange-500 to-transparent -z-10" />
-                  )}
-
-                  <div className="card text-center hover:border-orange-500/50 transition-all">
-                    <div className="relative inline-block mb-6">
-                      <div className="w-20 h-20 bg-gradient-orange rounded-2xl flex items-center justify-center font-bold text-3xl text-white shadow-orange-glow">
-                        <item.icon className="w-10 h-10" />
-                      </div>
-                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-glossy-black">
-                        {item.step}
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 text-white">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-400">{item.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <Link href="/how-it-works" className="inline-flex items-center gap-2 text-orange-500 font-semibold hover:text-orange-400 transition-colors group">
-                Learn More About Our Process
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Reveal delay={0.1}>
+              <Link href="/fleet" className="ed-navlink inline-flex items-center gap-2 text-gold-light hover:text-white">
+                View full fleet <ArrowRight className="w-4 h-4" />
               </Link>
+            </Reveal>
+          </div>
+          <FleetPreview />
+        </Section>
+
+        {/* 04 — Requirements */}
+        <Section className="border-t ed-hairline">
+          <div className="grid md:grid-cols-2 gap-12 items-start">
+            <div>
+              <Reveal><GoldEyebrow index="04" label="Requirements" /></Reveal>
+              <Reveal delay={0.05}>
+                <h2 className="ed-h2 mt-5 mb-6 max-w-md">What you need to qualify.</h2>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <p className="ed-muted text-sm leading-relaxed mb-6 max-w-md">
+                  Approval is fast and based on eligibility, not credit. See the full list before you apply.
+                </p>
+                <GhostCta href="/requirements">Full requirements</GhostCta>
+              </Reveal>
             </div>
+            <Reveal delay={0.1}>
+              <ul className="border-t ed-hairline">
+                {REQUIREMENTS.map((r) => (
+                  <li key={r} className="border-b ed-hairline py-4 flex items-center gap-4">
+                    <span className="text-gold-light font-display">—</span>
+                    <span className="text-sm">{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
           </div>
-        </section>
+        </Section>
 
-        {/* CTA Section */}
-        <section className="section relative overflow-hidden border-t border-glossy-border">
-          {/* Background */}
-          <div className="absolute inset-0 bg-gradient-glossy">
-            <motion.div
-              animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
-              transition={{ duration: 8, repeat: Infinity }}
-              className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-500/30 rounded-full blur-[120px]"
-            />
+        {/* 05 — FAQ */}
+        <Section className="border-t ed-hairline">
+          <div className="grid md:grid-cols-[0.4fr_0.6fr] gap-12">
+            <div>
+              <Reveal><GoldEyebrow index="05" label="FAQ" /></Reveal>
+              <Reveal delay={0.05}>
+                <h2 className="ed-h2 mt-5 max-w-xs">Questions, answered.</h2>
+              </Reveal>
+            </div>
+            <Reveal delay={0.08}>
+              <FaqAccordion items={FAQ} />
+            </Reveal>
           </div>
+        </Section>
 
-          <div className="container-luxury text-center relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="heading-section text-white mb-4">
-                Ready to Start Earning?
-              </h2>
-              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of drivers who are already making money with FX Weekly. Get your car today and start driving tomorrow.
+        {/* Final CTA band */}
+        <section className="border-t ed-hairline" style={{ background: 'var(--ed-card)' }}>
+          <div className="ed-container py-24 text-center">
+            <Reveal>
+              <h2 className="ed-h2 mb-5">Ready to start earning?</h2>
+            </Reveal>
+            <Reveal delay={0.05}>
+              <p className="ed-muted max-w-xl mx-auto mb-9">
+                Apply today, get approved tomorrow, and drive the same day. No credit check, no long-term contract.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    href="/contact"
-                    className="group btn btn-primary text-lg px-8 py-4 w-full sm:w-auto inline-flex items-center gap-2"
-                  >
-                    Apply Now
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    href="/fleet"
-                    className="btn btn-outline text-lg px-8 py-4 w-full sm:w-auto"
-                  >
-                    View Cars
-                  </Link>
-                </motion.div>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <PrimaryCta href="/contact">Apply now <ArrowRight className="w-4 h-4" /></PrimaryCta>
+                <GhostCta href="/fleet">See available cars</GhostCta>
               </div>
-            </motion.div>
+            </Reveal>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-glossy-darker text-white py-16 relative overflow-hidden border-t border-glossy-border">
-        <div className="absolute inset-0 bg-gradient-to-t from-glossy-black to-transparent" />
-        <div className="container-luxury relative z-10">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            {/* Brand */}
-            <div className="md:col-span-1">
-              <Link href="/" className="text-3xl font-bold inline-block mb-4">
-                FX<span className="text-gradient-glow">Weekly</span>
-              </Link>
-              <p className="text-gray-400 leading-relaxed">
-                Affordable weekly car leasing for gig workers and drivers.
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h4 className="font-bold mb-4 text-lg text-white">Company</h4>
-              <ul className="space-y-3">
-                {['How It Works', 'Available Cars', 'Requirements', 'FAQ'].map((item, idx) => (
-                  <li key={item}>
-                    <Link
-                      href={idx === 1 ? '/fleet' : `/${item.toLowerCase().replace(/ /g, '-')}`}
-                      className="text-gray-400 hover:text-orange-500 transition-colors inline-flex items-center gap-2 group"
-                    >
-                      <CheckCircle className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h4 className="font-bold mb-4 text-lg text-white">Legal</h4>
-              <ul className="space-y-3">
-                {['Terms of Service', 'Privacy Policy', 'GPS Disclosure'].map((item) => (
-                  <li key={item}>
-                    <Link
-                      href={`/${item.toLowerCase().replace(/ of | /g, '-')}`}
-                      className="text-gray-400 hover:text-orange-500 transition-colors inline-flex items-center gap-2 group"
-                    >
-                      <CheckCircle className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h4 className="font-bold mb-4 text-lg text-white">Contact</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <a href="mailto:support@fxweekly.com" className="hover:text-orange-500 transition-colors">
-                    support@fxweekly.com
-                  </a>
-                </li>
-                <li>
-                  <a href="tel:+15551234567" className="hover:text-orange-500 transition-colors">
-                    (555) 123-4567
-                  </a>
-                </li>
-              </ul>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="mt-4">
-                <Link href="/contact" className="btn btn-primary w-full text-center">
-                  Get Started
-                </Link>
-              </motion.div>
-            </div>
-          </div>
-
-          <div className="border-t border-glossy-border pt-8 text-center text-gray-500 text-sm">
-            <p>&copy; 2026 FX Weekly Lease. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
