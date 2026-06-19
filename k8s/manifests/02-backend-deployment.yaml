@@ -39,7 +39,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: backend
-        image: nexus.strategybase.io:8082/sb-custom-docker-images/fx-weekly-lease-backend:${IMAGE_TAG:-latest}
+        image: harbor.strategybase.io/sb-custom-docker-images/car-biz-backend:prod-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
