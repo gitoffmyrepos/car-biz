@@ -152,7 +152,7 @@ spec:
             drop:
             - ALL
       imagePullSecrets:
-      - name: nexus-registry-secret
+      - name: harbor-registry-secret
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch

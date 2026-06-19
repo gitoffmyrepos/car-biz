@@ -1,0 +1,178 @@
+# PostgreSQL for FX Weekly Lease (car-biz)
+# Dedicated, single-replica Postgres in-namespace (fx-weekly-lease-prod).
+# The ConfigMap (01-configmap.yaml) points the backend at:
+#   POSTGRES_HOST: postgresql-service.fx-weekly-lease-prod.svc.cluster.local
+#   POSTGRES_PORT: 5432
+#   POSTGRES_DB:   fx_weekly_lease
+# Credentials are sourced from the Vault-backed ExternalSecret
+# `fx-weekly-lease-secrets` (06-external-secrets.yaml), keys:
+#   database-user, database-password, database-name
+#
+# =============================================================================
+# OPERATOR — Vault properties that MUST be populated before deploy
+# =============================================================================
+#   fx-weekly-lease/prod/database = { url, user, password, database }
+#       url      -> postgresql+asyncpg://<user>:<password>@postgresql-service.fx-weekly-lease-prod.svc.cluster.local:5432/fx_weekly_lease
+#       user     -> e.g. fx_weekly_lease
+#       password -> generated strong password
+#       database -> fx_weekly_lease   (must match POSTGRES_DB in the ConfigMap)
+#   fx-weekly-lease/prod/redis    = { url, password }
+#   fx-weekly-lease/common/harbor = { username, password }   (operator-minted harbor robot account)
+#   fx-weekly-lease/prod/minio    = { access_key, secret_key } (scoped key for bucket car-biz-vehicle-images)
+# =============================================================================
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-data
+  labels:
+    app: fx-weekly-lease
+    component: postgresql
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fx-weekly-lease-postgresql
+  labels:
+    app: fx-weekly-lease
+    component: postgresql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: fx-weekly-lease
+      component: postgresql
+  template:
+    metadata:
+      labels:
+        app: fx-weekly-lease
+        component: postgresql
+    spec:
+      serviceAccountName: fx-weekly-lease-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+      - name: postgresql
+        image: postgres:16-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+          name: postgresql
+          protocol: TCP
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: database-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: database-password
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: database-name
+        # data dir lives in a subPath so the PVC root (lost+found etc.) does not
+        # collide with initdb's empty-dir requirement
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h 127.0.0.1
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 30
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+          subPath: pgdata
+        - name: tmp
+          mountPath: /tmp
+        - name: run
+          mountPath: /var/run/postgresql
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 70
+          runAsGroup: 70
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: postgresql-data
+        persistentVolumeClaim:
+          claimName: postgresql-data
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
+      - name: run
+        emptyDir:
+          sizeLimit: 50Mi
+---
+# PostgreSQL Service — name MUST match the ConfigMap POSTGRES_HOST
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-service
+  labels:
+    app: fx-weekly-lease
+    component: postgresql
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgresql
+  selector:
+    app: fx-weekly-lease
+    component: postgresql

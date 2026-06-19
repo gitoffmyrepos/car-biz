@@ -1,0 +1,156 @@
+# Redis for FX Weekly Lease (car-biz)
+# Dedicated, single-replica Redis in-namespace (fx-weekly-lease-prod).
+# The ConfigMap (01-configmap.yaml) points the backend at:
+#   REDIS_HOST: redis-service.fx-weekly-lease-prod.svc.cluster.local
+#   REDIS_PORT: 6379
+# The password is sourced from the Vault-backed ExternalSecret
+# `fx-weekly-lease-secrets` (06-external-secrets.yaml), key: redis-password.
+# AOF persistence is enabled on a small PVC.
+#
+# =============================================================================
+# OPERATOR — Vault properties that MUST be populated before deploy
+# =============================================================================
+#   fx-weekly-lease/prod/redis    = { url, password }
+#       url      -> redis://:<password>@redis-service.fx-weekly-lease-prod.svc.cluster.local:6379/0
+#       password -> generated strong password (also used by --requirepass below)
+#   fx-weekly-lease/prod/database = { url, user, password, database }
+#   fx-weekly-lease/common/harbor = { username, password }   (operator-minted harbor robot account)
+#   fx-weekly-lease/prod/minio    = { access_key, secret_key } (scoped key for bucket car-biz-vehicle-images)
+# =============================================================================
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  labels:
+    app: fx-weekly-lease
+    component: redis
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fx-weekly-lease-redis
+  labels:
+    app: fx-weekly-lease
+    component: redis
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: fx-weekly-lease
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: fx-weekly-lease
+        component: redis
+    spec:
+      serviceAccountName: fx-weekly-lease-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 6379
+          name: redis
+          protocol: TCP
+        # Password is read from the env var REDIS_PASSWORD (Vault-backed secret)
+        # and passed to redis-server via --requirepass. AOF persistence on.
+        command:
+        - sh
+        - -c
+        - exec redis-server --requirepass "$REDIS_PASSWORD" --appendonly yes --dir /data
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: redis-password
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+          initialDelaySeconds: 20
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 20
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-data
+---
+# Redis Service — name MUST match the ConfigMap REDIS_HOST
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  labels:
+    app: fx-weekly-lease
+    component: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: fx-weekly-lease
+    component: redis

@@ -6,7 +6,7 @@ kind: Kustomization
 metadata:
   name: fx-weekly-lease
 
-namespace: fx-weekly-lease-dev
+namespace: fx-weekly-lease-prod
 
 labels:
 - includeSelectors: true
@@ -21,13 +21,17 @@ resources:
 - 04-ingress.yaml
 - 05-network-policies.yaml
 - 06-external-secrets.yaml
+- 07-postgres.yaml
+- 08-redis.yaml
+- 09-migrate-job.yaml
 
-# Image customization (set via CI/CD)
+# Image customization (set via CI/CD).
+# Images are pulled from Harbor; deployments pin prod-latest by default.
 images:
-- name: nexus.strategybase.io:8082/sb-custom-docker-images/fx-weekly-lease-backend
-  newTag: latest-dev
-- name: nexus.strategybase.io:8082/sb-custom-docker-images/fx-weekly-lease-frontend
-  newTag: latest-dev
+- name: harbor.strategybase.io/sb-custom-docker-images/car-biz-backend
+  newTag: prod-latest
+- name: harbor.strategybase.io/sb-custom-docker-images/car-biz-frontend
+  newTag: prod-latest
 
 # Common annotations
 commonAnnotations:

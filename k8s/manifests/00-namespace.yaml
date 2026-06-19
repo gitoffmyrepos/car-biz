@@ -1,13 +1,12 @@
-# Namespace for FX Weekly Lease Application
-# Follows FX homelab naming conventions
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: fx-weekly-lease-dev
-  labels:
-    app: fx-weekly-lease
-    environment: dev
----
+# Namespace for FX Weekly Lease (car-biz) — PROD.
+# Follows FX homelab naming conventions.
+#
+# 2026-06-19: reduced to a single (prod) namespace + SA. The kustomization's
+# `namespace:` transformer rewrites every resource's namespace AND every
+# Namespace object's name; having both a dev and a prod Namespace here made the
+# transformer collapse both to one name -> "namespace transformation produces ID
+# conflict". A dev environment, if needed later, belongs in a separate overlay,
+# not duplicated in this base.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -16,15 +15,7 @@ metadata:
     app: fx-weekly-lease
     environment: prod
 ---
-# ServiceAccount for the application
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: fx-weekly-lease-sa
-  namespace: fx-weekly-lease-dev
-  labels:
-    app: fx-weekly-lease
----
+# ServiceAccount for the application (Vault k8s-auth role binds to this SA).
 apiVersion: v1
 kind: ServiceAccount
 metadata:

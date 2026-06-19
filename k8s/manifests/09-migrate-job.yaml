@@ -1,0 +1,148 @@
+# Database migration Job for FX Weekly Lease (car-biz)
+# Runs `alembic upgrade head` using the backend image so the schema
+# (incl. migration 002 vehicle_images) is applied before/with the rollout.
+#
+# Alembic reads settings.DATABASE_URL (backend/alembic/env.py), so this Job
+# wires the same ConfigMap + DATABASE_URL secret as the backend Deployment.
+#
+# Ordering: this Job must run AFTER Postgres is ready (07-postgres.yaml) and
+# BEFORE / alongside the backend rollout. The wait-for-postgres init container
+# blocks until TCP 5432 on postgresql-service answers, so it is safe to apply
+# the whole kustomization at once. The Job is idempotent (alembic skips
+# already-applied revisions) and can be re-run after each new migration.
+#
+# NOTE: helm-style hook annotations are included as documentation for an
+# ArgoCD/Helm deploy. Under a plain `kubectl apply -k`, kustomize treats this
+# as an ordinary Job; delete the completed Job before re-applying, or bump the
+# `job-revision` label, since Job pod templates are immutable.
+#
+# OPERATOR — see 07-postgres.yaml header for the full list of Vault properties.
+# This Job consumes: fx-weekly-lease/prod/database property `url`
+# (exposed as secret key database-url -> env DATABASE_URL).
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fx-weekly-lease-migrate
+  labels:
+    app: fx-weekly-lease
+    component: migrate
+  annotations:
+    # ArgoCD: run as a Sync hook before the rest of the app is healthy.
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    # Helm equivalents (no-op under kubectl/kustomize):
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 6
+  # Clean up finished migration Jobs after 1h (avoids immutable-template
+  # collisions on re-apply).
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: fx-weekly-lease
+        component: migrate
+    spec:
+      serviceAccountName: fx-weekly-lease-sa
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      # Block until Postgres is accepting connections before running alembic.
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:16-alpine
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
+            echo "waiting for postgres at $POSTGRES_HOST:$POSTGRES_PORT ..."
+            sleep 2
+          done
+          echo "postgres is ready"
+        envFrom:
+        - configMapRef:
+            name: fx-weekly-lease-config
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: database-user
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 70
+          runAsGroup: 70
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      containers:
+      - name: migrate
+        image: harbor.strategybase.io/sb-custom-docker-images/car-biz-backend:prod-latest
+        imagePullPolicy: Always
+        # Run from the backend app dir where alembic.ini lives.
+        command:
+        - alembic
+        - upgrade
+        - head
+        envFrom:
+        - configMapRef:
+            name: fx-weekly-lease-config
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: redis-url
+        - name: VAULT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: vault-token
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
