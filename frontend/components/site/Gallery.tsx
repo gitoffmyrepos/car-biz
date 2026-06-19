@@ -5,12 +5,14 @@
  * single silhouette when no images exist.
  */
 import { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { type FleetImage as FleetImageType } from '@/lib/fleet';
 import { FleetImage } from './FleetImage';
 
 export function Gallery({ images, alt }: { images: FleetImageType[]; alt: string }) {
   const ordered = [...images].sort((a, b) => a.sort_order - b.sort_order);
   const [active, setActive] = useState(0);
+  const reduce = useReducedMotion();
 
   const go = useCallback(
     (dir: number) => {
@@ -40,7 +42,22 @@ export function Gallery({ images, alt }: { images: FleetImageType[]; alt: string
   return (
     <div className="group" tabIndex={0} onKeyDown={onKey} aria-label={`${alt} image gallery`}>
       <div className="relative aspect-[16/10] bg-ink border ed-hairline overflow-hidden">
-        <FleetImage src={current?.url} alt={`${alt} — photo ${active + 1}`} sizes="(max-width: 1024px) 100vw, 60vw" priority />
+        {reduce ? (
+          <FleetImage src={current?.url} alt={`${alt} — photo ${active + 1}`} sizes="(max-width: 1024px) 100vw, 60vw" priority />
+        ) : (
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={current?.id ?? active}
+              className="absolute inset-0"
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <FleetImage src={current?.url} alt={`${alt} — photo ${active + 1}`} sizes="(max-width: 1024px) 100vw, 60vw" priority />
+            </motion.div>
+          </AnimatePresence>
+        )}
         {ordered.length > 1 && (
           <>
             <button

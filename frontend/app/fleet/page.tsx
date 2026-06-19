@@ -8,6 +8,7 @@ import { SiteNav } from '@/components/site/SiteNav';
 import { SiteFooter } from '@/components/site/SiteFooter';
 import { FleetFilters } from '@/components/site/FleetFilters';
 import { FleetCard } from '@/components/site/FleetCard';
+import { Reveal } from '@/components/site/Reveal';
 import { GoldEyebrow, GhostCta } from '@/components/site/primitives';
 import { fetchFleet, type FleetFilters as Filters, type FleetSort } from '@/lib/fleet';
 
@@ -69,8 +70,10 @@ export default async function FleetPage({ searchParams }: { searchParams: Search
           <div className="ed-container">
             {cars.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {cars.map((car) => (
-                  <FleetCard key={car.id} car={car} />
+                {cars.map((car, i) => (
+                  <Reveal key={car.id} delay={Math.min(i, 8) * 0.06}>
+                    <FleetCard car={car} />
+                  </Reveal>
                 ))}
               </div>
             ) : (

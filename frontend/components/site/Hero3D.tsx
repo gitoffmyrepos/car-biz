@@ -7,9 +7,26 @@
  * for: prefers-reduced-motion, no-WebGL environments, and any canvas/runtime
  * failure (caught by the error boundary). Canvas failure must never produce a
  * blank/white screen — the poster stays.
+ *
+ * Scroll-driven motion: when a `scrollTargetRef` (the hero section) is provided,
+ * Framer's useScroll tracks its progress through the viewport and feeds a 0..1
+ * value into the R3F scene's camera dolly + car yaw via a mutable ref (so the
+ * render loop reads it without React re-renders). Disabled under reduced motion.
+ *
+ * The heavy three/postprocessing scene is dynamically imported (ssr:false) so it
+ * stays code-split out of the first-load JS bundle.
  */
 import dynamic from 'next/dynamic';
-import { Component, Suspense, useEffect, useState, type ReactNode } from 'react';
+import {
+  Component,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
+import { useScroll, useMotionValueEvent, useReducedMotion } from 'framer-motion';
 
 const HeroScene = dynamic(() => import('./HeroScene'), {
   ssr: false,
@@ -62,23 +79,30 @@ function webglSupported(): boolean {
   }
 }
 
-export function Hero3D() {
+export function Hero3D({ scrollTargetRef }: { scrollTargetRef?: RefObject<HTMLElement> }) {
   const [enable3D, setEnable3D] = useState(false);
+  const reduce = useReducedMotion();
+  const scrollProgress = useRef(0);
+
+  // Track scroll progress of the hero section into a plain ref (no re-render).
+  const { scrollYProgress } = useScroll({
+    target: scrollTargetRef,
+    offset: ['start start', 'end start'],
+  });
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    scrollProgress.current = reduce ? 0 : v;
+  });
 
   useEffect(() => {
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!reduced && webglSupported()) setEnable3D(true);
-  }, []);
+    if (!reduce && webglSupported()) setEnable3D(true);
+  }, [reduce]);
 
   return (
     <div className="absolute inset-0 z-0">
       {enable3D ? (
         <CanvasErrorBoundary>
           <Suspense fallback={<HeroPoster />}>
-            <HeroScene />
+            <HeroScene scroll={scrollProgress} />
           </Suspense>
         </CanvasErrorBoundary>
       ) : (
