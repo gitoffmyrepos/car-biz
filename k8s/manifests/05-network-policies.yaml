@@ -161,7 +161,7 @@ spec:
     ports:
     - protocol: TCP
       port: 9000
-  # Allow egress to Keycloak
+  # Allow egress to in-cluster Keycloak if it is reintroduced.
   - to:
     - namespaceSelector:
         matchLabels:
@@ -169,6 +169,13 @@ spec:
     ports:
     - protocol: TCP
       port: 8080
+  # Allow egress to the current Keycloak host fronted by NPM on docker-host 246.
+  - to:
+    - ipBlock:
+        cidr: 192.168.119.246/32
+    ports:
+    - protocol: TCP
+      port: 443
   # Allow DNS lookups
   - to:
     - namespaceSelector: {}

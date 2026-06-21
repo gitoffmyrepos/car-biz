@@ -64,8 +64,8 @@ data:
 
   # Keycloak/OIDC Configuration
   KEYCLOAK_HOST: "keycloak.auth.svc.cluster.local"
-  KEYCLOAK_REALM: "fx-weekly-lease"
-  OIDC_ISSUER_URL: "https://auth.strategybase.io/realms/fx-weekly-lease"
+  KEYCLOAK_REALM: "strategybase"
+  OIDC_ISSUER_URL: "https://keycloak.strategybase.io/realms/strategybase"
   OIDC_CLIENT_ID: "fx-weekly-lease-app"
 
   # Rate Limiting
