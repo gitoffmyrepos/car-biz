@@ -22,6 +22,14 @@ RUN NODE_OPTIONS="--dns-result-order=ipv4first --max-old-space-size=4096" \
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# NEXT_PUBLIC_* are inlined into the client bundle at build time, so they must
+# be present BEFORE `next build`. Single-level api subdomain (CF Universal SSL
+# covers *.strategybase.io but not the 2-level api.weekly-lease).
+ARG NEXT_PUBLIC_API_URL=https://weekly-lease-api.strategybase.io
+ARG NEXT_PUBLIC_API_BASE_URL=https://weekly-lease-api.strategybase.io/api
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
 ARG CACHE_BUST
 RUN echo "cache-bust: $CACHE_BUST"  # busts the source COPY below per build
 COPY . .
