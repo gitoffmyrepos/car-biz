@@ -304,7 +304,7 @@ export function PrintableInvoice({
         <div className="invoice-footer text-center text-sm text-gray-500 mt-8 pt-4 border-t border-gray-200">
           <p>Thank you for your business!</p>
           <p className="mt-1">
-            Questions? Contact us at support@fxweekly.com or call (555) 123-4567
+            Questions? Contact us at support@gigwheels.com or call (555) 123-4567
           </p>
         </div>
       </div>

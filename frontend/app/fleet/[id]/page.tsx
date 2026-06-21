@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { SiteNav } from '@/components/site/SiteNav';
 import { SiteFooter } from '@/components/site/SiteFooter';
 import { Gallery } from '@/components/site/Gallery';
-import { GoldEyebrow, PrimaryCta, GhostCta } from '@/components/site/primitives';
+import { Eyebrow, PrimaryCta, GhostCta } from '@/components/site/primitives';
 import {
   fetchVehicle,
   formatWeeklyRate,
@@ -20,7 +20,7 @@ import {
   isAvailable,
 } from '@/lib/fleet';
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://fxweekly.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://gigwheels.com';
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const car = await fetchVehicle(params.id);
@@ -133,7 +133,7 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
 
           {/* Details */}
           <div>
-            <GoldEyebrow
+            <Eyebrow
               label={isAvailable(car.status) ? 'Available now' : statusLabel(car.status)}
             />
             <h1 className="ed-h2 mt-4 mb-6">{title}</h1>

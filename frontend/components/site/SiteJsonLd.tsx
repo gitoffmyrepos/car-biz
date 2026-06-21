@@ -2,7 +2,7 @@
  * Site-wide CarRental JSON-LD (org / contact / areaServed / priceRange).
  * Rendered once in the root layout. Server component.
  */
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://fxweekly.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://gigwheels.com';
 
 export function SiteJsonLd() {
   const data = {
@@ -17,7 +17,7 @@ export function SiteJsonLd() {
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      email: 'support@fxweekly.com',
+      email: 'support@gigwheels.com',
       telephone: '+1-555-123-4567',
     },
   };

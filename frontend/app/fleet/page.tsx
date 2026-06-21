@@ -9,7 +9,7 @@ import { SiteFooter } from '@/components/site/SiteFooter';
 import { FleetFilters } from '@/components/site/FleetFilters';
 import { FleetCard } from '@/components/site/FleetCard';
 import { Reveal } from '@/components/site/Reveal';
-import { GoldEyebrow, GhostCta } from '@/components/site/primitives';
+import { Eyebrow, GhostCta } from '@/components/site/primitives';
 import { fetchFleet, type FleetFilters as Filters, type FleetSort } from '@/lib/fleet';
 
 export const dynamic = 'force-dynamic';
@@ -47,7 +47,7 @@ export default async function FleetPage({ searchParams }: { searchParams: Search
         {/* Header */}
         <section className="ed-section pb-10">
           <div className="ed-container">
-            <GoldEyebrow index="03" label="The fleet" />
+            <Eyebrow index="03" label="The fleet" />
             <h1 className="ed-h1 mt-5 mb-4">Browse the fleet.</h1>
             <p className="ed-muted max-w-xl">
               Every car shows its real weekly rate and specs. Filter by body type and price, then apply to the one you want.
@@ -78,7 +78,7 @@ export default async function FleetPage({ searchParams }: { searchParams: Search
               </div>
             ) : (
               <div className="border ed-hairline p-12 text-center">
-                <GoldEyebrow label="Fleet updating" />
+                <Eyebrow label="Fleet updating" />
                 <h2 className="font-display text-2xl font-medium mt-4 mb-3">
                   {hasFilters ? 'No cars match those filters' : 'Our fleet is updating'}
                 </h2>

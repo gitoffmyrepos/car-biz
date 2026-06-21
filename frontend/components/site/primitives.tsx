@@ -1,16 +1,19 @@
 /**
- * Editorial design-system primitives (champagne-gold / dark / sharp corners).
+ * Editorial design-system primitives (black / white / red / sharp corners).
  * Server-component-safe (no hooks). Used across public-facing surfaces.
  */
 import Link from 'next/link';
 
-export function GoldEyebrow({ index, label }: { index?: string; label: string }) {
+export function Eyebrow({ index, label }: { index?: string; label: string }) {
   return (
     <span className="ed-eyebrow">
       {index ? `${index} — ${label}` : label}
     </span>
   );
 }
+
+/** @deprecated Use {@link Eyebrow}. Kept as alias during the rebrand. */
+export const GoldEyebrow = Eyebrow;
 
 export function Section({
   id,

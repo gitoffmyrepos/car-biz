@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { fetchFleet } from '@/lib/fleet';
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://fxweekly.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://gigwheels.com';
 
 const STATIC_PATHS = ['', '/fleet', '/how-it-works', '/requirements', '/faq', '/contact', '/terms', '/privacy', '/gps-disclosure'];
 

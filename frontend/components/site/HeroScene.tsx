@@ -5,9 +5,9 @@
  *
  * Composition: stylized sports car (GLB if present, else procedural low-poly)
  * on a reflective stage with drei <Environment preset="night"/> for PBR
- * reflections, gold key + rim lights, <ContactShadows> grounding, a subtle
+ * reflections, red key + rim lights, <ContactShadows> grounding, a subtle
  * <Float> bob, slow auto-rotate, mouse-parallax camera, and a clamped Bloom +
- * Vignette pass for a tasteful gold glow (kept low so overlaid text stays
+ * Vignette pass for a tasteful red glow (kept low so overlaid text stays
  * readable). A `scroll` prop (0..1, fed by the hero's scroll progress in
  * Hero3D) dollies the camera in and adds extra car yaw.
  *
@@ -109,18 +109,18 @@ export default function HeroScene({ scroll }: { scroll?: React.MutableRefObject<
       <color attach="background" args={['#0d0d0d']} />
       <fog attach="fog" args={['#0d0d0d', 8, 18]} />
 
-      {/* Lighting: gold key + cool rim on near-black */}
+      {/* Lighting: red key + cool rim on near-black */}
       <ambientLight intensity={0.25} />
       <spotLight
         position={[5, 6, 4]}
         angle={0.5}
         penumbra={0.8}
         intensity={2.4}
-        color="#D4AF6A"
+        color="#FF3B40"
         castShadow
         shadow-mapSize={[1024, 1024]}
       />
-      <pointLight position={[-6, 2, -4]} intensity={1.1} color="#B8963E" />
+      <pointLight position={[-6, 2, -4]} intensity={1.1} color="#E11D2A" />
       <pointLight position={[0, 1, 6]} intensity={0.5} color="#ffffff" />
 
       <Suspense fallback={null}>
@@ -140,7 +140,7 @@ export default function HeroScene({ scroll }: { scroll?: React.MutableRefObject<
       <CameraRig scroll={scrollRef} />
 
       {/* Clamped bloom: low intensity + high luminance threshold so only the
-          gold trim / headlights glow and overlaid copy stays readable. */}
+          red trim / headlights glow and overlaid copy stays readable. */}
       <EffectComposer multisampling={4}>
         <Bloom
           intensity={0.55}

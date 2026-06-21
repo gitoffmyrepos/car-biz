@@ -42,14 +42,20 @@ const config: Config = {
           light: '#1a1a1a',
           border: '#2a2a2a',
         },
-        // Champagne-gold editorial system (overhaul/fleet-redesign)
+        // Black + white + red editorial system (GigWheels rebrand)
         ink: {
           DEFAULT: '#0D0D0D',
           card: '#111111',
         },
+        // Brand red accent (replaces former champagne-gold)
+        accent: {
+          DEFAULT: '#E11D2A',
+          strong: '#FF3B40',
+        },
+        // Backwards-compatible alias: `gold` classes now render red
         gold: {
-          DEFAULT: '#B8963E',
-          light: '#D4AF6A',
+          DEFAULT: '#E11D2A',
+          light: '#FF3B40',
         },
         hairline: 'rgba(255,255,255,0.12)',
         faint: 'rgba(255,255,255,0.55)',

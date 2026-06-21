@@ -10,7 +10,7 @@ import { VideoHero } from '@/components/site/VideoHero';
 import { Reveal } from '@/components/site/Reveal';
 import { FleetPreview } from '@/components/site/FleetPreview';
 import { FaqAccordion } from '@/components/site/FaqAccordion';
-import { GoldEyebrow, Section, GhostCta } from '@/components/site/primitives';
+import { Eyebrow, Section, GhostCta } from '@/components/site/primitives';
 import { AnimatedCounter } from '@/components/site/fx/AnimatedCounter';
 import { Marquee } from '@/components/site/fx/Marquee';
 import { TiltSpotlightCard } from '@/components/site/fx/TiltSpotlightCard';
@@ -100,7 +100,7 @@ export default function HomePage() {
         <section ref={heroRef} className="relative min-h-[88vh] flex items-center overflow-hidden">
           {/* Optional Seedance ambient video (silent no-op until asset shipped) */}
           <VideoHero />
-          {/* Animated gold-on-black ambient mesh */}
+          {/* Animated red-on-black ambient mesh */}
           <Aurora />
           {/* 3D car layer (scroll-driven via the hero section ref) */}
           <Hero3D scrollTargetRef={heroRef} />
@@ -111,7 +111,7 @@ export default function HomePage() {
           <div className="ed-container relative z-10 pt-24 pb-16">
             <div className="max-w-2xl">
               <Reveal>
-                <GoldEyebrow index="01" label="Weekly car leasing" />
+                <Eyebrow index="01" label="Weekly car leasing" />
               </Reveal>
               <Reveal delay={0.05}>
                 <h1 className="ed-h1 mt-5 mb-6">
@@ -158,9 +158,9 @@ export default function HomePage() {
 
         {/* 01 — Why */}
         <Section className="border-t ed-hairline">
-          <Reveal><GoldEyebrow index="01" label="Why GigWheels" /></Reveal>
+          <Reveal><Eyebrow index="01" label="Why GigWheels" /></Reveal>
           <Reveal delay={0.05}>
-            <h2 className="ed-h2 mt-5 mb-14 max-w-2xl">Everything vznrentals lacks, plus a real fleet.</h2>
+            <h2 className="ed-h2 mt-5 mb-14 max-w-2xl">A real fleet you can actually browse — prices, specs, availability.</h2>
           </Reveal>
           <div className="grid md:grid-cols-3 gap-px border ed-hairline">
             {VALUES.map((v, i) => (
@@ -178,7 +178,7 @@ export default function HomePage() {
 
         {/* 02 — Process */}
         <Section className="border-t ed-hairline">
-          <Reveal><GoldEyebrow index="02" label="Process" /></Reveal>
+          <Reveal><Eyebrow index="02" label="Process" /></Reveal>
           <Reveal delay={0.05}>
             <h2 className="ed-h2 mt-5 mb-14 max-w-2xl">On the road in three steps.</h2>
           </Reveal>
@@ -199,7 +199,7 @@ export default function HomePage() {
         <Section className="border-t ed-hairline">
           <div className="flex items-end justify-between mb-12 gap-6 flex-wrap">
             <div>
-              <Reveal><GoldEyebrow index="03" label="The fleet" /></Reveal>
+              <Reveal><Eyebrow index="03" label="The fleet" /></Reveal>
               <Reveal delay={0.05}>
                 <h2 className="ed-h2 mt-5 max-w-xl">Real cars. Real weekly prices.</h2>
               </Reveal>
@@ -217,7 +217,7 @@ export default function HomePage() {
         <Section className="border-t ed-hairline">
           <div className="grid md:grid-cols-2 gap-12 items-start">
             <div>
-              <Reveal><GoldEyebrow index="04" label="Requirements" /></Reveal>
+              <Reveal><Eyebrow index="04" label="Requirements" /></Reveal>
               <Reveal delay={0.05}>
                 <h2 className="ed-h2 mt-5 mb-6 max-w-md">What you need to qualify.</h2>
               </Reveal>
@@ -245,7 +245,7 @@ export default function HomePage() {
         <Section className="border-t ed-hairline">
           <div className="grid md:grid-cols-[0.4fr_0.6fr] gap-12">
             <div>
-              <Reveal><GoldEyebrow index="05" label="FAQ" /></Reveal>
+              <Reveal><Eyebrow index="05" label="FAQ" /></Reveal>
               <Reveal delay={0.05}>
                 <h2 className="ed-h2 mt-5 max-w-xs">Questions, answered.</h2>
               </Reveal>

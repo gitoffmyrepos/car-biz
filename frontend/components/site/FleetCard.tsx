@@ -1,7 +1,7 @@
 /**
  * Fleet grid card. Server-component-safe (FleetImage + TiltSpotlightCard handle
- * their own client behavior). Sharp corners, hairline border, gold hover, a
- * cursor-tracking gold spotlight + subtle 3D tilt, and image zoom-on-hover.
+ * their own client behavior). Sharp corners, hairline border, red hover, a
+ * cursor-tracking red spotlight + subtle 3D tilt, and image zoom-on-hover.
  */
 import Link from 'next/link';
 import {

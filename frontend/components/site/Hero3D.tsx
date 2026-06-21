@@ -41,14 +41,14 @@ function HeroPoster() {
       className="absolute inset-0"
       style={{
         background:
-          'radial-gradient(60% 60% at 70% 40%, rgba(212,175,106,0.22) 0%, rgba(184,150,62,0.06) 40%, rgba(13,13,13,0) 70%), #0d0d0d',
+          'radial-gradient(60% 60% at 70% 40%, rgba(255,59,64,0.22) 0%, rgba(225,29,42,0.06) 40%, rgba(13,13,13,0) 70%), #0d0d0d',
       }}
     >
       <div
         className="absolute right-[8%] top-1/2 -translate-y-1/2 h-56 w-56 md:h-80 md:w-80 rounded-full opacity-70"
         style={{
           background:
-            'conic-gradient(from 140deg, rgba(212,175,106,0.0), rgba(212,175,106,0.55), rgba(184,150,62,0.1), rgba(212,175,106,0.0))',
+            'conic-gradient(from 140deg, rgba(255,59,64,0.0), rgba(255,59,64,0.55), rgba(225,29,42,0.1), rgba(255,59,64,0.0))',
           filter: 'blur(2px)',
         }}
       />

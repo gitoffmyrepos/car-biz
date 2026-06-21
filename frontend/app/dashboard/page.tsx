@@ -511,7 +511,7 @@ export default function CustomerDashboard() {
       {/* Footer */}
       <footer className="bg-charcoal text-white py-6 mt-12">
         <div className="max-w-7xl mx-auto px-6 text-center text-sm text-gray-400">
-          <p>&copy; 2026 FXWeekly. All rights reserved.</p>
+          <p>&copy; 2026 GigWheels. All rights reserved.</p>
           <div className="flex justify-center gap-4 mt-2">
             <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>

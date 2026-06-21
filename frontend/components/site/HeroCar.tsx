@@ -11,7 +11,7 @@
  *     NEVER blocks the hero.
  *
  *  2. Procedural fallback: a sleek low-poly sports car built from primitives —
- *     body + cabin + 4 wheels, dark paint + gold trim, PBR metalness/roughness.
+ *     body + cabin + 4 wheels, dark paint + red trim, PBR metalness/roughness.
  *
  * This module deliberately keeps both in one file so the boundary swap is local.
  */
@@ -23,7 +23,7 @@ import type { Group } from 'three';
 export const CAR_GLB_PATH = '/models/car.glb';
 
 const PAINT = '#15161a';
-const GOLD = '#c8a253';
+const ACCENT = '#e11d2a';
 const GLASS = '#0c0e12';
 const TIRE = '#0a0a0a';
 
@@ -58,17 +58,17 @@ export function ProceduralCar({ groupRef }: { groupRef?: React.Ref<Group> }) {
         <boxGeometry args={[1.5, 0.12, 1.22]} />
         <meshStandardMaterial color={PAINT} metalness={0.9} roughness={0.25} />
       </mesh>
-      {/* Gold side accent strips */}
+      {/* Red side accent strips */}
       {[0.76, -0.76].map((z) => (
         <mesh key={z} position={[0, 0.5, z]}>
           <boxGeometry args={[3.42, 0.06, 0.02]} />
-          <meshStandardMaterial color={GOLD} metalness={1} roughness={0.18} emissive="#3a2c10" />
+          <meshStandardMaterial color={ACCENT} metalness={1} roughness={0.18} emissive="#5a0c10" />
         </mesh>
       ))}
-      {/* Front gold splitter */}
+      {/* Front red splitter */}
       <mesh position={[1.72, 0.18, 0]}>
         <boxGeometry args={[0.08, 0.12, 1.46]} />
-        <meshStandardMaterial color={GOLD} metalness={1} roughness={0.2} emissive="#3a2c10" />
+        <meshStandardMaterial color={ACCENT} metalness={1} roughness={0.2} emissive="#5a0c10" />
       </mesh>
       {/* Wheels */}
       {[
@@ -82,10 +82,10 @@ export function ProceduralCar({ groupRef }: { groupRef?: React.Ref<Group> }) {
             <cylinderGeometry args={[0.42, 0.42, 0.3, 28]} />
             <meshStandardMaterial color={TIRE} metalness={0.2} roughness={0.85} />
           </mesh>
-          {/* Gold rim */}
+          {/* Red rim */}
           <mesh position={[0, 0.16, 0]}>
             <cylinderGeometry args={[0.24, 0.24, 0.04, 24]} />
-            <meshStandardMaterial color={GOLD} metalness={1} roughness={0.2} />
+            <meshStandardMaterial color={ACCENT} metalness={1} roughness={0.2} />
           </mesh>
         </group>
       ))}

@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * 3D-tilt card with a radial gold spotlight that tracks the cursor. Pointer
+ * 3D-tilt card with a radial red spotlight that tracks the cursor. Pointer
  * position drives CSS custom properties (--mx/--my for the spotlight) and a
  * Framer Motion spring (rotateX/rotateY for the tilt). Collapses to a static
  * container under prefers-reduced-motion or on touch (no hover). Renders a

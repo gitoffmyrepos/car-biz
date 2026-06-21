@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Ambient animated gold-on-black gradient mesh. Pure CSS (no canvas/WebGL):
+ * Ambient animated red-on-black gradient mesh. Pure CSS (no canvas/WebGL):
  * three blurred radial blobs drifting on long keyframes behind hero/CTA bands.
  * Decorative only (aria-hidden). Animation is frozen under prefers-reduced-
  * motion via the CSS media query in globals.css, so this stays a static glow.

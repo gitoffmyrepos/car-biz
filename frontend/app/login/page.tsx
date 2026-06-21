@@ -11,6 +11,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { SiteNav } from '@/components/site/SiteNav';
+import { SiteFooter } from '@/components/site/SiteFooter';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -69,44 +71,30 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-luxury-cream flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold"></div>
+      <div className="editorial min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--ed-gold)]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-luxury-cream flex flex-col">
-      {/* Header */}
-      <header className="bg-charcoal text-white py-4 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold">
-            <span className="text-gold">FX</span>Weekly
-          </Link>
-          <Link
-            href="/"
-            className="text-sm text-gray-300 hover:text-white transition-colors"
-          >
-            Back to Home
-          </Link>
-        </div>
-      </header>
+    <div className="editorial min-h-screen flex flex-col">
+      <SiteNav />
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center px-4 pt-28 pb-16">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-ink-card border ed-hairline p-8">
             {/* Logo */}
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-charcoal">
-                <span className="text-gold">FX</span>Weekly
-              </h1>
-              <p className="text-gray-600 mt-2">Sign in to your account</p>
+              <p className="ed-eyebrow mb-3">Welcome Back</p>
+              <h1 className="ed-h2 text-white">Sign in to your account</h1>
+              <p className="ed-muted mt-2 text-sm">Weekly car leasing for gig drivers</p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="mb-6 p-4 bg-ink-card border ed-hairline border-l-2 border-l-[var(--ed-gold)] text-gold-light text-sm">
                 {error}
               </div>
             )}
@@ -114,23 +102,23 @@ export default function LoginPage() {
             {/* Dev Mode Login Form */}
             {isDevMode && (
               <div className="space-y-6">
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-amber-800 text-sm font-medium">Development Mode</p>
-                  <p className="text-amber-700 text-xs mt-1">
+                <div className="p-4 bg-ink-card border ed-hairline">
+                  <p className="text-white text-sm font-medium">Development Mode</p>
+                  <p className="ed-muted text-xs mt-1">
                     Keycloak is not configured. Use dev login below.
                   </p>
                 </div>
 
                 <form onSubmit={handleDevLogin} className="space-y-4">
                   <div>
-                    <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="role" className="block ed-eyebrow mb-2">
                       Role
                     </label>
                     <select
                       id="role"
                       value={devRole}
                       onChange={(e) => setDevRole(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors"
+                      className="w-full bg-ink-card border ed-hairline px-4 py-3 text-white focus:outline-none focus:border-[var(--ed-gold)] transition-colors"
                     >
                       <option value="customer">Customer</option>
                       <option value="ops">Operations</option>
@@ -139,7 +127,7 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="email" className="block ed-eyebrow mb-2">
                       Email (optional)
                     </label>
                     <input
@@ -148,14 +136,14 @@ export default function LoginPage() {
                       value={devEmail}
                       onChange={(e) => setDevEmail(e.target.value)}
                       placeholder={`${devRole}@example.com`}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors"
+                      className="w-full bg-ink-card border ed-hairline px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[var(--ed-gold)] transition-colors"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 px-4 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 focus:ring-2 focus:ring-gold focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ed-cta ed-cta-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'Signing in...' : 'Sign In (Dev Mode)'}
                   </button>
@@ -163,10 +151,10 @@ export default function LoginPage() {
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
+                    <div className="w-full border-t ed-hairline"></div>
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">Quick Login</span>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-ink-card ed-muted uppercase tracking-wider">Quick Login</span>
                   </div>
                 </div>
 
@@ -187,7 +175,7 @@ export default function LoginPage() {
                       }
                     }}
                     disabled={isSubmitting}
-                    className="py-2 px-3 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="ed-cta ed-cta-ghost w-full px-3 py-2 text-xs disabled:opacity-50"
                   >
                     Customer
                   </button>
@@ -206,7 +194,7 @@ export default function LoginPage() {
                       }
                     }}
                     disabled={isSubmitting}
-                    className="py-2 px-3 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="ed-cta ed-cta-ghost w-full px-3 py-2 text-xs disabled:opacity-50"
                   >
                     Ops
                   </button>
@@ -226,7 +214,7 @@ export default function LoginPage() {
                       }
                     }}
                     disabled={isSubmitting}
-                    className="py-2 px-3 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="ed-cta ed-cta-ghost w-full px-3 py-2 text-xs disabled:opacity-50"
                   >
                     Admin
                   </button>
@@ -239,7 +227,7 @@ export default function LoginPage() {
               <div className="space-y-6">
                 <button
                   onClick={handleKeycloakLogin}
-                  className="w-full py-3 px-4 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 focus:ring-2 focus:ring-gold focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
+                  className="ed-cta ed-cta-primary w-full"
                 >
                   <svg
                     className="w-5 h-5"
@@ -257,7 +245,7 @@ export default function LoginPage() {
                   Sign in with Keycloak
                 </button>
 
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm ed-muted">
                   You will be redirected to the secure login page.
                 </p>
               </div>
@@ -265,9 +253,9 @@ export default function LoginPage() {
 
             {/* Footer */}
             <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm ed-muted">
                 Don&apos;t have an account?{' '}
-                <Link href="/signup" className="text-gold hover:text-gold/80 font-medium">
+                <Link href="/signup" className="text-gold-light hover:underline font-medium">
                   Create an account
                 </Link>
               </p>
@@ -275,11 +263,13 @@ export default function LoginPage() {
           </div>
 
           {/* Security Notice */}
-          <div className="mt-4 text-center text-xs text-gray-500">
+          <div className="mt-4 text-center text-xs ed-muted">
             <p>Your connection is secure and encrypted.</p>
           </div>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

@@ -116,7 +116,7 @@
 }
 
 /* ============================================================
-   Champagne-Gold Editorial System (overhaul/fleet-redesign)
+   Black + White + Red Editorial System (GigWheels)
    Dark, near-black, sharp corners, Helvetica body + display serif.
    Scoped to public-facing surfaces via the .editorial root class so
    the existing orange admin/dashboard theme is untouched.
@@ -125,8 +125,12 @@
   :root {
     --ed-background: #0d0d0d;
     --ed-card: #111111;
-    --ed-gold: #b8963e;
-    --ed-gold-light: #d4af6a;
+    /* Brand red accent (replaces former champagne-gold) */
+    --ed-accent: #e11d2a;
+    --ed-accent-strong: #ff3b40;
+    /* Backwards-compatible aliases — same vars now resolve to red */
+    --ed-gold: var(--ed-accent);
+    --ed-gold-light: var(--ed-accent-strong);
     --ed-text: #ffffff;
     --ed-muted: rgba(255, 255, 255, 0.55);
     --ed-border: rgba(255, 255, 255, 0.12);
@@ -180,7 +184,7 @@
     transition: border-color 0.3s ease, transform 0.3s ease;
   }
   .ed-card:hover {
-    border-color: rgba(184, 150, 62, 0.5);
+    border-color: rgba(225, 29, 42, 0.5);
   }
 
   /* CTAs */
@@ -193,11 +197,11 @@
   }
   .ed-cta-ghost {
     color: var(--ed-gold-light);
-    border: 1px solid rgba(184, 150, 62, 0.55);
+    border: 1px solid rgba(225, 29, 42, 0.55);
   }
   .ed-cta-ghost:hover {
     border-color: var(--ed-gold-light);
-    background: rgba(184, 150, 62, 0.08);
+    background: rgba(225, 29, 42, 0.08);
   }
 
   /* Chips */
@@ -292,8 +296,8 @@
     transition: opacity 0.3s ease;
     background: radial-gradient(
       circle at var(--mx, 50%) var(--my, 50%),
-      rgba(212, 175, 106, 0.18),
-      rgba(212, 175, 106, 0) 45%
+      rgba(255, 59, 64, 0.18),
+      rgba(255, 59, 64, 0) 45%
     );
   }
   .fx-tilt-card:hover .fx-tilt-spotlight {
@@ -319,7 +323,7 @@
     height: 38rem;
     top: -10rem;
     right: -8rem;
-    background: radial-gradient(circle, rgba(212, 175, 106, 0.35), rgba(212, 175, 106, 0) 70%);
+    background: radial-gradient(circle, rgba(225, 29, 42, 0.35), rgba(225, 29, 42, 0) 70%);
     animation: fx-aurora-drift-1 22s ease-in-out infinite;
   }
   .fx-aurora-2 {
@@ -327,7 +331,7 @@
     height: 30rem;
     bottom: -8rem;
     left: -6rem;
-    background: radial-gradient(circle, rgba(184, 150, 62, 0.28), rgba(184, 150, 62, 0) 70%);
+    background: radial-gradient(circle, rgba(255, 59, 64, 0.28), rgba(255, 59, 64, 0) 70%);
     animation: fx-aurora-drift-2 28s ease-in-out infinite;
   }
   .fx-aurora-3 {
@@ -335,7 +339,7 @@
     height: 24rem;
     top: 30%;
     left: 45%;
-    background: radial-gradient(circle, rgba(212, 175, 106, 0.16), rgba(212, 175, 106, 0) 70%);
+    background: radial-gradient(circle, rgba(225, 29, 42, 0.16), rgba(225, 29, 42, 0) 70%);
     animation: fx-aurora-drift-3 19s ease-in-out infinite;
   }
   @keyframes fx-aurora-drift-1 {
@@ -355,11 +359,11 @@
   .fx-shimmer-text {
     background: linear-gradient(
       100deg,
-      var(--ed-gold) 0%,
-      var(--ed-gold-light) 25%,
-      #fff3d6 50%,
-      var(--ed-gold-light) 75%,
-      var(--ed-gold) 100%
+      var(--ed-accent) 0%,
+      var(--ed-accent-strong) 25%,
+      #ffd9da 50%,
+      var(--ed-accent-strong) 75%,
+      var(--ed-accent) 100%
     );
     background-size: 200% 100%;
     -webkit-background-clip: text;
@@ -396,7 +400,7 @@
     animation: none !important;
   }
   .fx-shimmer-text {
-    /* keep a readable static gold fill */
+    /* keep a readable static red fill */
     background-position: 50% 0;
   }
   .fx-zoom-img {

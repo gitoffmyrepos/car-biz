@@ -12,6 +12,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { SiteNav } from '@/components/site/SiteNav';
+import { SiteFooter } from '@/components/site/SiteFooter';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -97,44 +99,30 @@ export default function SignupPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-luxury-cream flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold"></div>
+      <div className="editorial min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--ed-gold)]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-luxury-cream flex flex-col">
-      {/* Header */}
-      <header className="bg-charcoal text-white py-4 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold">
-            <span className="text-gold">FX</span>Weekly
-          </Link>
-          <Link
-            href="/"
-            className="text-sm text-gray-300 hover:text-white transition-colors"
-          >
-            Back to Home
-          </Link>
-        </div>
-      </header>
+    <div className="editorial min-h-screen flex flex-col">
+      <SiteNav />
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center px-4 pt-28 pb-16">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-ink-card border ed-hairline p-8">
             {/* Logo */}
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-charcoal">
-                <span className="text-gold">FX</span>Weekly
-              </h1>
-              <p className="text-gray-600 mt-2">Create your account</p>
+              <p className="ed-eyebrow mb-3">Get Started</p>
+              <h1 className="ed-h2 text-white">Create your account</h1>
+              <p className="ed-muted mt-2 text-sm">Weekly car leasing for gig drivers</p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="mb-6 p-4 bg-ink-card border ed-hairline border-l-2 border-l-[var(--ed-gold)] text-gold-light text-sm">
                 {error}
               </div>
             )}
@@ -142,17 +130,17 @@ export default function SignupPage() {
             {/* Dev Mode Signup Form */}
             {isDevMode && (
               <div className="space-y-6">
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-amber-800 text-sm font-medium">Development Mode</p>
-                  <p className="text-amber-700 text-xs mt-1">
+                <div className="p-4 bg-ink-card border ed-hairline">
+                  <p className="text-white text-sm font-medium">Development Mode</p>
+                  <p className="ed-muted text-xs mt-1">
                     Keycloak is not configured. Use dev registration below.
                   </p>
                 </div>
 
                 <form onSubmit={handleDevSignup} className="space-y-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name <span className="text-red-500">*</span>
+                    <label htmlFor="name" className="block ed-eyebrow mb-2">
+                      Full Name <span className="text-gold-light">*</span>
                     </label>
                     <input
                       type="text"
@@ -162,13 +150,13 @@ export default function SignupPage() {
                       onChange={handleInputChange}
                       placeholder="John Doe"
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors"
+                      className="w-full bg-ink-card border ed-hairline px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[var(--ed-gold)] transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address <span className="text-red-500">*</span>
+                    <label htmlFor="email" className="block ed-eyebrow mb-2">
+                      Email Address <span className="text-gold-light">*</span>
                     </label>
                     <input
                       type="email"
@@ -178,12 +166,12 @@ export default function SignupPage() {
                       onChange={handleInputChange}
                       placeholder="john@example.com"
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors"
+                      className="w-full bg-ink-card border ed-hairline px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[var(--ed-gold)] transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="phone" className="block ed-eyebrow mb-2">
                       Phone Number (optional)
                     </label>
                     <input
@@ -193,23 +181,23 @@ export default function SignupPage() {
                       value={formData.phone}
                       onChange={handleInputChange}
                       placeholder="(555) 123-4567"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors"
+                      className="w-full bg-ink-card border ed-hairline px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-[var(--ed-gold)] transition-colors"
                     />
                   </div>
 
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs ed-muted">
                     <p>
                       By creating an account, you agree to our{' '}
-                      <Link href="/terms" className="text-gold hover:underline">Terms of Service</Link>{' '}
+                      <Link href="/terms" className="text-gold-light hover:underline">Terms of Service</Link>{' '}
                       and{' '}
-                      <Link href="/privacy" className="text-gold hover:underline">Privacy Policy</Link>.
+                      <Link href="/privacy" className="text-gold-light hover:underline">Privacy Policy</Link>.
                     </p>
                   </div>
 
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 px-4 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 focus:ring-2 focus:ring-gold focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ed-cta ed-cta-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'Creating Account...' : 'Create Account (Dev Mode)'}
                   </button>
@@ -220,13 +208,13 @@ export default function SignupPage() {
             {/* Keycloak Signup Button (when configured) */}
             {!isDevMode && oidcConfig && (
               <div className="space-y-6">
-                <p className="text-gray-600 text-center text-sm">
+                <p className="ed-muted text-center text-sm">
                   Create an account to start leasing premium vehicles weekly.
                 </p>
 
                 <button
                   onClick={handleKeycloakSignup}
-                  className="w-full py-3 px-4 bg-gold text-charcoal font-semibold rounded-lg hover:bg-gold/90 focus:ring-2 focus:ring-gold focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
+                  className="ed-cta ed-cta-primary w-full"
                 >
                   <svg
                     className="w-5 h-5"
@@ -244,7 +232,7 @@ export default function SignupPage() {
                   Create Account
                 </button>
 
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm ed-muted">
                   You will be redirected to our secure registration page.
                 </p>
               </div>
@@ -252,9 +240,9 @@ export default function SignupPage() {
 
             {/* Footer */}
             <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm ed-muted">
                 Already have an account?{' '}
-                <Link href="/login" className="text-gold hover:text-gold/80 font-medium">
+                <Link href="/login" className="text-gold-light hover:underline font-medium">
                   Sign in
                 </Link>
               </p>
@@ -262,42 +250,44 @@ export default function SignupPage() {
           </div>
 
           {/* Benefits Section */}
-          <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-lg font-semibold text-charcoal mb-4">Why Join FXWeekly?</h2>
+          <div className="mt-6 bg-ink-card border ed-hairline p-6">
+            <h2 className="ed-eyebrow mb-4">Why Join GigWheels?</h2>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-gold-light flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span className="text-gray-600 text-sm">Access to premium luxury vehicles</span>
+                <span className="ed-muted text-sm">Access to premium reliable vehicles</span>
               </li>
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-gold-light flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span className="text-gray-600 text-sm">Flexible weekly leasing terms</span>
+                <span className="ed-muted text-sm">Flexible weekly leasing terms</span>
               </li>
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-gold-light flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span className="text-gray-600 text-sm">24/7 customer support</span>
+                <span className="ed-muted text-sm">24/7 customer support</span>
               </li>
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-gold-light flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <span className="text-gray-600 text-sm">Transparent pricing - no hidden fees</span>
+                <span className="ed-muted text-sm">Transparent pricing - no hidden fees</span>
               </li>
             </ul>
           </div>
 
           {/* Security Notice */}
-          <div className="mt-4 text-center text-xs text-gray-500">
+          <div className="mt-4 text-center text-xs ed-muted">
             <p>Your information is secure and encrypted.</p>
           </div>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { SiteNav } from '@/components/site/SiteNav';
+import { SiteFooter } from '@/components/site/SiteFooter';
+import { Eyebrow } from '@/components/site/primitives';
+import { ShimmerText } from '@/components/site/fx/ShimmerText';
 
 interface FAQItem {
   question: string;
@@ -143,249 +147,170 @@ export default function FAQPage() {
     : faqItems;
 
   return (
-    <main className="min-h-screen">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-glossy-black/90 backdrop-blur-md border-b border-glossy-border">
-        <div className="container-luxury">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-display font-bold text-white">
-                FX<span className="text-gradient-glow">Weekly</span>
-              </span>
-            </Link>
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">
-                How It Works
-              </Link>
-              <Link href="/fleet" className="text-gray-400 hover:text-white transition-colors">
-                Fleet
-              </Link>
-              <Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">
-                Requirements
-              </Link>
-              <Link href="/faq" className="text-orange-500 font-medium transition-colors">
-                FAQ
-              </Link>
-              <Link href="/contact" className="btn btn-primary">
-                Get Started
-              </Link>
-            </div>
-            <button className="md:hidden p-2 rounded-lg hover:bg-glossy-light" aria-label="Open menu">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="editorial min-h-screen">
+      <a href="#main" className="skip-to-main">Skip to main content</a>
+      <SiteNav />
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 bg-gradient-glossy overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-        </div>
-        <div className="container-luxury relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="heading-display text-white mb-6">
-              Frequently Asked <span className="text-gradient-glow">Questions</span>
+      <main id="main">
+        {/* Hero Section */}
+        <section className="ed-section border-t ed-hairline pt-32">
+          <div className="ed-container">
+            <Eyebrow label="FAQ" />
+            <h1 className="ed-h1 mt-5 mb-6">
+              Frequently Asked <ShimmerText>Questions</ShimmerText>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
+            <p className="ed-muted text-lg max-w-2xl">
               Find answers to common questions about our weekly car-rental service.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Category Filter */}
-      <section className="border-b border-glossy-border sticky top-16 md:top-20 z-40">
-        <div className="container-luxury py-4">
-          <div className="flex flex-wrap items-center gap-2 justify-center">
-            <button
-              onClick={() => setActiveCategory(null)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                activeCategory === null
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              All Questions
-            </button>
-            {categories.map((category) => (
+        {/* Category Filter */}
+        <section className="border-t border-b ed-hairline sticky top-16 md:top-20 z-40" style={{ background: 'var(--ed-card)' }}>
+          <div className="ed-container py-4">
+            <div className="flex flex-wrap items-center gap-2 justify-center">
               <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeCategory === category
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                onClick={() => setActiveCategory(null)}
+                className={`px-4 py-2 text-sm font-medium transition-all border ed-hairline ${
+                  activeCategory === null
+                    ? 'bg-gold-light text-black border-transparent'
+                    : 'bg-ink-card text-gold-light hover:text-white'
                 }`}
               >
-                {category}
+                All Questions
               </button>
-            ))}
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`px-4 py-2 text-sm font-medium transition-all border ed-hairline ${
+                    activeCategory === category
+                      ? 'bg-gold-light text-black border-transparent'
+                      : 'bg-ink-card text-gold-light hover:text-white'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* FAQ Items */}
-      <section className="section">
-        <div className="container-luxury">
-          <div className="max-w-3xl mx-auto">
-            {activeCategory && (
-              <h2 className="text-2xl font-bold text-white mb-6 text-center">
-                {activeCategory}
-              </h2>
-            )}
-            <div className="space-y-4">
-              {filteredFAQs.map((item) => {
-                const globalIndex = faqItems.indexOf(item);
-                const isOpen = openItems.has(globalIndex);
+        {/* FAQ Items */}
+        <section className="ed-section">
+          <div className="ed-container">
+            <div className="max-w-3xl mx-auto">
+              {activeCategory && (
+                <h2 className="ed-h2 mb-6 text-center">
+                  {activeCategory}
+                </h2>
+              )}
+              <div className="space-y-4">
+                {filteredFAQs.map((item) => {
+                  const globalIndex = faqItems.indexOf(item);
+                  const isOpen = openItems.has(globalIndex);
 
-                return (
-                  <div
-                    key={globalIndex}
-                    className="card overflow-hidden"
-                  >
-                    <button
-                      onClick={() => toggleItem(globalIndex)}
-                      className="w-full p-6 text-left flex items-center justify-between hover:bg-glossy-light transition-colors"
-                      aria-expanded={isOpen}
-                    >
-                      <div className="flex items-start space-x-4 flex-1">
-                        {!activeCategory && (
-                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded flex-shrink-0">
-                            {item.category}
-                          </span>
-                        )}
-                        <span className="font-medium text-white pr-4">
-                          {item.question}
-                        </span>
-                      </div>
-                      <svg
-                        className={`w-5 h-5 text-orange-500 transform transition-transform flex-shrink-0 ${
-                          isOpen ? 'rotate-180' : ''
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
+                  return (
                     <div
-                      className={`overflow-hidden transition-all duration-300 ${
-                        isOpen ? 'max-h-96' : 'max-h-0'
-                      }`}
+                      key={globalIndex}
+                      className="ed-card overflow-hidden"
                     >
-                      <div className="px-6 pb-6 text-gray-300 border-t border-glossy-border pt-4">
-                        {!activeCategory && <div className="mb-2"></div>}
-                        {item.answer}
+                      <button
+                        onClick={() => toggleItem(globalIndex)}
+                        className="w-full p-6 text-left flex items-center justify-between transition-colors"
+                        aria-expanded={isOpen}
+                      >
+                        <div className="flex items-start space-x-4 flex-1">
+                          {!activeCategory && (
+                            <span className="px-2 py-1 bg-ink-card border ed-hairline text-gold-light text-xs font-medium flex-shrink-0">
+                              {item.category}
+                            </span>
+                          )}
+                          <span className="font-medium text-white pr-4">
+                            {item.question}
+                          </span>
+                        </div>
+                        <svg
+                          className={`w-5 h-5 text-gold-light transform transition-transform flex-shrink-0 ${
+                            isOpen ? 'rotate-180' : ''
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ${
+                          isOpen ? 'max-h-96' : 'max-h-0'
+                        }`}
+                      >
+                        <div className="px-6 pb-6 ed-muted border-t ed-hairline pt-4">
+                          {!activeCategory && <div className="mb-2"></div>}
+                          {item.answer}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {filteredFAQs.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-400">No questions found in this category.</p>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        </div>
-      </section>
 
-      {/* Still Have Questions */}
-      <section className="section">
-        <div className="container-luxury">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="w-16 h-16 mx-auto mb-6 bg-orange-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              {filteredFAQs.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="ed-muted">No questions found in this category.</p>
+                </div>
+              )}
             </div>
-            <h2 className="heading-section text-white mb-4">Still Have Questions?</h2>
-            <p className="text-lg text-gray-300 mb-8">
-              Can&apos;t find what you&apos;re looking for? Our team is here to help.
-              Reach out to us directly and we&apos;ll get back to you as soon as possible.
+          </div>
+        </section>
+
+        {/* Still Have Questions */}
+        <section className="ed-section border-t ed-hairline">
+          <div className="ed-container">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="w-16 h-16 mx-auto mb-6 bg-ink-card border ed-hairline flex items-center justify-center">
+                <svg className="w-8 h-8 text-gold-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="ed-h2 mb-4">Still Have Questions?</h2>
+              <p className="ed-muted text-lg mb-8">
+                Can&apos;t find what you&apos;re looking for? Our team is here to help.
+                Reach out to us directly and we&apos;ll get back to you as soon as possible.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="/contact" className="ed-cta ed-cta-primary w-full sm:w-auto">
+                  Contact Us
+                </Link>
+                <a href="tel:5551234567" className="ed-cta ed-cta-ghost w-full sm:w-auto">
+                  Call (555) 123-4567
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="ed-section border-t ed-hairline" style={{ background: 'var(--ed-card)' }}>
+          <div className="ed-container text-center">
+            <h2 className="ed-h2 mb-4">Ready to Get Started?</h2>
+            <p className="ed-muted text-lg mb-8 max-w-2xl mx-auto">
+              Now that you have answers to your questions, take the next step toward driving your dream vehicle.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/contact" className="btn btn-primary px-8 py-4 w-full sm:w-auto">
-                Contact Us
+              <Link href="/contact" className="ed-cta ed-cta-primary w-full sm:w-auto">
+                Start Your Application
               </Link>
-              <a href="tel:5551234567" className="btn btn-outline px-8 py-4 w-full sm:w-auto">
-                Call (555) 123-4567
-              </a>
+              <Link href="/fleet" className="ed-cta ed-cta-ghost w-full sm:w-auto">
+                Browse Our Fleet
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* CTA Section */}
-      <section className="section bg-gradient-glossy text-white">
-        <div className="container-luxury text-center">
-          <h2 className="heading-section mb-4">Ready to Get Started?</h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Now that you have answers to your questions, take the next step toward driving your dream vehicle.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/contact" className="btn btn-primary text-lg px-8 py-4 w-full sm:w-auto">
-              Start Your Application
-            </Link>
-            <Link href="/fleet" className="btn btn-outline border-white text-white hover:bg-white hover:text-glossy-black text-lg px-8 py-4 w-full sm:w-auto">
-              Browse Our Fleet
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-glossy-black text-white py-12">
-        <div className="container-luxury">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div className="md:col-span-1">
-              <Link href="/" className="text-2xl font-display font-bold">
-                FX<span className="text-orange-500">Weekly</span>
-              </Link>
-              <p className="mt-4 text-gray-400">
-                Weekly car rentals for gig drivers, with flexible weekly payments.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Company</h4>
-              <ul className="space-y-2">
-                <li><Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">How It Works</Link></li>
-                <li><Link href="/fleet" className="text-gray-400 hover:text-white transition-colors">Our Fleet</Link></li>
-                <li><Link href="/requirements" className="text-gray-400 hover:text-white transition-colors">Requirements</Link></li>
-                <li><Link href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Legal</h4>
-              <ul className="space-y-2">
-                <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/gps-disclosure" className="text-gray-400 hover:text-white transition-colors">GPS Disclosure</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Contact</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>support@fxweekly.com</li>
-                <li>(555) 123-4567</li>
-              </ul>
-              <Link href="/contact" className="btn btn-primary mt-4 w-full text-center">
-                Contact Us
-              </Link>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; {new Date().getFullYear()} GigWheels. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </main>
+      <SiteFooter />
+    </div>
   );
 }

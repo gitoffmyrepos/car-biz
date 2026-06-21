@@ -21,7 +21,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'fx-weekly-theme';
+const STORAGE_KEY = 'gigwheels-theme';
 
 /**
  * Get system preference for dark/light mode

@@ -22,7 +22,7 @@ const display = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://fxweekly.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://gigwheels.com'),
   title: {
     default: 'GigWheels | Weekly Car Rentals for Gig Drivers',
     template: '%s | GigWheels',

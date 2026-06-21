@@ -2,6 +2,7 @@
  * Editorial footer for public-facing pages. Server component.
  */
 import Link from 'next/link';
+import { Logo } from './Logo';
 
 const COMPANY = [
   { href: '/fleet', label: 'Fleet' },
@@ -22,8 +23,8 @@ export function SiteFooter() {
       <div className="ed-container py-16">
         <div className="grid md:grid-cols-4 gap-10 mb-12">
           <div>
-            <Link href="/" className="font-display text-2xl font-semibold tracking-tight inline-block mb-4">
-              FX<span className="ed-gold-word">Weekly</span>
+            <Link href="/" aria-label="GigWheels home" className="inline-block mb-4">
+              <Logo size={30} />
             </Link>
             <p className="ed-muted text-sm leading-relaxed">
               Affordable weekly car leasing for gig and delivery drivers. Published prices, real fleet, fast approval.
@@ -60,8 +61,8 @@ export function SiteFooter() {
             <h4 className="ed-eyebrow mb-4">Contact</h4>
             <ul className="space-y-3 text-sm ed-muted">
               <li>
-                <a href="mailto:support@fxweekly.com" className="hover:text-white transition-colors">
-                  support@fxweekly.com
+                <a href="mailto:support@gigwheels.com" className="hover:text-white transition-colors">
+                  support@gigwheels.com
                 </a>
               </li>
               <li>

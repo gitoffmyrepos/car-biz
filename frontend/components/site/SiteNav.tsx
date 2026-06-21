@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { Logo } from './Logo';
 
 const LINKS: { href: string; label: string }[] = [
   { href: '/fleet', label: 'Fleet' },
@@ -25,8 +26,8 @@ export function SiteNav() {
     <nav className="ed-nav" aria-label="Main navigation">
       <div className="ed-container">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="font-display text-xl font-semibold tracking-tight text-white">
-            FX<span className="ed-gold-word">Weekly</span>
+          <Link href="/" aria-label="GigWheels home">
+            <Logo size={26} />
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
