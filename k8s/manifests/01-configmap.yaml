@@ -41,12 +41,12 @@ data:
   REDIS_PORT: "6379"
 
   # MinIO/S3 Configuration (credentials from Vault)
-  MINIO_HOST: "minio.prod-forex.svc.cluster.local"
+  MINIO_HOST: "minio-external.prod-forex.svc.cluster.local"
   MINIO_PORT: "9000"
   MINIO_BUCKET_PAYMENTS: "fx-weekly-lease-payments"
   MINIO_BUCKET_INSURANCE: "fx-weekly-lease-insurance"
   MINIO_BUCKET_INCIDENTS: "fx-weekly-lease-incidents"
-  S3_ENDPOINT: "http://minio.prod-forex.svc.cluster.local:9000"
+  S3_ENDPOINT: "http://minio-external.prod-forex.svc.cluster.local:9000"
   S3_USE_SSL: "false"
   S3_BUCKET_PAYMENTS: "fx-weekly-lease-payments"
   S3_BUCKET_INSURANCE: "fx-weekly-lease-insurance"
