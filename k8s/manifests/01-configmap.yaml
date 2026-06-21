@@ -19,8 +19,10 @@ data:
   DEBUG: "false"
 
   # Frontend Configuration
-  NEXT_PUBLIC_API_URL: "https://api.weekly-lease.strategybase.io"
+  NEXT_PUBLIC_API_URL: "https://weekly-lease-api.strategybase.io"
+  NEXT_PUBLIC_API_BASE_URL: "https://weekly-lease-api.strategybase.io/api"
   NEXT_PUBLIC_APP_URL: "https://weekly-lease.strategybase.io"
+  API_BASE_URL: "http://backend-service.fx-weekly-lease-prod.svc.cluster.local:8000/api"
 
   # Backend Configuration
   API_HOST: "0.0.0.0"
