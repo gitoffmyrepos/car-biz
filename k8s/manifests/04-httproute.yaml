@@ -1,0 +1,70 @@
+# Gateway-API HTTPRoutes for car-biz public hosts.
+#
+# 2026-06-20: the cluster routes north-south traffic via kgateway
+# (Gateway API), NOT a k8s Ingress controller — the only IngressClass is
+# `tailscale`. A plain Ingress (the old 04-ingress.yaml) is never served, so
+# weekly-lease.strategybase.io returned 404 at the gateway. These HTTPRoutes
+# attach to the shared `ha-cluster-gateway` (192.168.119.240) https listener,
+# the same one argo-events.strategybase.io uses. The Cloudflare tunnel sends
+# weekly-lease / api.weekly-lease → https://192.168.119.240:443 (Host-preserved),
+# and the gateway routes by Host via these rules. The gateway's https listener
+# allows routes from all namespaces, so no ReferenceGrant is needed.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: car-biz-frontend
+  namespace: fx-weekly-lease-prod
+  labels:
+    app: fx-weekly-lease
+    component: frontend
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: ha-cluster-gateway
+    namespace: kgateway-system
+    sectionName: https
+  hostnames:
+  - weekly-lease.strategybase.io
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: frontend-service
+      namespace: fx-weekly-lease-prod
+      port: 3000
+      weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: car-biz-backend
+  namespace: fx-weekly-lease-prod
+  labels:
+    app: fx-weekly-lease
+    component: backend
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: ha-cluster-gateway
+    namespace: kgateway-system
+    sectionName: https
+  hostnames:
+  - api.weekly-lease.strategybase.io
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: backend-service
+      namespace: fx-weekly-lease-prod
+      port: 8000
+      weight: 1

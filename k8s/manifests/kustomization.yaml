@@ -18,7 +18,7 @@ resources:
 - 01-configmap.yaml
 - 02-backend-deployment.yaml
 - 03-frontend-deployment.yaml
-- 04-ingress.yaml
+- 04-httproute.yaml
 - 05-network-policies.yaml
 - 06-external-secrets.yaml
 - 07-postgres.yaml
