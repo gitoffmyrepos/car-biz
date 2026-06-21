@@ -42,7 +42,7 @@ export function SiteBackground() {
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(90deg, rgba(13,13,13,0.94) 0%, rgba(13,13,13,0.82) 42%, rgba(13,13,13,0.55) 100%)',
+            'linear-gradient(90deg, rgba(13,13,13,0.78) 0%, rgba(13,13,13,0.55) 42%, rgba(13,13,13,0.22) 100%)',
         }}
       />
       {/* Vertical scrim — keeps the photo a quiet, premium backdrop overall and
@@ -51,7 +51,7 @@ export function SiteBackground() {
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(180deg, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.35) 30%, rgba(13,13,13,0.78) 100%)',
+            'linear-gradient(180deg, rgba(13,13,13,0.34) 0%, rgba(13,13,13,0.14) 30%, rgba(13,13,13,0.52) 100%)',
         }}
       />
     </div>

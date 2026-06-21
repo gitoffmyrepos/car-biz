@@ -35,7 +35,9 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 # `next build`. TOKEN defaults empty — the widget self-disables until the
 # operator supplies the inbox website token (from Chatwoot admin) and rebuilds.
 ARG NEXT_PUBLIC_CHATWOOT_BASE_URL=https://gigwheels-chat.strategybase.io
-ARG NEXT_PUBLIC_CHATWOOT_TOKEN=
+# Website inbox token (public, exposed in the client bundle by design — it only
+# identifies the GigWheels Website inbox). Minted from Chatwoot account #1.
+ARG NEXT_PUBLIC_CHATWOOT_TOKEN=CuUinCD8aVpZ4Ff6HoDrcUqm
 ENV NEXT_PUBLIC_CHATWOOT_BASE_URL=$NEXT_PUBLIC_CHATWOOT_BASE_URL
 ENV NEXT_PUBLIC_CHATWOOT_TOKEN=$NEXT_PUBLIC_CHATWOOT_TOKEN
 
