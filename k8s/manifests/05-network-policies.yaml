@@ -210,6 +210,15 @@ spec:
         matchLabels:
           app: fx-weekly-lease
           component: backend
+  # Allow schema migration jobs to reach Postgres only.
+  - from:
+    - podSelector:
+        matchLabels:
+          app: fx-weekly-lease
+          component: migrate
+    ports:
+    - protocol: TCP
+      port: 5432
   egress:
   # Allow DNS
   - to:
