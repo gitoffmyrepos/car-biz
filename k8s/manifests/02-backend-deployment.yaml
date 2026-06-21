@@ -124,6 +124,16 @@ spec:
             secretKeyRef:
               name: gigwheels-secrets
               key: resend-api-key
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: gigwheels-secrets
+              key: smtp-user
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gigwheels-secrets
+              key: smtp-password
         - name: MINIO_ACCESS_KEY
           valueFrom:
             secretKeyRef:

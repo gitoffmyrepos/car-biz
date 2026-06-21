@@ -30,6 +30,15 @@ ARG NEXT_PUBLIC_API_BASE_URL=https://gigwheels-api.strategybase.io/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 
+# Chatwoot live-chat widget (gigwheels-chat namespace). NEXT_PUBLIC_* are
+# inlined into the client bundle at build time, so they must be present BEFORE
+# `next build`. TOKEN defaults empty — the widget self-disables until the
+# operator supplies the inbox website token (from Chatwoot admin) and rebuilds.
+ARG NEXT_PUBLIC_CHATWOOT_BASE_URL=https://gigwheels-chat.strategybase.io
+ARG NEXT_PUBLIC_CHATWOOT_TOKEN=
+ENV NEXT_PUBLIC_CHATWOOT_BASE_URL=$NEXT_PUBLIC_CHATWOOT_BASE_URL
+ENV NEXT_PUBLIC_CHATWOOT_TOKEN=$NEXT_PUBLIC_CHATWOOT_TOKEN
+
 ARG CACHE_BUST
 RUN echo "cache-bust: $CACHE_BUST"  # busts the source COPY below per build
 COPY . .

@@ -33,6 +33,7 @@ cryptography==42.0.2
 
 # Email
 resend==0.8.0
+aiosmtplib==3.0.1
 
 # Vault Integration
 hvac==2.1.0

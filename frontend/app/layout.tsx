@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { CarBackgroundCarousel } from '@/components/ui/CarBackgroundCarousel';
 import { SiteJsonLd } from '@/components/site/SiteJsonLd';
+import { ChatwootWidget } from '@/components/site/ChatwootWidget';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -71,6 +72,7 @@ export default function RootLayout({
         <SiteJsonLd />
         <CarBackgroundCarousel />
         <Providers>{children}</Providers>
+        <ChatwootWidget />
       </body>
     </html>
   );

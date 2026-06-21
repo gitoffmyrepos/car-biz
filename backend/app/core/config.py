@@ -66,7 +66,23 @@ class Settings(BaseSettings):
     VAULT_TRANSIT_KEY_NAME: str = "gigwheels-dev-transit"
     VAULT_KV_PATH_PREFIX: str = "secret/gigwheels/dev"
 
-    # Resend Email
+    # Email backend selection
+    # "auto" -> use SMTP when SMTP_HOST is set, else Resend, else log-and-skip
+    # "smtp" -> force SMTP backend
+    # "resend" -> force Resend backend
+    EMAIL_BACKEND: str = "auto"
+
+    # SMTP Email (e.g. Proton SMTP submission / Proton Mail Bridge)
+    # Proton defaults: host smtp.protonmail.ch, port 587, STARTTLS,
+    # auth = SMTP username + Proton Business SMTP token (or Bridge password).
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_USE_TLS: bool = True  # STARTTLS on the submission port
+
+    # Resend Email (legacy / back-compat)
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "noreply@example.com"
 

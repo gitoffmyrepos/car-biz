@@ -2,33 +2,145 @@
 GigWheels - Email Service
 Weekly car rentals for gig drivers
 
-Email service using Resend for sending transactional emails.
+Email service for sending transactional emails.
+
+Supports two backends:
+  * SMTP  - Proton SMTP submission (smtp.protonmail.ch:587 STARTTLS) or
+            Proton Mail Bridge, via aiosmtplib. Used when EMAIL_BACKEND="smtp"
+            or (EMAIL_BACKEND="auto" and SMTP_HOST is set).
+  * Resend - legacy HTTP API, used when a Resend API key is configured and SMTP
+            is not selected.
+
+If neither backend is configured the service logs and skips (dev mode); it
+never fabricates a successful send.
 """
 
 import logging
-
-import resend
+from email.message import EmailMessage
 
 from app.core.config import settings
 
 
 logger = logging.getLogger(__name__)
 
+# Backend identifiers
+BACKEND_SMTP = "smtp"
+BACKEND_RESEND = "resend"
+BACKEND_NONE = "none"
+
 
 class EmailService:
-    """Service for sending transactional emails via Resend."""
+    """Service for sending transactional emails via SMTP (Proton) or Resend."""
 
     def __init__(self):
-        """Initialize the Resend client."""
-        self.api_key = settings.RESEND_API_KEY
-        self.from_email = settings.RESEND_FROM_EMAIL
-        self.enabled = bool(self.api_key)
+        """Resolve the active email backend from configuration."""
+        backend_setting = (settings.EMAIL_BACKEND or "auto").strip().lower()
 
-        if self.enabled:
-            resend.api_key = self.api_key
-            logger.info("Email service initialized with Resend")
+        self.smtp_host = settings.SMTP_HOST
+        self.smtp_port = settings.SMTP_PORT
+        self.smtp_user = settings.SMTP_USER
+        self.smtp_password = settings.SMTP_PASSWORD
+        self.smtp_use_tls = settings.SMTP_USE_TLS
+        self.resend_api_key = settings.RESEND_API_KEY
+
+        # Select backend
+        if backend_setting == BACKEND_SMTP or (
+            backend_setting == "auto" and bool(self.smtp_host)
+        ):
+            self.backend = BACKEND_SMTP
+            # Prefer the dedicated SMTP from-address; fall back to the Resend one.
+            self.from_email = settings.SMTP_FROM_EMAIL or settings.RESEND_FROM_EMAIL
+        elif backend_setting in (BACKEND_RESEND, "auto") and bool(self.resend_api_key):
+            self.backend = BACKEND_RESEND
+            self.from_email = settings.RESEND_FROM_EMAIL
         else:
-            logger.warning("Email service disabled - RESEND_API_KEY not configured")
+            self.backend = BACKEND_NONE
+            self.from_email = settings.SMTP_FROM_EMAIL or settings.RESEND_FROM_EMAIL
+
+        self.enabled = self.backend != BACKEND_NONE
+
+        if self.backend == BACKEND_SMTP:
+            logger.info(
+                "Email service initialized with SMTP backend (host=%s port=%s starttls=%s)",
+                self.smtp_host,
+                self.smtp_port,
+                self.smtp_use_tls,
+            )
+        elif self.backend == BACKEND_RESEND:
+            logger.info("Email service initialized with Resend backend")
+        else:
+            logger.warning(
+                "Email service disabled - no SMTP_HOST and no RESEND_API_KEY configured"
+            )
+
+    async def _dispatch(self, params: dict) -> dict:
+        """
+        Send a single email described by ``params`` via the active backend.
+
+        ``params`` uses the existing Resend-shaped contract:
+            {"from", "to" (list[str]), "subject", "html", "text" (optional)}
+
+        Returns a dict matching the callers' contract:
+            {"success": bool, "message"/"error": str, "email_id": str | None}
+
+        Raises ValueError on invalid recipients; never fabricates a send.
+        """
+        recipients = params.get("to") or []
+        if isinstance(recipients, str):
+            recipients = [recipients]
+        recipients = [r for r in recipients if r and "@" in r]
+        if not recipients:
+            raise ValueError("No valid recipient email address provided")
+
+        if self.backend == BACKEND_SMTP:
+            return await self._dispatch_smtp(params, recipients)
+        if self.backend == BACKEND_RESEND:
+            return self._dispatch_resend(params, recipients)
+        # Should not reach here when enabled; guard defensively.
+        raise RuntimeError("No email backend configured")
+
+    async def _dispatch_smtp(self, params: dict, recipients: list) -> dict:
+        """Send via Proton SMTP submission using aiosmtplib + STARTTLS."""
+        import aiosmtplib
+
+        message = EmailMessage()
+        message["From"] = params["from"]
+        message["To"] = ", ".join(recipients)
+        message["Subject"] = params["subject"]
+
+        text_body = params.get("text") or "Please view this email in an HTML-capable client."
+        message.set_content(text_body)
+        if params.get("html"):
+            message.add_alternative(params["html"], subtype="html")
+
+        await aiosmtplib.send(
+            message,
+            hostname=self.smtp_host,
+            port=self.smtp_port,
+            username=self.smtp_user or None,
+            password=self.smtp_password or None,
+            start_tls=self.smtp_use_tls,
+        )
+
+        return {
+            "success": True,
+            "message": "Email sent successfully",
+            "email_id": message.get("Message-ID"),
+        }
+
+    def _dispatch_resend(self, params: dict, recipients: list) -> dict:
+        """Send via the Resend HTTP API. ``resend`` is imported lazily."""
+        import resend
+
+        resend.api_key = self.resend_api_key
+        send_params = dict(params)
+        send_params["to"] = recipients
+        resend_response = resend.Emails.send(send_params)
+        return {
+            "success": True,
+            "message": "Email sent successfully",
+            "email_id": resend_response.get("id"),
+        }
 
     async def send_inquiry_auto_response(
         self,
@@ -190,14 +302,14 @@ Questions? Contact us at support@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
-            logger.info(f"Inquiry auto-response email sent to {to_email}, ID: {response.get('id', 'unknown')}")
+            logger.info(f"Inquiry auto-response email sent to {to_email}, ID: {response.get('email_id', 'unknown')}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -236,8 +348,9 @@ Questions? Contact us at support@fxweeklylease.com
                 "simulated": True
             }
 
-        # Admin notification email - can be configured separately
-        admin_email = settings.RESEND_FROM_EMAIL  # In production, use a separate admin email setting
+        # Admin notification email - can be configured separately.
+        # Defaults to the active backend's from-address (Proton SMTP or Resend).
+        admin_email = self.from_email  # In production, use a separate admin email setting
 
         subject = f"New Inquiry Received - INQ-{inquiry_id:06d}"
 
@@ -323,14 +436,14 @@ Questions? Contact us at support@fxweeklylease.com
                 "html": html_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
             logger.info(f"Admin notification email sent for inquiry {inquiry_id}")
 
             return {
                 "success": True,
                 "message": "Admin notification sent",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -568,14 +681,14 @@ Questions? Contact us at support@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
-            logger.info(f"Due date reminder email sent to {to_email} for invoice {invoice_number}, ID: {response.get('id', 'unknown')}")
+            logger.info(f"Due date reminder email sent to {to_email} for invoice {invoice_number}, ID: {response.get('email_id', 'unknown')}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -784,14 +897,14 @@ Questions? Contact us at support@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
             logger.info(f"Payment verification pending email sent to {to_email} for invoice {invoice_number}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -1083,14 +1196,14 @@ Case Reference: {case_number}
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
-            logger.info(f"Escalation notice email sent to {to_email} for case {case_number}, ID: {response.get('id', 'unknown')}")
+            logger.info(f"Escalation notice email sent to {to_email} for case {case_number}, ID: {response.get('email_id', 'unknown')}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -1307,14 +1420,14 @@ Questions? Contact us at support@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
             logger.info(f"Late payment notice email sent to {to_email} for invoice {invoice_number}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -1539,14 +1652,14 @@ For urgent matters: legal@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
             logger.info(f"Lease termination notice email sent to {to_email} for case {case_number}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -1808,14 +1921,14 @@ For urgent matters: legal@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
             logger.info(f"Ban notice email sent to {to_email} for ban {ban_number}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -2065,14 +2178,14 @@ GigWheels - Weekly car rentals for gig drivers
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
-            logger.info(f"Welcome email sent to {to_email}, ID: {response.get('id', 'unknown')}")
+            logger.info(f"Welcome email sent to {to_email}, ID: {response.get('email_id', 'unknown')}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -2294,14 +2407,14 @@ Questions? Contact us at support@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
-            logger.info(f"Payment approved email sent to {to_email} for invoice {invoice_number}, ID: {response.get('id', 'unknown')}")
+            logger.info(f"Payment approved email sent to {to_email} for invoice {invoice_number}, ID: {response.get('email_id', 'unknown')}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:
@@ -2546,14 +2659,14 @@ Questions? Contact us at support@fxweeklylease.com
                 "text": text_content,
             }
 
-            response = resend.Emails.send(params)
+            response = await self._dispatch(params)
 
-            logger.info(f"Payment rejected email sent to {to_email} for invoice {invoice_number}, ID: {response.get('id', 'unknown')}")
+            logger.info(f"Payment rejected email sent to {to_email} for invoice {invoice_number}, ID: {response.get('email_id', 'unknown')}")
 
             return {
                 "success": True,
                 "message": "Email sent successfully",
-                "email_id": response.get("id"),
+                "email_id": response.get("email_id"),
             }
 
         except Exception as e:

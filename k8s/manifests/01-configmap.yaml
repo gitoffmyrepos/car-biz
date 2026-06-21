@@ -26,6 +26,15 @@ data:
   INTERNAL_API_BASE_URL: "http://backend-service:8000/api"
   API_BASE_URL: "https://gigwheels.strategybase.io"
 
+  # Chatwoot live-chat widget (deployed in namespace gigwheels-chat).
+  # These NEXT_PUBLIC_* are inlined into the client bundle at BUILD time (also
+  # set as ARG/ENV in the frontend Dockerfile). The widget renders only when
+  # BOTH are non-empty. The operator fills NEXT_PUBLIC_CHATWOOT_TOKEN with the
+  # website (inbox) token from Chatwoot admin AFTER the chatwoot stack deploys,
+  # then rebuilds the frontend image.
+  NEXT_PUBLIC_CHATWOOT_BASE_URL: "https://gigwheels-chat.strategybase.io"
+  NEXT_PUBLIC_CHATWOOT_TOKEN: ""
+
   # Backend Configuration
   API_HOST: "0.0.0.0"
   API_PORT: "8000"
@@ -78,10 +87,18 @@ data:
   LOG_LEVEL: "INFO"
   LOG_FORMAT: "json"
 
-  # Email Configuration (Resend API key from Vault)
-  EMAIL_FROM: "noreply@strategybase.io"
+  # Email Configuration
+  EMAIL_FROM: "noreply@gigwheels.strategybase.io"
   EMAIL_FROM_NAME: "GigWheels"
-  RESEND_FROM_EMAIL: "noreply@strategybase.io"
+  RESEND_FROM_EMAIL: "noreply@gigwheels.strategybase.io"
+  # Proton SMTP (auto-selected when SMTP_HOST set; user/password from the
+  # gigwheels-secrets ExternalSecret). Operator fills the Proton SMTP token in
+  # Vault gigwheels/prod/email {smtp_user, smtp_password}.
+  EMAIL_BACKEND: "auto"
+  SMTP_HOST: "smtp.protonmail.ch"
+  SMTP_PORT: "587"
+  SMTP_USE_TLS: "true"
+  SMTP_FROM_EMAIL: "noreply@gigwheels.strategybase.io"
 
   # Background Jobs
   CELERY_BROKER_URL: "redis://redis-service:6379/0"
