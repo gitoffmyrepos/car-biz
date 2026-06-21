@@ -133,7 +133,9 @@ spec:
         volumeMounts:
         - name: postgresql-data
           mountPath: /var/lib/postgresql/data
-          subPath: pgdata
+          # No k8s subPath: fsGroup 70 can't create it on the PVC root. PGDATA
+          # points at a sub-dir (.../pgdata) that postgres's own entrypoint
+          # creates inside the mounted volume, sidestepping the lost+found clash.
         - name: tmp
           mountPath: /tmp
         - name: run
