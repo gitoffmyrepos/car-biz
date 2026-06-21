@@ -60,10 +60,12 @@ ENV HOSTNAME=0.0.0.0
 # node:20-alpine already provides the non-root node user/group at UID/GID 1000,
 # matching the deployment's runAsUser/fsGroup.
 
-# Standalone output bundles public/ already. COPY directory destinations MUST
-# end in '/' (kaniko multi-source rule), else the build fails.
+# Next standalone does NOT auto-copy public/ or .next/static — copy both.
+# (Earlier comment was wrong; every /images/* asset was 404ing.) COPY directory
+# destinations MUST end in '/' (kaniko multi-source rule), else the build fails.
 COPY --from=build --chown=node:node /app/.next/standalone/ ./
 COPY --from=build --chown=node:node /app/.next/static/ ./.next/static/
+COPY --from=build --chown=node:node /app/public/ ./public/
 
 USER node
 EXPOSE 3000
