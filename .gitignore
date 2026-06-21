@@ -199,3 +199,8 @@ graphify-out/
 .claude/verification/
 test_results_logging.json
 frontend/images/
+
+# frontend/lib is Next.js source (TS modules), NOT Python build output —
+# the generic "lib/" rule above wrongly matched it. Keep it tracked.
+!frontend/lib/
+!frontend/lib/**
