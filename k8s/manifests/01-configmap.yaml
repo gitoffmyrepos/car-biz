@@ -31,12 +31,12 @@ data:
 
   # Database Service Endpoints (credentials from Vault)
   # PostgreSQL - Deployed separately or via operator
-  POSTGRES_HOST: "postgresql-service.fx-weekly-lease-prod.svc.cluster.local"
+  POSTGRES_HOST: "postgresql-service"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "fx_weekly_lease"
 
   # Redis Service Endpoints
-  REDIS_HOST: "redis-service.fx-weekly-lease-prod.svc.cluster.local"
+  REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
 
   # MinIO/S3 Configuration (credentials from Vault)
@@ -71,5 +71,5 @@ data:
   EMAIL_FROM_NAME: "FX Weekly Lease"
 
   # Background Jobs
-  CELERY_BROKER_URL: "redis://redis-service.fx-weekly-lease-prod.svc.cluster.local:6379/0"
-  CELERY_RESULT_BACKEND: "redis://redis-service.fx-weekly-lease-prod.svc.cluster.local:6379/1"
+  CELERY_BROKER_URL: "redis://redis-service:6379/0"
+  CELERY_RESULT_BACKEND: "redis://redis-service:6379/1"

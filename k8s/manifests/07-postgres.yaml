@@ -1,7 +1,7 @@
 # PostgreSQL for FX Weekly Lease (car-biz)
 # Dedicated, single-replica Postgres in-namespace (fx-weekly-lease-prod).
 # The ConfigMap (01-configmap.yaml) points the backend at:
-#   POSTGRES_HOST: postgresql-service.fx-weekly-lease-prod.svc.cluster.local
+#   POSTGRES_HOST: postgresql-service
 #   POSTGRES_PORT: 5432
 #   POSTGRES_DB:   fx_weekly_lease
 # Credentials are sourced from the Vault-backed ExternalSecret
@@ -12,7 +12,7 @@
 # OPERATOR — Vault properties that MUST be populated before deploy
 # =============================================================================
 #   fx-weekly-lease/prod/database = { url, user, password, database }
-#       url      -> postgresql+asyncpg://<user>:<password>@postgresql-service.fx-weekly-lease-prod.svc.cluster.local:5432/fx_weekly_lease
+#       url      -> postgresql+asyncpg://<user>:<password>@postgresql-service:5432/fx_weekly_lease
 #       user     -> e.g. fx_weekly_lease
 #       password -> generated strong password
 #       database -> fx_weekly_lease   (must match POSTGRES_DB in the ConfigMap)

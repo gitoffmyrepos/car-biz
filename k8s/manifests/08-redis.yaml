@@ -1,7 +1,7 @@
 # Redis for FX Weekly Lease (car-biz)
 # Dedicated, single-replica Redis in-namespace (fx-weekly-lease-prod).
 # The ConfigMap (01-configmap.yaml) points the backend at:
-#   REDIS_HOST: redis-service.fx-weekly-lease-prod.svc.cluster.local
+#   REDIS_HOST: redis-service
 #   REDIS_PORT: 6379
 # The password is sourced from the Vault-backed ExternalSecret
 # `fx-weekly-lease-secrets` (06-external-secrets.yaml), key: redis-password.
@@ -11,7 +11,7 @@
 # OPERATOR — Vault properties that MUST be populated before deploy
 # =============================================================================
 #   fx-weekly-lease/prod/redis    = { url, password }
-#       url      -> redis://:<password>@redis-service.fx-weekly-lease-prod.svc.cluster.local:6379/0
+#       url      -> redis://:<password>@redis-service:6379/0
 #       password -> generated strong password (also used by --requirepass below)
 #   fx-weekly-lease/prod/database = { url, user, password, database }
 #   fx-weekly-lease/common/harbor = { username, password }   (operator-minted harbor robot account)
