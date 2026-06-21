@@ -18,6 +18,9 @@ metadata:
     # label (KGW_DISCOVERY_NAMESPACE_SELECTORS). Without it the routes get
     # status.parents:[] and the gateway 404s the host. 2026-06-20.
     kgateway.dev/discover: "true"
+    # This namespace includes embedded Postgres and Redis. Keep it out of
+    # ambient mesh; datastore protocols have previously hung behind ztunnel.
+    istio.io/dataplane-mode: none
 ---
 # ServiceAccount for the application (Vault k8s-auth role binds to this SA).
 apiVersion: v1
