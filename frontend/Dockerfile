@@ -40,15 +40,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Non-root user; UID 1000 matches the deployment's runAsUser/fsGroup.
-RUN addgroup -g 1000 -S nodejs && adduser -S -u 1000 -G nodejs nextjs
+# node:20-alpine already provides the non-root node user/group at UID/GID 1000,
+# matching the deployment's runAsUser/fsGroup.
 
 # Standalone output bundles public/ already. COPY directory destinations MUST
 # end in '/' (kaniko multi-source rule), else the build fails.
-COPY --from=build --chown=nextjs:nodejs /app/.next/standalone/ ./
-COPY --from=build --chown=nextjs:nodejs /app/.next/static/ ./.next/static/
+COPY --from=build --chown=node:node /app/.next/standalone/ ./
+COPY --from=build --chown=node:node /app/.next/static/ ./.next/static/
 
-USER 1000
+USER node
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
