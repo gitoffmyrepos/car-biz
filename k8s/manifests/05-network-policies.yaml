@@ -16,7 +16,7 @@ spec:
   - Ingress
 ---
 # Frontend Network Policy
-# Allows: ingress from ingress controller, egress to backend and DNS
+# Allows: ingress from gateway/ingress controller, egress to backend and DNS
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -33,7 +33,15 @@ spec:
   - Ingress
   - Egress
   ingress:
-  # Allow traffic from ingress controller
+  # Allow traffic from kgateway (current north-south path)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kgateway-system
+    ports:
+    - protocol: TCP
+      port: 3000
+  # Allow traffic from legacy ingress controller namespace if reintroduced
   - from:
     - namespaceSelector:
         matchLabels:
@@ -69,7 +77,7 @@ spec:
       port: 53
 ---
 # Backend Network Policy
-# Allows: ingress from frontend and ingress, egress to databases, vault, and external
+# Allows: ingress from frontend and gateway/ingress, egress to databases, vault, and external
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -95,7 +103,15 @@ spec:
     ports:
     - protocol: TCP
       port: 8000
-  # Allow traffic from ingress controller (for direct API access)
+  # Allow traffic from kgateway (for direct API access)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kgateway-system
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow traffic from legacy ingress controller namespace if reintroduced
   - from:
     - namespaceSelector:
         matchLabels:

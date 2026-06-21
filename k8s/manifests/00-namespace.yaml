@@ -14,6 +14,10 @@ metadata:
   labels:
     app: fx-weekly-lease
     environment: prod
+    # kgateway only discovers/attaches HTTPRoutes in namespaces carrying this
+    # label (KGW_DISCOVERY_NAMESPACE_SELECTORS). Without it the routes get
+    # status.parents:[] and the gateway 404s the host. 2026-06-20.
+    kgateway.dev/discover: "true"
 ---
 # ServiceAccount for the application (Vault k8s-auth role binds to this SA).
 apiVersion: v1
