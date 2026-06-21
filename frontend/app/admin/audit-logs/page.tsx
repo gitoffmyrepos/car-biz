@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { DataTable, Column } from '@/components/ui/DataTable';
+import { apiUrl } from '@/lib/api';
 
 interface AuditLogEntry {
   id: number;
@@ -87,7 +88,7 @@ export default function AuditLogsPage() {
       if (targetTypeFilter && !showInsuranceOnly) params.append('target_type_filter', targetTypeFilter);
       params.append('limit', '500');
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}${endpoint}?${params}`;
+      const url = apiUrl(`${endpoint}?${params}`);
 
       const response = await fetch(url, {
         headers: {
@@ -119,7 +120,7 @@ export default function AuditLogsPage() {
       if (!token) return;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/audit-logs/${logId}`,
+        apiUrl(`/admin/audit-logs/${logId}`),
         {
           headers: {
             'Authorization': `Bearer ${token}`,

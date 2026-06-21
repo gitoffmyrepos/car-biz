@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/lib/api';
 
 interface SystemSetting {
   id: number;
@@ -94,8 +95,8 @@ export default function AdminSettingsPage() {
       setLoading(true);
       setError(null);
       const url = selectedCategory
-        ? `http://localhost:8100/api/admin/settings?category=${selectedCategory}`
-        : 'http://localhost:8100/api/admin/settings';
+        ? apiUrl(`/admin/settings?category=${selectedCategory}`)
+        : apiUrl('/admin/settings');
 
       const response = await fetch(url, {
         headers: {
@@ -134,7 +135,7 @@ export default function AdminSettingsPage() {
   const handleSave = async (settingKey: string) => {
     try {
       setSaving(true);
-      const response = await fetch(`http://localhost:8100/api/admin/settings/${settingKey}`, {
+      const response = await fetch(apiUrl(`/admin/settings/${settingKey}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,

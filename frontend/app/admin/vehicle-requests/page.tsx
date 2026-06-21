@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/lib/api';
 import Link from 'next/link';
 
 interface VehicleRequest {
@@ -83,8 +84,8 @@ export default function AdminVehicleRequestsPage() {
     try {
       setLoading(true);
       const url = statusFilter === 'all'
-        ? 'http://localhost:8100/api/admin/vehicle-requests'
-        : `http://localhost:8100/api/admin/vehicle-requests?status_filter=${statusFilter}`;
+        ? apiUrl('/admin/vehicle-requests')
+        : apiUrl(`/admin/vehicle-requests?status_filter=${statusFilter}`);
 
       const response = await fetch(url, {
         headers: {
@@ -107,7 +108,7 @@ export default function AdminVehicleRequestsPage() {
 
   const fetchAvailableVehicles = async () => {
     try {
-      const response = await fetch('http://localhost:8100/api/admin/available-vehicles', {
+      const response = await fetch(apiUrl('/admin/available-vehicles'), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -161,7 +162,7 @@ export default function AdminVehicleRequestsPage() {
       setSubmitting(true);
       setError(null);
 
-      const response = await fetch('http://localhost:8100/api/admin/assign-vehicle', {
+      const response = await fetch(apiUrl('/admin/assign-vehicle'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -216,7 +217,7 @@ export default function AdminVehicleRequestsPage() {
       setSubmitting(true);
       setError(null);
 
-      const url = `http://localhost:8100/api/admin/vehicle-requests/${selectedRequest.id}/status?new_status=${newStatus}${statusNotes ? `&notes=${encodeURIComponent(statusNotes)}` : ''}`;
+      const url = apiUrl(`/admin/vehicle-requests/${selectedRequest.id}/status?new_status=${newStatus}${statusNotes ? `&notes=${encodeURIComponent(statusNotes)}` : ''}`);
 
       const response = await fetch(url, {
         method: 'PATCH',

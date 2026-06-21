@@ -63,11 +63,21 @@ spec:
             configMapKeyRef:
               name: fx-weekly-lease-config
               key: NEXT_PUBLIC_API_URL
+        - name: NEXT_PUBLIC_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: fx-weekly-lease-config
+              key: NEXT_PUBLIC_API_BASE_URL
         - name: NEXT_PUBLIC_APP_URL
           valueFrom:
             configMapKeyRef:
               name: fx-weekly-lease-config
               key: NEXT_PUBLIC_APP_URL
+        - name: INTERNAL_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: fx-weekly-lease-config
+              key: INTERNAL_API_BASE_URL
         - name: NODE_ENV
           value: "production"
         - name: PORT

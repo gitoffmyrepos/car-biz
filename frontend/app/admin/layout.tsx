@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { apiUrl } from '@/lib/api';
 
 // Admin sidebar navigation items
 const adminNavItems = [
@@ -132,7 +133,7 @@ export default function AdminLayout({
       }
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/auth/me`, {
+        const response = await fetch(apiUrl('/auth/me'), {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

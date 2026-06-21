@@ -9,8 +9,9 @@
  */
 
 import { revalidatePath } from 'next/cache';
+import { serverApiBaseUrl } from '@/lib/api';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8100/api';
+const API_BASE_URL = serverApiBaseUrl();
 
 // Map frontend values to backend enum values
 const vehicleTypeMap: Record<string, string> = {

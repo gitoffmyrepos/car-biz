@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { apiBaseUrl } from '@/lib/api';
 
 interface FormData {
   fullName: string;
@@ -140,7 +141,7 @@ export default function ContactPage() {
         notes: formData.notes.trim() || null,
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8100/api';
+      const apiUrl = apiBaseUrl();
       const response = await fetch(`${apiUrl}/inquiries/`, {
         method: 'POST',
         headers: {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ConfirmModal } from '@/components/ui/Modal';
+import { apiUrl } from '@/lib/api';
 
 interface Vehicle {
   id: number;
@@ -195,8 +196,8 @@ export default function AdminVehiclesPage() {
     try {
       setLoading(true);
       const url = statusFilter === 'all'
-        ? 'http://localhost:8100/api/admin/vehicles'
-        : `http://localhost:8100/api/admin/vehicles?status_filter=${statusFilter}`;
+        ? apiUrl('/admin/vehicles')
+        : apiUrl(`/admin/vehicles?status_filter=${statusFilter}`);
 
       const response = await fetch(url, {
         headers: {
@@ -225,7 +226,7 @@ export default function AdminVehiclesPage() {
     try {
       setLoadingReports(true);
       const response = await fetch(
-        `http://localhost:8100/api/admin/vehicles/${vehicleId}/condition-reports`,
+        apiUrl(`/admin/vehicles/${vehicleId}/condition-reports`),
         {
           headers: {
             'Authorization': `Bearer ${getAuthToken()}`,
@@ -265,7 +266,7 @@ export default function AdminVehiclesPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8100/api/admin/vehicles/${selectedVehicle.id}/condition-reports`,
+        apiUrl(`/admin/vehicles/${selectedVehicle.id}/condition-reports`),
         {
           method: 'POST',
           headers: {
@@ -366,7 +367,7 @@ export default function AdminVehiclesPage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8100/api/admin/vehicles', {
+      const response = await fetch(apiUrl('/admin/vehicles'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -401,7 +402,7 @@ export default function AdminVehiclesPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/vehicles/${selectedVehicle.id}`, {
+      const response = await fetch(apiUrl(`/admin/vehicles/${selectedVehicle.id}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -450,7 +451,7 @@ export default function AdminVehiclesPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/vehicles/${vehicleToDelete.id}`, {
+      const response = await fetch(apiUrl(`/admin/vehicles/${vehicleToDelete.id}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -501,7 +502,7 @@ export default function AdminVehiclesPage() {
       formData.append('file', selectedImage);
 
       const response = await fetch(
-        `http://localhost:8100/api/admin/vehicles/${vehicleId}/upload-image`,
+        apiUrl(`/admin/vehicles/${vehicleId}/upload-image`),
         {
           method: 'POST',
           headers: {
@@ -534,7 +535,7 @@ export default function AdminVehiclesPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8100/api/admin/vehicles/${vehicleId}/image`,
+        apiUrl(`/admin/vehicles/${vehicleId}/image`),
         {
           method: 'DELETE',
           headers: {
@@ -567,7 +568,7 @@ export default function AdminVehiclesPage() {
       formData.append('file', bulkImportFile);
 
       const response = await fetch(
-        'http://localhost:8100/api/admin/vehicles/bulk-import',
+        apiUrl('/admin/vehicles/bulk-import'),
         {
           method: 'POST',
           headers: {

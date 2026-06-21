@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiUrl } from '@/lib/api';
 
 interface Customer {
   id: number;
@@ -73,8 +74,8 @@ export default function AdminCustomersPage() {
     try {
       setLoading(true);
       const url = statusFilter === 'all'
-        ? 'http://localhost:8100/api/admin/customers'
-        : `http://localhost:8100/api/admin/customers?insurance_status=${statusFilter}`;
+        ? apiUrl('/admin/customers')
+        : apiUrl(`/admin/customers?insurance_status=${statusFilter}`);
 
       const response = await fetch(url, {
         headers: {
@@ -101,7 +102,7 @@ export default function AdminCustomersPage() {
 
   const openCustomerModal = async (customerId: number) => {
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/customers/${customerId}`, {
+      const response = await fetch(apiUrl(`/admin/customers/${customerId}`), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -138,7 +139,7 @@ export default function AdminCustomersPage() {
     try {
       setLoadingDocument(true);
       const response = await fetch(
-        `http://localhost:8100/api/admin/customers/${selectedCustomer.id}/insurance-document`,
+        apiUrl(`/admin/customers/${selectedCustomer.id}/insurance-document`),
         {
           method: 'POST',
           headers: {
@@ -177,7 +178,7 @@ export default function AdminCustomersPage() {
     try {
       setSubmitting(true);
       const response = await fetch(
-        `http://localhost:8100/api/admin/customers/${selectedCustomer.id}/verify-insurance`,
+        apiUrl(`/admin/customers/${selectedCustomer.id}/verify-insurance`),
         {
           method: 'POST',
           headers: {

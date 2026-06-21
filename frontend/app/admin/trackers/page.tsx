@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ConfirmModal } from '@/components/ui/Modal';
+import { apiUrl } from '@/lib/api';
 
 interface Tracker {
   id: number;
@@ -127,8 +128,8 @@ export default function AdminTrackersPage() {
     try {
       setLoading(true);
       const url = statusFilter === 'all'
-        ? 'http://localhost:8100/api/admin/trackers'
-        : `http://localhost:8100/api/admin/trackers?status_filter=${statusFilter}`;
+        ? apiUrl('/admin/trackers')
+        : apiUrl(`/admin/trackers?status_filter=${statusFilter}`);
 
       const response = await fetch(url, {
         headers: {
@@ -157,7 +158,7 @@ export default function AdminTrackersPage() {
     try {
       setLoadingVehicles(true);
       // Fetch all vehicles and filter for ones without trackers
-      const response = await fetch('http://localhost:8100/api/admin/vehicles', {
+      const response = await fetch(apiUrl('/admin/vehicles'), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -185,7 +186,7 @@ export default function AdminTrackersPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/trackers/${selectedTracker.id}/assign`, {
+      const response = await fetch(apiUrl(`/admin/trackers/${selectedTracker.id}/assign`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -228,7 +229,7 @@ export default function AdminTrackersPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/trackers/${trackerToUnassign.id}/unassign`, {
+      const response = await fetch(apiUrl(`/admin/trackers/${trackerToUnassign.id}/unassign`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -300,7 +301,7 @@ export default function AdminTrackersPage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8100/api/admin/trackers', {
+      const response = await fetch(apiUrl('/admin/trackers'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -342,7 +343,7 @@ export default function AdminTrackersPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/trackers/${selectedTracker.id}`, {
+      const response = await fetch(apiUrl(`/admin/trackers/${selectedTracker.id}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -397,7 +398,7 @@ export default function AdminTrackersPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/trackers/${trackerToDelete.id}`, {
+      const response = await fetch(apiUrl(`/admin/trackers/${trackerToDelete.id}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,

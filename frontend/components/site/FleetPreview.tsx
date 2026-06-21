@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiUrl } from '@/lib/api';
 import {
   type FleetVehicleSummary,
   formatWeeklyRate,
@@ -21,9 +22,7 @@ export function FleetPreview() {
 
   useEffect(() => {
     let active = true;
-    const base = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8100/api').replace(/\/$/, '');
-    const url = base.endsWith('/api') ? `${base}/public/fleet` : `${base}/api/public/fleet`;
-    fetch(`${url}?sort=year_desc`)
+    fetch(apiUrl('/public/fleet?sort=year_desc'))
       .then((r) => (r.ok ? r.json() : []))
       .then((data: unknown) => {
         if (active) setCars(Array.isArray(data) ? (data as FleetVehicleSummary[]).slice(0, 6) : []);

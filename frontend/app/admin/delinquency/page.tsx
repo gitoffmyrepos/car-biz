@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { apiUrl } from '@/lib/api';
 import Link from 'next/link';
 
 interface RecoveryWorkflowStatus {
@@ -162,8 +163,8 @@ export default function AdminDelinquencyPage() {
     try {
       setLoading(true);
       const url = statusFilter === 'all'
-        ? 'http://localhost:8100/api/admin/delinquency'
-        : `http://localhost:8100/api/admin/delinquency?status=${statusFilter}`;
+        ? apiUrl('/admin/delinquency')
+        : apiUrl(`/admin/delinquency?status=${statusFilter}`);
 
       const response = await fetch(url, {
         headers: {
@@ -186,7 +187,7 @@ export default function AdminDelinquencyPage() {
 
   const fetchDelinquencyTypes = async () => {
     try {
-      const response = await fetch('http://localhost:8100/api/admin/delinquency/types', {
+      const response = await fetch(apiUrl('/admin/delinquency/types'), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -205,7 +206,7 @@ export default function AdminDelinquencyPage() {
 
   const fetchRecoveryWorkflowStatus = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8100/api/admin/settings/recovery-workflow-status', {
+      const response = await fetch(apiUrl('/admin/settings/recovery-workflow-status'), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -267,7 +268,7 @@ export default function AdminDelinquencyPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/delinquency/${selectedCase.id}/contact`, {
+      const response = await fetch(apiUrl(`/admin/delinquency/${selectedCase.id}/contact`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -300,7 +301,7 @@ export default function AdminDelinquencyPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/delinquency/${delinquencyCase.id}/escalate?level=${level}`, {
+      const response = await fetch(apiUrl(`/admin/delinquency/${delinquencyCase.id}/escalate?level=${level}`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -333,7 +334,7 @@ export default function AdminDelinquencyPage() {
 
   const fetchRecoveryActionForCase = async (caseId: number): Promise<RecoveryAction | null> => {
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/recovery-actions?case_id=${caseId}`, {
+      const response = await fetch(apiUrl(`/admin/recovery-actions?case_id=${caseId}`), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -401,7 +402,7 @@ export default function AdminDelinquencyPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/recovery-actions/${selectedRecoveryAction.id}/vendor`, {
+      const response = await fetch(apiUrl(`/admin/recovery-actions/${selectedRecoveryAction.id}/vendor`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -460,7 +461,7 @@ export default function AdminDelinquencyPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/delinquency/${selectedCase.id}/authorize-recovery`, {
+      const response = await fetch(apiUrl(`/admin/delinquency/${selectedCase.id}/authorize-recovery`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -498,7 +499,7 @@ export default function AdminDelinquencyPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/delinquency/${selectedCase.id}/resolve`, {
+      const response = await fetch(apiUrl(`/admin/delinquency/${selectedCase.id}/resolve`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { apiUrl } from '@/lib/api';
 
 interface IncidentReport {
   id: number;
@@ -89,7 +90,7 @@ export default function IncidentsPage() {
       if (severityFilter) params.append('severity_filter', severityFilter);
       if (typeFilter) params.append('type_filter', typeFilter);
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/incidents?${params}`;
+      const url = apiUrl(`/admin/incidents?${params}`);
 
       const response = await fetch(url, {
         headers: {
@@ -121,7 +122,7 @@ export default function IncidentsPage() {
       if (!token) return;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/incidents/${incidentId}/start-review`,
+        apiUrl(`/admin/incidents/${incidentId}/start-review`),
         {
           method: 'POST',
           headers: {
@@ -153,7 +154,7 @@ export default function IncidentsPage() {
       params.append('resolution_notes', resolutionNotes);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/incidents/${selectedIncident.id}/resolve?${params}`,
+        apiUrl(`/admin/incidents/${selectedIncident.id}/resolve?${params}`),
         {
           method: 'POST',
           headers: {
@@ -181,7 +182,7 @@ export default function IncidentsPage() {
       if (!token) return;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/incidents/${selectedIncident.id}`,
+        apiUrl(`/admin/incidents/${selectedIncident.id}`),
         {
           method: 'PUT',
           headers: {
@@ -199,7 +200,7 @@ export default function IncidentsPage() {
         setAdminNotes('');
         // Refresh the selected incident
         const incidentResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/incidents/${selectedIncident.id}`,
+          apiUrl(`/admin/incidents/${selectedIncident.id}`),
           {
             headers: {
               'Authorization': `Bearer ${token}`,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/lib/api';
 
 interface PaymentProof {
   has_proof: boolean;
@@ -113,7 +114,7 @@ export default function AdminPaymentsPage() {
         throw new Error('Not authenticated');
       }
 
-      let url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/invoices?limit=100`;
+      let url = apiUrl('/admin/invoices?limit=100');
       if (statusFilter) {
         url += `&status_filter=${statusFilter}`;
       }
@@ -228,7 +229,7 @@ export default function AdminPaymentsPage() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/invoices/${invoiceId}/payment-proof`,
+        apiUrl(`/admin/invoices/${invoiceId}/payment-proof`),
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -269,7 +270,7 @@ export default function AdminPaymentsPage() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100'}/api/admin/invoices/${selectedInvoice.id}/verify`,
+        apiUrl(`/admin/invoices/${selectedInvoice.id}/verify`),
         {
           method: 'POST',
           headers: {

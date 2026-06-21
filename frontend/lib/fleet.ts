@@ -12,6 +12,8 @@
  *   GET /api/public/fleet/{id}
  */
 
+import { serverApiBaseUrl } from '@/lib/api';
+
 export interface FleetImage {
   id: number;
   url: string;
@@ -56,10 +58,7 @@ export interface FleetFilters {
  * non-public internal var when present.
  */
 function apiBase(): string {
-  const fromServer = process.env.API_BASE_URL;
-  const fromPublic = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const base = (fromServer || fromPublic || 'http://localhost:8100/api').replace(/\/$/, '');
-  return base.endsWith('/api') ? base : `${base}/api`;
+  return serverApiBaseUrl();
 }
 
 function buildFleetQuery(filters: FleetFilters): string {

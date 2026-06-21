@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/lib/api';
 import Link from 'next/link';
 
 interface MaintenanceSchedule {
@@ -138,8 +139,8 @@ export default function AdminMaintenancePage() {
     try {
       setLoading(true);
       const url = statusFilter === 'all'
-        ? 'http://localhost:8100/api/admin/maintenance'
-        : `http://localhost:8100/api/admin/maintenance?status=${statusFilter}`;
+        ? apiUrl('/admin/maintenance')
+        : apiUrl(`/admin/maintenance?status=${statusFilter}`);
 
       const response = await fetch(url, {
         headers: {
@@ -162,7 +163,7 @@ export default function AdminMaintenancePage() {
 
   const fetchMaintenanceTypes = async () => {
     try {
-      const response = await fetch('http://localhost:8100/api/admin/maintenance/types', {
+      const response = await fetch(apiUrl('/admin/maintenance/types'), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -182,7 +183,7 @@ export default function AdminMaintenancePage() {
   const fetchVehicles = async () => {
     try {
       setLoadingVehicles(true);
-      const response = await fetch('http://localhost:8100/api/admin/vehicles', {
+      const response = await fetch(apiUrl('/admin/vehicles'), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -249,7 +250,7 @@ export default function AdminMaintenancePage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8100/api/admin/maintenance', {
+      const response = await fetch(apiUrl('/admin/maintenance'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -297,7 +298,7 @@ export default function AdminMaintenancePage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/maintenance/${schedule.id}/start`, {
+      const response = await fetch(apiUrl(`/admin/maintenance/${schedule.id}/start`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -327,7 +328,7 @@ export default function AdminMaintenancePage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/maintenance/${selectedSchedule.id}/complete`, {
+      const response = await fetch(apiUrl(`/admin/maintenance/${selectedSchedule.id}/complete`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -364,7 +365,7 @@ export default function AdminMaintenancePage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/maintenance/${selectedSchedule.id}/cancel`, {
+      const response = await fetch(apiUrl(`/admin/maintenance/${selectedSchedule.id}/cancel`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -397,7 +398,7 @@ export default function AdminMaintenancePage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8100/api/admin/maintenance/${schedule.id}`, {
+      const response = await fetch(apiUrl(`/admin/maintenance/${schedule.id}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,

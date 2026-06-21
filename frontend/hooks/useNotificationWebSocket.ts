@@ -9,13 +9,11 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { apiWebSocketBaseUrl } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 // WebSocket URL - uses same host as API but with ws:// protocol
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL ||
-  (typeof window !== 'undefined'
-    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:8100/api`
-    : 'ws://localhost:8100/api');
+const WS_BASE_URL = apiWebSocketBaseUrl();
 
 // Notification data from WebSocket
 export interface WebSocketNotification {

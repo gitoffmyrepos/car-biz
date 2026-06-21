@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/lib/api';
 
 // Dashboard stats card component
 function StatCard({
@@ -141,7 +142,7 @@ export default function AdminDashboard() {
 
       try {
         // Fetch dashboard stats from admin endpoint
-        const statsResponse = await fetch('http://localhost:8100/api/admin/dashboard/stats', {
+        const statsResponse = await fetch(apiUrl('/admin/dashboard/stats'), {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         if (statsResponse.ok) {
@@ -150,7 +151,7 @@ export default function AdminDashboard() {
         }
 
         // Fetch recent inquiries
-        const inquiriesResponse = await fetch('http://localhost:8100/api/inquiries/');
+        const inquiriesResponse = await fetch(apiUrl('/inquiries/'));
         if (inquiriesResponse.ok) {
           const inquiriesData = await inquiriesResponse.json();
           setRecentInquiries(inquiriesData.items?.slice(0, 5) || []);

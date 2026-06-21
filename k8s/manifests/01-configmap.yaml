@@ -23,6 +23,7 @@ data:
   NEXT_PUBLIC_API_URL: "https://weekly-lease-api.strategybase.io"
   NEXT_PUBLIC_API_BASE_URL: "https://weekly-lease-api.strategybase.io/api"
   NEXT_PUBLIC_APP_URL: "https://weekly-lease.strategybase.io"
+  INTERNAL_API_BASE_URL: "http://backend-service:8000/api"
   API_BASE_URL: "https://weekly-lease.strategybase.io"
 
   # Backend Configuration

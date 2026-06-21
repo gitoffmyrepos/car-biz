@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/lib/api';
 
 interface Inquiry {
   id: number;
@@ -71,7 +72,7 @@ export default function AdminInquiriesPage() {
     setLoading(true);
     setError(null);
     try {
-      let url = `http://localhost:8100/api/inquiries/?page=${page}&per_page=10`;
+      let url = apiUrl(`/inquiries/?page=${page}&per_page=10`);
       if (statusFilter) {
         url += `&status_filter=${statusFilter}`;
       }
@@ -98,7 +99,7 @@ export default function AdminInquiriesPage() {
     setUpdatingStatus(true);
     try {
       const response = await fetch(
-        `http://localhost:8100/api/inquiries/${inquiryId}/status?new_status=${newStatus}`,
+        apiUrl(`/inquiries/${inquiryId}/status?new_status=${newStatus}`),
         {
           method: 'PATCH',
         }
