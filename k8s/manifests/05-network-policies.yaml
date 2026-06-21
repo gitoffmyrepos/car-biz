@@ -143,8 +143,10 @@ spec:
     ports:
     - protocol: TCP
       port: 6379
-  # Allow egress to Vault
+  # Allow egress to Vault ExternalName backed by vault.strategybase.io.
   - to:
+    - ipBlock:
+        cidr: 192.168.119.246/32
     - namespaceSelector:
         matchLabels:
           name: vault

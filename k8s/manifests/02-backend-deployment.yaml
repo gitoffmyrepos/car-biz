@@ -129,7 +129,17 @@ spec:
             secretKeyRef:
               name: fx-weekly-lease-secrets
               key: minio-access-key
+        - name: S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: minio-access-key
         - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: minio-secret-key
+        - name: S3_SECRET_KEY
           valueFrom:
             secretKeyRef:
               name: fx-weekly-lease-secrets

@@ -15,19 +15,20 @@ data:
   # Application Settings
   APP_NAME: "FX Weekly Lease"
   APP_VERSION: "1.0.0"
-  ENVIRONMENT: "${ENVIRONMENT}"
+  APP_ENV: "production"
+  ENVIRONMENT: "prod"
   DEBUG: "false"
 
   # Frontend Configuration
   NEXT_PUBLIC_API_URL: "https://weekly-lease-api.strategybase.io"
   NEXT_PUBLIC_API_BASE_URL: "https://weekly-lease-api.strategybase.io/api"
   NEXT_PUBLIC_APP_URL: "https://weekly-lease.strategybase.io"
-  API_BASE_URL: "http://backend-service.fx-weekly-lease-prod.svc.cluster.local:8000/api"
+  API_BASE_URL: "https://weekly-lease.strategybase.io"
 
   # Backend Configuration
   API_HOST: "0.0.0.0"
   API_PORT: "8000"
-  CORS_ORIGINS: "https://weekly-lease.strategybase.io"
+  CORS_ALLOWED_ORIGINS: "[\"https://weekly-lease.strategybase.io\"]"
 
   # Database Service Endpoints (credentials from Vault)
   # PostgreSQL - Deployed separately or via operator
@@ -45,11 +46,19 @@ data:
   MINIO_BUCKET_PAYMENTS: "fx-weekly-lease-payments"
   MINIO_BUCKET_INSURANCE: "fx-weekly-lease-insurance"
   MINIO_BUCKET_INCIDENTS: "fx-weekly-lease-incidents"
+  S3_ENDPOINT: "http://minio.prod-forex.svc.cluster.local:9000"
+  S3_USE_SSL: "false"
+  S3_BUCKET_PAYMENTS: "fx-weekly-lease-payments"
+  S3_BUCKET_INSURANCE: "fx-weekly-lease-insurance"
+  S3_BUCKET_INCIDENTS: "fx-weekly-lease-incidents"
+  S3_BUCKET_CONDITION_REPORTS: "fx-weekly-lease-condition-reports"
+  S3_BUCKET_VEHICLES: "fx-weekly-lease-vehicles"
+  S3_BUCKET_VEHICLE_IMAGES: "car-biz-vehicle-images"
 
   # Vault Configuration
-  VAULT_ADDR: "http://vault.vault.svc.cluster.local:8200"
-  VAULT_KV_PATH: "secret/fx-weekly-lease/${ENVIRONMENT}"
-  VAULT_TRANSIT_KEY: "fx-weekly-lease-${ENVIRONMENT}-transit"
+  VAULT_ADDR: "http://vault-external.prod-forex.svc.cluster.local:8200"
+  VAULT_KV_PATH_PREFIX: "secret/fx-weekly-lease/prod"
+  VAULT_TRANSIT_KEY_NAME: "fx-weekly-lease-prod-transit"
   VAULT_AUTH_METHOD: "kubernetes"
 
   # Keycloak/OIDC Configuration
@@ -59,6 +68,8 @@ data:
   OIDC_CLIENT_ID: "fx-weekly-lease-app"
 
   # Rate Limiting
+  RATE_LIMIT_REQUESTS: "60"
+  RATE_LIMIT_WINDOW: "60"
   RATE_LIMIT_REQUESTS_PER_MINUTE: "60"
   RATE_LIMIT_AUTH_REQUESTS_PER_MINUTE: "10"
 
@@ -69,6 +80,7 @@ data:
   # Email Configuration (Resend API key from Vault)
   EMAIL_FROM: "noreply@strategybase.io"
   EMAIL_FROM_NAME: "FX Weekly Lease"
+  RESEND_FROM_EMAIL: "noreply@strategybase.io"
 
   # Background Jobs
   CELERY_BROKER_URL: "redis://redis-service:6379/0"
