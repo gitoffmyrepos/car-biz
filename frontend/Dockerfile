@@ -1,29 +1,35 @@
-# Weekly Vehicle Leasing Platform - Frontend Dockerfile
-# Salvage-to-Lux Fleet Management - Next.js Frontend
+# Weekly Vehicle Leasing Platform — Frontend (Next.js) PRODUCTION image.
+# Multi-stage standalone build (next.config.js has output:'standalone').
+# Runs `node server.js` as non-root, writes nothing to the root FS, so it's
+# compatible with readOnlyRootFilesystem (cache/tmp come from emptyDir mounts).
 
-FROM node:20-alpine
-
-# Set working directory
+# ---- deps ----
+FROM node:20-alpine AS deps
 WORKDIR /app
-
-# Install dependencies only when needed
 RUN apk add --no-cache libc6-compat
-
-# Copy package files
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy source code
+# ---- build ----
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Expose port
-EXPOSE 3000
-
-# Set environment variables
-ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
 
-# Start development server
-CMD ["npm", "run", "dev"]
+# ---- runner ----
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+# Numeric UID/GID (Kaniko can't resolve usernames; matches deployment runAsUser).
+RUN addgroup -g 1000 nodejs && adduser -u 1000 -G nodejs -S -H nextjs
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=1000:1000 /app/.next/standalone ./
+COPY --from=builder --chown=1000:1000 /app/.next/static ./.next/static
+USER 1000
+EXPOSE 3000
+CMD ["node", "server.js"]
