@@ -33,23 +33,34 @@ const HeroScene = dynamic(() => import('./HeroScene'), {
   loading: () => <HeroPoster />,
 });
 
-/** Static poster — pure CSS, no image asset required. */
+/** Hero background — real car photo (Unsplash, free license) with a slow
+ *  Ken-Burns drift for a cinematic in-motion feel. Dark + red gradients keep
+ *  the white/red copy legible. `.hero-kenburns` is frozen under reduced-motion
+ *  (globals.css). This is the default hero visual; the WebGL car is opt-in via
+ *  NEXT_PUBLIC_HERO_3D once a real car.glb is supplied. */
 function HeroPoster() {
   return (
-    <div
-      aria-hidden="true"
-      className="absolute inset-0"
-      style={{
-        background:
-          'radial-gradient(60% 60% at 70% 40%, rgba(255,59,64,0.22) 0%, rgba(225,29,42,0.06) 40%, rgba(13,13,13,0) 70%), #0d0d0d',
-      }}
-    >
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden" style={{ background: '#0d0d0d' }}>
       <div
-        className="absolute right-[8%] top-1/2 -translate-y-1/2 h-56 w-56 md:h-80 md:w-80 rounded-full opacity-70"
+        className="absolute inset-0 hero-kenburns"
+        style={{
+          backgroundImage: "url('/images/hero-car.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center right',
+        }}
+      />
+      <div
+        className="absolute inset-0"
         style={{
           background:
-            'conic-gradient(from 140deg, rgba(255,59,64,0.0), rgba(255,59,64,0.55), rgba(225,29,42,0.1), rgba(255,59,64,0.0))',
-          filter: 'blur(2px)',
+            'radial-gradient(70% 70% at 75% 45%, rgba(225,29,42,0.16) 0%, rgba(13,13,13,0) 60%)',
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(90deg, #0d0d0d 0%, rgba(13,13,13,0.62) 38%, rgba(13,13,13,0.12) 100%)',
         }}
       />
     </div>
@@ -94,7 +105,11 @@ export function Hero3D({ scrollTargetRef }: { scrollTargetRef?: RefObject<HTMLEl
   });
 
   useEffect(() => {
-    if (!reduce && webglSupported()) setEnable3D(true);
+    // Real car photo is the default hero. The procedural WebGL car is opt-in
+    // (NEXT_PUBLIC_HERO_3D=true) — enable once a proper car.glb is supplied.
+    if (process.env.NEXT_PUBLIC_HERO_3D === 'true' && !reduce && webglSupported()) {
+      setEnable3D(true);
+    }
   }, [reduce]);
 
   return (
