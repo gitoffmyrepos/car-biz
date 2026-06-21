@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # ============================================================================
-# CAR-BIZ FRONTEND — Next.js standalone (multi-stage)
+# GIGWHEELS FRONTEND — Next.js standalone (multi-stage)
 # Emulates the FX microservices/frontend-next pattern: hardened npm install
 # (kaniko-safe), standalone output, non-root runner, trailing-slash COPY.
 # Port 3000 (matches the deployment/service/HTTPRoute).
@@ -24,9 +24,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # NEXT_PUBLIC_* are inlined into the client bundle at build time, so they must
 # be present BEFORE `next build`. Single-level api subdomain (CF Universal SSL
-# covers *.strategybase.io but not the 2-level api.weekly-lease).
-ARG NEXT_PUBLIC_API_URL=https://weekly-lease-api.strategybase.io
-ARG NEXT_PUBLIC_API_BASE_URL=https://weekly-lease-api.strategybase.io/api
+# covers *.strategybase.io but not the 2-level gigwheels-api).
+ARG NEXT_PUBLIC_API_URL=https://gigwheels-api.strategybase.io
+ARG NEXT_PUBLIC_API_BASE_URL=https://gigwheels-api.strategybase.io/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 
@@ -38,9 +38,9 @@ RUN npm run build
 
 # ---- Production Stage ----
 FROM node:20-alpine AS runner
-LABEL org.opencontainers.image.title="Car-Biz Frontend (Next.js)"
+LABEL org.opencontainers.image.title="GigWheels Frontend (Next.js)"
 LABEL org.opencontainers.image.vendor="StrategyBase"
-LABEL service="car-biz-frontend"
+LABEL service="gigwheels-frontend"
 
 WORKDIR /app
 ENV NODE_ENV=production

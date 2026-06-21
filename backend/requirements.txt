@@ -1,5 +1,5 @@
-# Weekly Vehicle Leasing Platform - Backend Dependencies
-# Salvage-to-Lux Fleet Management
+# GigWheels - Backend Dependencies
+# Weekly car rentals for gig drivers
 
 # Web Framework
 fastapi==0.109.2

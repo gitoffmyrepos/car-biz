@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - API Integration Tests
-Salvage-to-Lux Fleet Management
+GigWheels - API Integration Tests
+Weekly car rentals for gig drivers
 
 Integration tests for core API endpoints.
 """

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Background Job Service
-Salvage-to-Lux Fleet Management
+GigWheels - Background Job Service
+Weekly car rentals for gig drivers
 
 Redis-backed background job queue for async processing of tasks like email notifications.
 """

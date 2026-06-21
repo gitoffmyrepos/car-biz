@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Database Configuration
-Salvage-to-Lux Fleet Management
+GigWheels - Database Configuration
+Weekly car rentals for gig drivers
 
 SQLAlchemy async database setup with connection pooling.
 """

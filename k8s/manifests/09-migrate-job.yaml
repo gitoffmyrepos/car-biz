@@ -1,4 +1,4 @@
-# Database migration Job for FX Weekly Lease (car-biz)
+# Database migration Job for GigWheels (car-biz)
 # Runs `alembic upgrade head` using the backend image so the schema
 # (incl. migration 002 vehicle_images) is applied before/with the rollout.
 #
@@ -17,15 +17,15 @@
 # `job-revision` label, since Job pod templates are immutable.
 #
 # OPERATOR — see 07-postgres.yaml header for the full list of Vault properties.
-# This Job consumes: fx-weekly-lease/prod/database property `url`
+# This Job consumes: gigwheels/prod/database property `url`
 # (exposed as secret key database-url -> env DATABASE_URL).
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: fx-weekly-lease-migrate
+  name: gigwheels-migrate
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: migrate
   annotations:
     # ArgoCD: run as a Sync hook before the rest of the app is healthy.
@@ -43,10 +43,10 @@ spec:
   template:
     metadata:
       labels:
-        app: fx-weekly-lease
+        app: gigwheels
         component: migrate
     spec:
-      serviceAccountName: fx-weekly-lease-sa
+      serviceAccountName: gigwheels-sa
       restartPolicy: Never
       securityContext:
         runAsNonRoot: true
@@ -72,12 +72,12 @@ spec:
           echo "postgres is ready"
         envFrom:
         - configMapRef:
-            name: fx-weekly-lease-config
+            name: gigwheels-config
         env:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: database-user
         resources:
           requests:
@@ -97,7 +97,7 @@ spec:
             - ALL
       containers:
       - name: migrate
-        image: harbor.strategybase.io/sb-custom-docker-images/car-biz-backend:prod-latest
+        image: harbor.strategybase.io/sb-custom-docker-images/gigwheels-backend:prod-latest
         imagePullPolicy: Always
         # Run from the backend app dir where alembic.ini lives.
         command:
@@ -106,22 +106,22 @@ spec:
         - head
         envFrom:
         - configMapRef:
-            name: fx-weekly-lease-config
+            name: gigwheels-config
         env:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: database-url
         - name: REDIS_URL
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: redis-url
         - name: VAULT_TOKEN
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: vault-token
         resources:
           requests:

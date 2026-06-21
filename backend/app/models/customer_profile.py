@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Customer Profile Model
-Salvage-to-Lux Fleet Management
+GigWheels - Customer Profile Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for customer profiles.
 """

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Structured Logging
-Salvage-to-Lux Fleet Management
+GigWheels - Structured Logging
+Weekly car rentals for gig drivers
 
 Provides structured JSON logging with:
 - Correlation/request ID tracking

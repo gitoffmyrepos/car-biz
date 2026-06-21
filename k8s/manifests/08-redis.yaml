@@ -1,21 +1,21 @@
-# Redis for FX Weekly Lease (car-biz)
-# Dedicated, single-replica Redis in-namespace (fx-weekly-lease-prod).
+# Redis for GigWheels (car-biz)
+# Dedicated, single-replica Redis in-namespace (gigwheels-prod).
 # The ConfigMap (01-configmap.yaml) points the backend at:
 #   REDIS_HOST: redis-service
 #   REDIS_PORT: 6379
 # The password is sourced from the Vault-backed ExternalSecret
-# `fx-weekly-lease-secrets` (06-external-secrets.yaml), key: redis-password.
+# `gigwheels-secrets` (06-external-secrets.yaml), key: redis-password.
 # AOF persistence is enabled on a small PVC.
 #
 # =============================================================================
 # OPERATOR — Vault properties that MUST be populated before deploy
 # =============================================================================
-#   fx-weekly-lease/prod/redis    = { url, password }
+#   gigwheels/prod/redis    = { url, password }
 #       url      -> redis://:<password>@redis-service:6379/0
 #       password -> generated strong password (also used by --requirepass below)
-#   fx-weekly-lease/prod/database = { url, user, password, database }
-#   fx-weekly-lease/common/harbor = { username, password }   (operator-minted harbor robot account)
-#   fx-weekly-lease/prod/minio    = { access_key, secret_key } (scoped key for bucket car-biz-vehicle-images)
+#   gigwheels/prod/database = { url, user, password, database }
+#   gigwheels/common/harbor = { username, password }   (operator-minted harbor robot account)
+#   gigwheels/prod/minio    = { access_key, secret_key } (scoped key for bucket gigwheels-vehicle-images)
 # =============================================================================
 ---
 apiVersion: v1
@@ -23,7 +23,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: redis-data
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: redis
 spec:
   accessModes:
@@ -35,9 +35,9 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fx-weekly-lease-redis
+  name: gigwheels-redis
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: redis
 spec:
   replicas: 1
@@ -45,15 +45,15 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: fx-weekly-lease
+      app: gigwheels
       component: redis
   template:
     metadata:
       labels:
-        app: fx-weekly-lease
+        app: gigwheels
         component: redis
     spec:
-      serviceAccountName: fx-weekly-lease-sa
+      serviceAccountName: gigwheels-sa
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
@@ -80,7 +80,7 @@ spec:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: redis-password
         resources:
           requests:
@@ -144,7 +144,7 @@ kind: Service
 metadata:
   name: redis-service
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: redis
 spec:
   type: ClusterIP
@@ -154,5 +154,5 @@ spec:
     protocol: TCP
     name: redis
   selector:
-    app: fx-weekly-lease
+    app: gigwheels
     component: redis

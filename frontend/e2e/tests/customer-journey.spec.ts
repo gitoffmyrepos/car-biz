@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Customer Journey E2E Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Customer Journey E2E Tests
+ * Weekly car rentals for gig drivers
  *
  * End-to-end tests for the complete customer journey.
  */

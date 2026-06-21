@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Notification Badge Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Notification Badge Component
+ * Weekly car rentals for gig drivers
  *
  * Real-time notification badge with unread count.
  * Connects to WebSocket for live updates.

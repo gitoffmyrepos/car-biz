@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - System Settings Model
-Salvage-to-Lux Fleet Management
+GigWheels - System Settings Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for configurable system settings.
 """
@@ -109,7 +109,7 @@ DEFAULT_SETTINGS = [
     # General
     {
         "setting_key": "company_name",
-        "setting_value": "FX Weekly Lease",
+        "setting_value": "GigWheels",
         "display_name": "Company Name",
         "description": "The company name displayed throughout the application",
         "category": "general",

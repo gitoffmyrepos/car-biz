@@ -1,5 +1,5 @@
-# Weekly Vehicle Leasing Platform - Backend Dockerfile
-# Salvage-to-Lux Fleet Management - FastAPI Backend
+# GigWheels - Backend Dockerfile
+# Weekly car rentals for gig drivers - FastAPI Backend
 
 FROM python:3.12-slim
 

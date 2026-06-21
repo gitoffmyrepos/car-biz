@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Auth Context
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Auth Context
+ * Weekly car rentals for gig drivers
  *
  * React context for authentication state management.
  * Supports both OIDC (Keycloak) and development mode authentication.
@@ -56,7 +56,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Token storage helpers
-const TOKEN_KEY = 'fx_weekly_lease_token';
+const TOKEN_KEY = 'gigwheels_token';
 
 function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Fleet API Tests
-Salvage-to-Lux Fleet Management
+GigWheels - Fleet API Tests
+Weekly car rentals for gig drivers
 
 Tests for the public fleet inventory API and admin vehicle-image endpoints.
 

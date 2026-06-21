@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Notification Model
-Salvage-to-Lux Fleet Management
+GigWheels - Notification Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for customer notifications (in-app).
 """

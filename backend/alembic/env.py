@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Alembic Environment Configuration
-Salvage-to-Lux Fleet Management
+GigWheels - Alembic Environment Configuration
+Weekly car rentals for gig drivers
 
 Async migration support for PostgreSQL with SQLAlchemy.
 """

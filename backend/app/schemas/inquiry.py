@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Inquiry Schemas
-Salvage-to-Lux Fleet Management
+GigWheels - Inquiry Schemas
+Weekly car rentals for gig drivers
 
 Pydantic schemas for inquiry API validation and serialization.
 """

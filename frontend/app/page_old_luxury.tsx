@@ -367,7 +367,7 @@ export default function HomePage() {
           <div className="container-luxury">
             <div className="text-center mb-16">
               <h2 className="heading-section text-luxury-charcoal dark:text-white mb-4">
-                Why Choose FX Weekly?
+                Why Choose GigWheels?
               </h2>
               <p className="text-xl text-muted max-w-2xl mx-auto">
                 Experience the freedom of premium vehicles without the burden of ownership
@@ -491,7 +491,7 @@ export default function HomePage() {
                 What Our Customers Say
               </h2>
               <p className="text-xl text-muted max-w-2xl mx-auto">
-                Join thousands of satisfied customers who trust FX Weekly
+                Join thousands of satisfied customers who trust GigWheels
               </p>
             </motion.div>
 
@@ -557,7 +557,7 @@ export default function HomePage() {
                 FX<span className="text-gold-500">Weekly</span>
               </Link>
               <p className="text-gray-300 leading-relaxed">
-                Premium vehicle leasing with flexible weekly payments.
+                Weekly car rentals for gig drivers, with flexible weekly payments.
               </p>
             </div>
 
@@ -621,7 +621,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; 2026 FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; 2026 GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

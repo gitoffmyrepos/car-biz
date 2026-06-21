@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Vault Service
-Salvage-to-Lux Fleet Management
+GigWheels - Vault Service
+Weekly car rentals for gig drivers
 
 HashiCorp Vault integration for secrets management and Transit encryption.
 """

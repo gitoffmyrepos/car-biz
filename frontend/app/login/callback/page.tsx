@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - OIDC Callback Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - OIDC Callback Page
+ * Weekly car rentals for gig drivers
  *
  * Handles the OIDC callback from Keycloak after authentication.
  */

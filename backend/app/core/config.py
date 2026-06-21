@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Configuration
-Salvage-to-Lux Fleet Management
+GigWheels - Configuration
+Weekly car rentals for gig drivers
 
 Application settings loaded from environment variables.
 """
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     """Application configuration loaded from environment variables."""
 
     # Application
-    APP_NAME: str = "FX Weekly Lease"
+    APP_NAME: str = "GigWheels"
     APP_VERSION: str = "1.0.0"
     APP_ENV: str = "dev"
     DEBUG: bool = True
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     ]
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/weekly_lease"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/gigwheels"
 
     # Redis
     REDIS_URL: str = "redis://redis:6379"
@@ -46,13 +46,13 @@ class Settings(BaseSettings):
     S3_ACCESS_KEY: str = ""
     S3_SECRET_KEY: str = ""
     S3_USE_SSL: bool = True
-    S3_BUCKET_PAYMENTS: str = "fx-weekly-lease-payments"
-    S3_BUCKET_INSURANCE: str = "fx-weekly-lease-insurance"
-    S3_BUCKET_INCIDENTS: str = "fx-weekly-lease-incidents"
-    S3_BUCKET_CONDITION_REPORTS: str = "fx-weekly-lease-condition-reports"
-    S3_BUCKET_VEHICLES: str = "fx-weekly-lease-vehicles"
+    S3_BUCKET_PAYMENTS: str = "gigwheels-payments"
+    S3_BUCKET_INSURANCE: str = "gigwheels-insurance"
+    S3_BUCKET_INCIDENTS: str = "gigwheels-incidents"
+    S3_BUCKET_CONDITION_REPORTS: str = "gigwheels-condition-reports"
+    S3_BUCKET_VEHICLES: str = "gigwheels-vehicles"
     # Public-read bucket for marketing vehicle gallery photos (not KYC/private docs)
-    S3_BUCKET_VEHICLE_IMAGES: str = "car-biz-vehicle-images"
+    S3_BUCKET_VEHICLE_IMAGES: str = "gigwheels-vehicle-images"
     # Optional public base URL for the vehicle-images bucket (e.g. CDN / MinIO public host).
     # When set, public gallery URLs are built as f"{S3_PUBLIC_BASE_URL}/{bucket}/{key}".
     # When empty, the storage service falls back to presigned GETs or the local file route.
@@ -63,8 +63,8 @@ class Settings(BaseSettings):
     VAULT_ADDR: str = ""
     VAULT_AUTH_METHOD: str = "token"
     VAULT_TOKEN: str = ""
-    VAULT_TRANSIT_KEY_NAME: str = "fx-weekly-lease-dev-transit"
-    VAULT_KV_PATH_PREFIX: str = "secret/fx-weekly-lease/dev"
+    VAULT_TRANSIT_KEY_NAME: str = "gigwheels-dev-transit"
+    VAULT_KV_PATH_PREFIX: str = "secret/gigwheels/dev"
 
     # Resend Email
     RESEND_API_KEY: str = ""

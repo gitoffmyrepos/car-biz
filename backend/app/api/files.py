@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - File Serving API
-Salvage-to-Lux Fleet Management
+GigWheels - File Serving API
+Weekly car rentals for gig drivers
 
 Serves files from local storage in development mode.
 In production, files are served directly via S3/MinIO signed URLs.
@@ -60,10 +60,10 @@ async def serve_file(
     """
     # Validate bucket name to prevent path traversal
     allowed_buckets = [
-        "fx-weekly-lease-insurance",
-        "fx-weekly-lease-payments",
-        "fx-weekly-lease-incidents",
-        "fx-weekly-lease-vehicles",
+        "gigwheels-insurance",
+        "gigwheels-payments",
+        "gigwheels-incidents",
+        "gigwheels-vehicles",
     ]
 
     if bucket not in allowed_buckets:

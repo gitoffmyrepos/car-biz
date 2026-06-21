@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Form Validation Utilities
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Form Validation Utilities
+ * Weekly car rentals for gig drivers
  *
  * Client-side form validation with comprehensive rules and error messages.
  */

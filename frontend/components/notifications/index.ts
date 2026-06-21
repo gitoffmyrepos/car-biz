@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Notifications Components
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Notifications Components
+ * Weekly car rentals for gig drivers
  *
  * Export all notification-related components.
  */

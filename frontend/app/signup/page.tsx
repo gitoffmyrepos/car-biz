@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Signup Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Signup Page
+ * Weekly car rentals for gig drivers
  *
  * Customer registration page with Keycloak integration and dev mode support.
  * New users are assigned the 'customer' role by default.

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Inquiry Model
-Salvage-to-Lux Fleet Management
+GigWheels - Inquiry Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for customer inquiries/contact form submissions.
 """

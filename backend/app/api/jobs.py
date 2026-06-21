@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Background Jobs API
-Salvage-to-Lux Fleet Management
+GigWheels - Background Jobs API
+Weekly car rentals for gig drivers
 
 API endpoints for managing and testing background jobs.
 """

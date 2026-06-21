@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Customer Dashboard
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Customer Dashboard
+ * Weekly car rentals for gig drivers
  *
  * Customer dashboard showing leases, available vehicles, and account info.
  */

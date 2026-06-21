@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Insurance Retention Service
-Salvage-to-Lux Fleet Management
+GigWheels - Insurance Retention Service
+Weekly car rentals for gig drivers
 
 Service for managing insurance document retention policy.
 Handles automatic deletion of expired insurance documents.

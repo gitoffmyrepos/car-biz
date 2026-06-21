@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Incident Report Model
-Salvage-to-Lux Fleet Management
+GigWheels - Incident Report Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for customer incident reports.
 """

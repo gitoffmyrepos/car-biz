@@ -3,14 +3,14 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'How It Works',
   description:
-    'Learn how our weekly vehicle leasing process works. Simple 4-step process from application to driving away in your premium vehicle.',
+    'Learn how our weekly car-rental process works. Simple 4-step process from application to driving away in your vehicle.',
   alternates: {
     canonical: '/how-it-works',
   },
   openGraph: {
-    title: 'How It Works | FX Weekly Lease',
+    title: 'How It Works | GigWheels',
     description:
-      'Learn how our weekly vehicle leasing process works. Simple 4-step process from application to driving away.',
+      'Learn how our weekly car-rental process works. Simple 4-step process from application to driving away.',
   },
 };
 

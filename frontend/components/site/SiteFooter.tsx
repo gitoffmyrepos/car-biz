@@ -77,7 +77,7 @@ export function SiteFooter() {
         </div>
 
         <div className="border-t ed-hairline pt-8 text-center text-xs ed-muted">
-          <p>&copy; 2026 FX Weekly Lease. All rights reserved.</p>
+          <p>&copy; 2026 GigWheels. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Playwright E2E Configuration
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Playwright E2E Configuration
+ * Weekly car rentals for gig drivers
  */
 
 import { defineConfig, devices } from '@playwright/test';

@@ -158,7 +158,7 @@ export default function HomePage() {
 
         {/* 01 — Why */}
         <Section className="border-t ed-hairline">
-          <Reveal><GoldEyebrow index="01" label="Why FX Weekly" /></Reveal>
+          <Reveal><GoldEyebrow index="01" label="Why GigWheels" /></Reveal>
           <Reveal delay={0.05}>
             <h2 className="ed-h2 mt-5 mb-14 max-w-2xl">Everything vznrentals lacks, plus a real fleet.</h2>
           </Reveal>

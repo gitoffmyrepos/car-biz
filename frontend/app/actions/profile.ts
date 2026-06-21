@@ -1,8 +1,8 @@
 'use server';
 
 /**
- * Weekly Vehicle Leasing Platform - Profile Server Actions
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Profile Server Actions
+ * Weekly car rentals for gig drivers
  *
  * Server actions for customer profile operations.
  */

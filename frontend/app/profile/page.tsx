@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Customer Profile Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Customer Profile Page
+ * Weekly car rentals for gig drivers
  *
  * Customer profile view and edit page with insurance upload.
  */

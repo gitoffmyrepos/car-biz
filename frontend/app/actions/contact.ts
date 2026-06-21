@@ -1,8 +1,8 @@
 'use server';
 
 /**
- * Weekly Vehicle Leasing Platform - Contact Form Server Actions
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Contact Form Server Actions
+ * Weekly car rentals for gig drivers
  *
  * Server actions for contact/inquiry form submissions.
  * Uses Next.js Server Actions for secure, validated mutations.

@@ -77,7 +77,7 @@ export default function GPSDisclosurePage() {
                 <div>
                   <h2 className="text-xl font-bold text-orange-800 mb-2">Important Disclosure Notice</h2>
                   <p className="text-orange-700">
-                    All vehicles leased from FX Weekly Lease are equipped with GPS tracking and telematics devices. By signing a lease agreement with us, you acknowledge and consent to vehicle monitoring as described in this disclosure.
+                    All vehicles leased from GigWheels are equipped with GPS tracking and telematics devices. By signing a lease agreement with us, you acknowledge and consent to vehicle monitoring as described in this disclosure.
                   </p>
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function GPSDisclosurePage() {
               </h2>
               <div className="text-gray-300 space-y-4 pl-11">
                 <p>
-                  By entering into a vehicle lease agreement with FX Weekly Lease, you provide consent for vehicle tracking as follows:
+                  By entering into a vehicle lease agreement with GigWheels, you provide consent for vehicle tracking as follows:
                 </p>
 
                 <div className="bg-glossy-black rounded-lg p-6 mt-4">
@@ -311,7 +311,7 @@ export default function GPSDisclosurePage() {
                   If you have questions about our GPS tracking practices or this disclosure, please contact us:
                 </p>
                 <div className="bg-glossy-black rounded-lg p-6 mt-4">
-                  <p className="font-semibold text-white">FX Weekly Lease - Compliance Team</p>
+                  <p className="font-semibold text-white">GigWheels - Compliance Team</p>
                   <p>123 Main Street</p>
                   <p>City, State 12345</p>
                   <p className="mt-4">
@@ -331,7 +331,7 @@ export default function GPSDisclosurePage() {
             <div className="border-t border-glossy-border pt-8 mt-8">
               <div className="bg-glossy-black rounded-lg p-6 text-center">
                 <p className="text-gray-300 mb-4">
-                  By leasing a vehicle from FX Weekly Lease, you acknowledge that you have read, understood, and consent to the GPS tracking practices described in this disclosure.
+                  By leasing a vehicle from GigWheels, you acknowledge that you have read, understood, and consent to the GPS tracking practices described in this disclosure.
                 </p>
                 <p className="text-sm text-gray-400">
                   This disclosure is provided in compliance with applicable state and federal laws regarding vehicle tracking notification requirements.
@@ -366,7 +366,7 @@ export default function GPSDisclosurePage() {
                 <span className="text-orange-500">Weekly</span>
               </Link>
               <p className="text-gray-400 text-sm">
-                Premium weekly vehicle leasing made simple and accessible.
+                Weekly car rentals for gig drivers — simple and accessible.
               </p>
             </div>
             <div>
@@ -398,7 +398,7 @@ export default function GPSDisclosurePage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
-            <p>&copy; 2026 FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; 2026 GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Schema Tests
-Salvage-to-Lux Fleet Management
+GigWheels - Schema Tests
+Weekly car rentals for gig drivers
 
 Unit tests for Pydantic schema validation.
 """

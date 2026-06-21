@@ -445,7 +445,7 @@ export default function AdminInquiriesPage() {
                 Close
               </button>
               <a
-                href={`mailto:${selectedInquiry.email}?subject=Re: Your FX Weekly Lease Inquiry&body=Dear ${selectedInquiry.full_name},%0D%0A%0D%0AThank you for your inquiry about our ${vehicleTypeLabels[selectedInquiry.vehicle_type] || selectedInquiry.vehicle_type} vehicles.%0D%0A%0D%0A`}
+                href={`mailto:${selectedInquiry.email}?subject=Re: Your GigWheels Inquiry&body=Dear ${selectedInquiry.full_name},%0D%0A%0D%0AThank you for your inquiry about our ${vehicleTypeLabels[selectedInquiry.vehicle_type] || selectedInquiry.vehicle_type} vehicles.%0D%0A%0D%0A`}
                 className="btn btn-primary"
               >
                 Send Email

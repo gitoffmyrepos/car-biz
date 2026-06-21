@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Ban Record Model
-Salvage-to-Lux Fleet Management
+GigWheels - Ban Record Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for tracking customer bans.
 """

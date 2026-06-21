@@ -79,7 +79,7 @@ export default function IncidentsPage() {
       setIsLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) {
         setError('Not authenticated');
         return;
@@ -118,7 +118,7 @@ export default function IncidentsPage() {
 
   const handleStartReview = async (incidentId: number) => {
     try {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) return;
 
       const response = await fetch(
@@ -147,7 +147,7 @@ export default function IncidentsPage() {
     if (!selectedIncident || !resolutionNotes.trim()) return;
 
     try {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) return;
 
       const params = new URLSearchParams();
@@ -178,7 +178,7 @@ export default function IncidentsPage() {
     if (!selectedIncident) return;
 
     try {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) return;
 
       const response = await fetch(

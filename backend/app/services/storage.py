@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Storage Service
-Salvage-to-Lux Fleet Management
+GigWheels - Storage Service
+Weekly car rentals for gig drivers
 
 MinIO/S3 storage service for file uploads with local filesystem fallback for development.
 """
@@ -51,7 +51,7 @@ class StorageService:
     def __init__(self):
         self.use_s3 = bool(settings.S3_ENDPOINT and settings.S3_ACCESS_KEY and settings.S3_SECRET_KEY)
         self._s3_client = None
-        self._local_storage_path = Path("/tmp/fx-weekly-lease-uploads")
+        self._local_storage_path = Path("/tmp/gigwheels-uploads")
 
         if self.use_s3:
             self._init_s3_client()

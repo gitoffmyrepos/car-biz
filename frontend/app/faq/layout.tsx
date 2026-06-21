@@ -3,14 +3,14 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'FAQ',
   description:
-    'Frequently asked questions about FX Weekly Lease. Learn about requirements, payments, insurance, and our vehicle policies.',
+    'Frequently asked questions about GigWheels. Learn about requirements, payments, insurance, and our vehicle policies.',
   alternates: {
     canonical: '/faq',
   },
   openGraph: {
-    title: 'FAQ | FX Weekly Lease',
+    title: 'FAQ | GigWheels',
     description:
-      'Frequently asked questions about our weekly vehicle leasing service.',
+      'Frequently asked questions about our weekly car-rental service.',
   },
 };
 

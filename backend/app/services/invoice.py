@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Invoice Service
-Salvage-to-Lux Fleet Management
+GigWheels - Invoice Service
+Weekly car rentals for gig drivers
 
 Service for generating and managing weekly invoices.
 """

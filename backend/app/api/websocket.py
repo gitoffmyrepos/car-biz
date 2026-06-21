@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - WebSocket API
-Salvage-to-Lux Fleet Management
+GigWheels - WebSocket API
+Weekly car rentals for gig drivers
 
 WebSocket endpoints for real-time notifications.
 """

@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Login Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Login Page
+ * Weekly car rentals for gig drivers
  *
  * Login page with OIDC/Keycloak authentication and dev mode support.
  */

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - WebSocket Manager
-Salvage-to-Lux Fleet Management
+GigWheels - WebSocket Manager
+Weekly car rentals for gig drivers
 
 WebSocket connection manager for real-time notifications.
 Handles client connections, authentication, and message broadcasting.

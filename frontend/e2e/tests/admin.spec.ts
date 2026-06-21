@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Admin E2E Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Admin E2E Tests
+ * Weekly car rentals for gig drivers
  *
  * End-to-end tests for admin workflows.
  */

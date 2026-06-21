@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Validation Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Validation Tests
+ * Weekly car rentals for gig drivers
  *
  * Unit tests for form validation utilities.
  */

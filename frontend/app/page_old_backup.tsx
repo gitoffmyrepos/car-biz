@@ -175,7 +175,7 @@ export default function HomePage() {
         <div className="container-luxury">
           <div className="text-center mb-16">
             <h2 className="heading-section text-luxury-charcoal mb-4">
-              Why Choose FX Weekly?
+              Why Choose GigWheels?
             </h2>
             <p className="text-xl text-muted max-w-2xl mx-auto">
               Experience the freedom of premium vehicles without the burden of ownership
@@ -308,7 +308,7 @@ export default function HomePage() {
               </Link>
               {/* Improved contrast: text-gray-300 instead of text-gray-400 */}
               <p className="mt-4 text-gray-300">
-                Premium vehicle leasing with flexible weekly payments.
+                Weekly car rentals for gig drivers, with flexible weekly payments.
               </p>
             </div>
 
@@ -351,7 +351,7 @@ export default function HomePage() {
 
           {/* Improved contrast: text-gray-300 instead of text-gray-400 */}
           <div className="border-t border-gray-800 pt-8 text-center text-gray-300 text-sm">
-            <p>&copy; {new Date().getFullYear()} FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

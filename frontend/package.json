@@ -1,7 +1,7 @@
 {
-  "name": "fx-weekly-lease-frontend",
+  "name": "gigwheels-frontend",
   "version": "1.0.0",
-  "description": "Weekly Vehicle Leasing Platform - Salvage-to-Lux Fleet Management",
+  "description": "GigWheels",
   "private": true,
   "scripts": {
     "dev": "next dev",

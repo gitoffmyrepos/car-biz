@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Weekly Vehicle Leasing Platform - Database Seeding Script
-Salvage-to-Lux Fleet Management
+GigWheels - Database Seeding Script
+Weekly car rentals for gig drivers
 
 Creates realistic test data for development and testing.
 This script is idempotent - safe to run multiple times.
@@ -896,7 +896,7 @@ async def seed_notifications(
         notifications_data = [
             {
                 "type": NotificationType.WELCOME,
-                "title": "Welcome to FX Weekly Lease!",
+                "title": "Welcome to GigWheels!",
                 "message": "Your account has been created. Complete your profile to get started.",
                 "priority": NotificationPriority.LOW,
                 "is_read": True,
@@ -1022,7 +1022,7 @@ async def verify_seed_data(session: AsyncSession) -> bool:
 async def run_seed(clear_first: bool = False) -> None:
     """Run the database seeding process."""
     print("\n" + "=" * 60)
-    print("FX Weekly Lease - Database Seeding Script")
+    print("GigWheels - Database Seeding Script")
     print("=" * 60)
 
     async with async_session_maker() as session:

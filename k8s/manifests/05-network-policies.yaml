@@ -1,4 +1,4 @@
-# Network Policies for FX Weekly Lease
+# Network Policies for GigWheels
 # Implements network isolation between application components
 ---
 # Default deny all ingress traffic
@@ -7,11 +7,11 @@ kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
 spec:
   podSelector:
     matchLabels:
-      app: fx-weekly-lease
+      app: gigwheels
   policyTypes:
   - Ingress
 ---
@@ -22,12 +22,12 @@ kind: NetworkPolicy
 metadata:
   name: frontend-network-policy
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: frontend
 spec:
   podSelector:
     matchLabels:
-      app: fx-weekly-lease
+      app: gigwheels
       component: frontend
   policyTypes:
   - Ingress
@@ -53,7 +53,7 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          app: fx-weekly-lease
+          app: gigwheels
     ports:
     - protocol: TCP
       port: 3000
@@ -62,7 +62,7 @@ spec:
   - to:
     - podSelector:
         matchLabels:
-          app: fx-weekly-lease
+          app: gigwheels
           component: backend
     ports:
     - protocol: TCP
@@ -83,12 +83,12 @@ kind: NetworkPolicy
 metadata:
   name: backend-network-policy
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: backend
 spec:
   podSelector:
     matchLabels:
-      app: fx-weekly-lease
+      app: gigwheels
       component: backend
   policyTypes:
   - Ingress
@@ -98,7 +98,7 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          app: fx-weekly-lease
+          app: gigwheels
           component: frontend
     ports:
     - protocol: TCP
@@ -202,7 +202,7 @@ kind: NetworkPolicy
 metadata:
   name: database-network-policy
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
 spec:
   podSelector:
     matchExpressions:
@@ -219,13 +219,13 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          app: fx-weekly-lease
+          app: gigwheels
           component: backend
   # Allow schema migration jobs to reach Postgres only.
   - from:
     - podSelector:
         matchLabels:
-          app: fx-weekly-lease
+          app: gigwheels
           component: migrate
     ports:
     - protocol: TCP

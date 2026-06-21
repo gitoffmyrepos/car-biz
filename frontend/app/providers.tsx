@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Client Providers
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Client Providers
+ * Weekly car rentals for gig drivers
  *
  * Client-side providers wrapper for auth, toast notifications, theme, and other contexts.
  */

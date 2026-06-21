@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Notification Service
-Salvage-to-Lux Fleet Management
+GigWheels - Notification Service
+Weekly car rentals for gig drivers
 
 Service for creating and managing customer notifications.
 Includes real-time WebSocket broadcasting for live updates.
@@ -142,7 +142,7 @@ class NotificationService:
             db=db,
             customer_profile_id=customer_profile_id,
             notification_type=NotificationType.WELCOME,
-            title="Welcome to FX Weekly!",
+            title="Welcome to GigWheels!",
             message=f"Welcome {customer_name}! We're excited to have you. Start by uploading your insurance documentation to get verified.",
             priority=NotificationPriority.HIGH,
             action_url="/profile",

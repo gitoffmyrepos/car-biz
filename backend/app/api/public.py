@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Public API Routes
-Salvage-to-Lux Fleet Management
+GigWheels - Public API Routes
+Weekly car rentals for gig drivers
 
 Public API endpoints that don't require authentication.
 

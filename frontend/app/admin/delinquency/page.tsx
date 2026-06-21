@@ -154,7 +154,7 @@ export default function AdminDelinquencyPage() {
 
   const getAuthToken = () => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('fx_weekly_lease_token') || '';
+      return localStorage.getItem('gigwheels_token') || '';
     }
     return '';
   };

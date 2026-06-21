@@ -72,7 +72,7 @@ export default function AuditLogsPage() {
       setIsLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) {
         setError('Not authenticated');
         return;
@@ -116,7 +116,7 @@ export default function AuditLogsPage() {
 
   const fetchLogDetail = async (logId: number) => {
     try {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) return;
 
       const response = await fetch(

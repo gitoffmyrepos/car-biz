@@ -3,14 +3,14 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Requirements',
   description:
-    'Learn about the requirements to qualify for FX Weekly Lease. Driver age, license, insurance, and documentation requirements.',
+    'Learn about the requirements to qualify for GigWheels. Driver age, license, insurance, and documentation requirements.',
   alternates: {
     canonical: '/requirements',
   },
   openGraph: {
-    title: 'Requirements | FX Weekly Lease',
+    title: 'Requirements | GigWheels',
     description:
-      'Learn about the requirements to qualify for our weekly vehicle leasing service.',
+      'Learn about the requirements to qualify for our weekly car-rental service.',
   },
 };
 

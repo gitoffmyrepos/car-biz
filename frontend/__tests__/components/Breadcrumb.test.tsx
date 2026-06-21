@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Breadcrumb Component Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Breadcrumb Component Tests
+ * Weekly car rentals for gig drivers
  *
  * Unit tests for the breadcrumb navigation component.
  */

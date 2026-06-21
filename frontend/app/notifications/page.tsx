@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Customer Notifications Center
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Customer Notifications Center
+ * Weekly car rentals for gig drivers
  *
  * Displays customer notifications with read/unread status.
  */
@@ -548,7 +548,7 @@ export default function NotificationsPage() {
             </div>
 
             <div className="text-sm text-white/40">
-              &copy; {new Date().getFullYear()} FX Weekly. All rights reserved.
+              &copy; {new Date().getFullYear()} GigWheels. All rights reserved.
             </div>
           </div>
         </div>

@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Breadcrumb Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Breadcrumb Component
+ * Weekly car rentals for gig drivers
  *
  * Breadcrumb navigation for hierarchical page structure.
  */

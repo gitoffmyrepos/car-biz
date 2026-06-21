@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 File Upload Security Verification Script
-Run inside Docker container: docker exec fx-weekly-lease-backend python3 /app/scripts/verify_upload_security.py
+Run inside Docker container: docker exec gigwheels-backend python3 /app/scripts/verify_upload_security.py
 """
 
 import sys

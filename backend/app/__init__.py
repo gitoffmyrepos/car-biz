@@ -1,2 +1,2 @@
-# Weekly Vehicle Leasing Platform - Backend Application
-# Salvage-to-Lux Fleet Management
+# GigWheels - Backend Application
+# Weekly car rentals for gig drivers

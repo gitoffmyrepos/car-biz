@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Jest Setup
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Jest Setup
+ * Weekly car rentals for gig drivers
  *
  * Jest test setup and global mocks.
  */

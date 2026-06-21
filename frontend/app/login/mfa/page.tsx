@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - MFA Verification Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - MFA Verification Page
+ * Weekly car rentals for gig drivers
  *
  * MFA verification page for admin users.
  * In dev mode, accepts any 6-digit code.

@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - 404 Not Found
- * Salvage-to-Lux Fleet Management
+ * GigWheels - 404 Not Found
+ * Weekly car rentals for gig drivers
  *
  * Custom 404 page for Next.js App Router.
  * Displayed when a page is not found.

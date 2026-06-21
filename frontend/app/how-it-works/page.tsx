@@ -472,7 +472,7 @@ export default function HowItWorksPage() {
                 FX<span className="text-orange-500">Weekly</span>
               </Link>
               <p className="mt-4 text-gray-400">
-                Premium vehicle leasing with flexible weekly payments.
+                Weekly car rentals for gig drivers, with flexible weekly payments.
               </p>
             </div>
 
@@ -511,7 +511,7 @@ export default function HowItWorksPage() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; {new Date().getFullYear()} FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

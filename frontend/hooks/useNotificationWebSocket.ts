@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - WebSocket Notifications Hook
- * Salvage-to-Lux Fleet Management
+ * GigWheels - WebSocket Notifications Hook
+ * Weekly car rentals for gig drivers
  *
  * Custom React hook for real-time notifications via WebSocket.
  * Handles connection, reconnection, and message processing.

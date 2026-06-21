@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Admin API
-Salvage-to-Lux Fleet Management
+GigWheels - Admin API
+Weekly car rentals for gig drivers
 
 Admin-only API endpoints with RBAC protection.
 """

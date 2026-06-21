@@ -1,8 +1,8 @@
-# Weekly Vehicle Leasing Platform
+# GigWheels
 
-**Salvage-to-Lux Fleet Management System**
+**Weekly car rentals for gig drivers**
 
-A production-grade web application for managing a weekly vehicle leasing business. Built with Next.js (App Router) + FastAPI, designed for deployment on a Kubernetes homelab infrastructure.
+A production-grade web application for managing a weekly car-rental business for gig drivers. Built with Next.js (App Router) + FastAPI, designed for deployment on a Kubernetes homelab infrastructure.
 
 ## Overview
 
@@ -118,7 +118,7 @@ docker-compose up -d
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://...` |
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379` |
 | `OIDC_ISSUER_URL` | Keycloak realm URL | `http://keycloak.../realms/...` |
-| `OIDC_CLIENT_ID` | OIDC client identifier | `fx-weekly-lease-app` |
+| `OIDC_CLIENT_ID` | OIDC client identifier | `gigwheels-app` |
 | `S3_ENDPOINT` | MinIO endpoint | `minio.strategybase.io` |
 | `VAULT_ADDR` | Vault server address | `http://vault...:8200` |
 | `RESEND_API_KEY` | Resend email API key | `re_...` |
@@ -170,7 +170,7 @@ This application is designed to integrate with existing homelab infrastructure:
 
 Configuration follows patterns discovered in `/home/kelvin/SB-HomeLAb/FX`:
 - Environment variable naming conventions
-- Vault KV path structure: `secret/fx-weekly-lease/<env>/*`
+- Vault KV path structure: `secret/gigwheels/<env>/*`
 - Docker image tagging: `{VERSION}-{COMMIT}`, `latest-{ENV}`
 - Jenkins pipeline stage conventions
 

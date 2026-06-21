@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Data Table Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Data Table Component
+ * Weekly car rentals for gig drivers
  *
  * Reusable data table with pagination, sorting, and filtering.
  */

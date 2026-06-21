@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Lease Model
-Salvage-to-Lux Fleet Management
+GigWheels - Lease Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for customer vehicle leases.
 """

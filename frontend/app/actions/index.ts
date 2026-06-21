@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Server Actions Index
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Server Actions Index
+ * Weekly car rentals for gig drivers
  *
  * Re-exports all server actions for easy importing.
  */

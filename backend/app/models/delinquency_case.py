@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Delinquency Case Model
-Salvage-to-Lux Fleet Management
+GigWheels - Delinquency Case Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for tracking delinquent payment cases and recovery actions.
 """

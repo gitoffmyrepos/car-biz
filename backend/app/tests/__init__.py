@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Test Suite
-Salvage-to-Lux Fleet Management
+GigWheels - Test Suite
+Weekly car rentals for gig drivers
 
 Backend unit tests covering:
 - Schema validation (test_schemas.py)

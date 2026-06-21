@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - useFormValidation Hook Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - useFormValidation Hook Tests
+ * Weekly car rentals for gig drivers
  *
  * Unit tests for the form validation React hook.
  */

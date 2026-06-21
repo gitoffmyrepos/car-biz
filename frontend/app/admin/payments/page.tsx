@@ -109,7 +109,7 @@ export default function AdminPaymentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) {
         throw new Error('Not authenticated');
       }
@@ -223,7 +223,7 @@ export default function AdminPaymentsPage() {
     setLoadingProof(true);
     setPaymentProof(null);
     try {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) {
         throw new Error('Not authenticated');
       }
@@ -264,7 +264,7 @@ export default function AdminPaymentsPage() {
     setVerificationSuccess(null);
 
     try {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
       if (!token) {
         throw new Error('Not authenticated');
       }

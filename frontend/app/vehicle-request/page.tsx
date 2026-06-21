@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Vehicle Request Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Vehicle Request Page
+ * Weekly car rentals for gig drivers
  *
  * Customer page to submit a vehicle request.
  * Only approved customers (with approved insurance) can submit requests.

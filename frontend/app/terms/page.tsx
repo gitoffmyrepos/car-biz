@@ -48,7 +48,7 @@ export default function TermsPage() {
             Terms of <span className="text-gradient-glow">Service</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Please read these terms carefully before using our weekly vehicle leasing services.
+            Please read these terms carefully before using our weekly car-rental services.
           </p>
           <p className="text-gray-400 mt-4">Last Updated: {lastUpdated}</p>
         </div>
@@ -84,10 +84,10 @@ export default function TermsPage() {
               </h2>
               <div className="text-gray-300 space-y-4 pl-11">
                 <p>
-                  By accessing or using FX Weekly Lease services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.
+                  By accessing or using GigWheels services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.
                 </p>
                 <p>
-                  These terms constitute a legally binding agreement between you ("Lessee," "Customer," or "You") and FX Weekly Lease ("Company," "We," or "Us") governing your use of our weekly vehicle leasing services.
+                  These terms constitute a legally binding agreement between you ("Lessee," "Customer," or "You") and GigWheels ("Company," "We," or "Us") governing your use of our weekly car-rental services.
                 </p>
                 <p>
                   Your continued use of our services following any modifications to these terms constitutes acceptance of those changes.
@@ -102,7 +102,7 @@ export default function TermsPage() {
                 Eligibility Requirements
               </h2>
               <div className="text-gray-300 space-y-4 pl-11">
-                <p>To be eligible for our weekly vehicle leasing services, you must meet the following requirements:</p>
+                <p>To be eligible for our weekly car-rental services, you must meet the following requirements:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Be at least 21 years of age</li>
                   <li>Hold a valid driver's license for a minimum of 2 years</li>
@@ -182,7 +182,7 @@ export default function TermsPage() {
                   <li><strong>Uninsured/Underinsured Motorist:</strong> Recommended but not required</li>
                 </ul>
                 <p>
-                  You must provide proof of insurance listing FX Weekly Lease as an additional insured party before vehicle pickup. Insurance must remain active throughout the lease period.
+                  You must provide proof of insurance listing GigWheels as an additional insured party before vehicle pickup. Insurance must remain active throughout the lease period.
                 </p>
                 <p>
                   In the event your insurance lapses or is cancelled, you must notify us immediately. Failure to maintain required insurance coverage is grounds for immediate lease termination.
@@ -265,13 +265,13 @@ export default function TermsPage() {
               </h2>
               <div className="text-gray-300 space-y-4 pl-11">
                 <p>
-                  To the maximum extent permitted by law, FX Weekly Lease shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of our services or vehicles.
+                  To the maximum extent permitted by law, GigWheels shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of our services or vehicles.
                 </p>
                 <p>
                   Our total liability for any claims arising from your lease shall not exceed the total amount paid by you for the current lease period.
                 </p>
                 <p>
-                  You agree to indemnify and hold harmless FX Weekly Lease, its officers, directors, employees, and agents from any claims, damages, or expenses arising from:
+                  You agree to indemnify and hold harmless GigWheels, its officers, directors, employees, and agents from any claims, damages, or expenses arising from:
                 </p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Your use of our vehicles</li>
@@ -299,7 +299,7 @@ export default function TermsPage() {
                   <li><strong>Governing Law:</strong> These terms shall be governed by and construed in accordance with the laws of the State in which services are provided.</li>
                 </ol>
                 <p>
-                  You agree to waive any right to participate in class action lawsuits against FX Weekly Lease.
+                  You agree to waive any right to participate in class action lawsuits against GigWheels.
                 </p>
               </div>
             </section>
@@ -334,7 +334,7 @@ export default function TermsPage() {
                   If you have any questions about these Terms of Service, please contact us:
                 </p>
                 <div className="bg-glossy-black rounded-lg p-6 mt-4">
-                  <p className="font-semibold text-white">FX Weekly Lease</p>
+                  <p className="font-semibold text-white">GigWheels</p>
                   <p>123 Main Street</p>
                   <p>City, State 12345</p>
                   <p className="mt-4">
@@ -353,7 +353,7 @@ export default function TermsPage() {
             {/* Acceptance Footer */}
             <div className="border-t border-glossy-border pt-8 mt-8 text-center">
               <p className="text-gray-300 mb-6">
-                By using FX Weekly Lease services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+                By using GigWheels services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
@@ -384,7 +384,7 @@ export default function TermsPage() {
                 <span className="text-orange-500">Weekly</span>
               </Link>
               <p className="text-gray-400 text-sm">
-                Premium weekly vehicle leasing made simple and accessible.
+                Weekly car rentals for gig drivers — simple and accessible.
               </p>
             </div>
             <div>
@@ -415,7 +415,7 @@ export default function TermsPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
-            <p>&copy; 2026 FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; 2026 GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

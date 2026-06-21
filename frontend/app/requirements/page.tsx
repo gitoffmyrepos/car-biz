@@ -52,7 +52,7 @@ export default function RequirementsPage() {
               Eligibility <span className="text-gradient-glow">Requirements</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
-              Review our straightforward requirements to ensure you&apos;re ready to join the FX Weekly family.
+              Review our straightforward requirements to ensure you&apos;re ready to join the GigWheels family.
             </p>
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function RequirementsPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <span className="text-gray-700">
-                      Insurance must list FX Weekly Lease as additional insured or lienholder
+                      Insurance must list GigWheels as additional insured or lienholder
                     </span>
                   </li>
                   <li className="flex items-start">
@@ -371,7 +371,7 @@ export default function RequirementsPage() {
         <div className="container-luxury text-center">
           <h2 className="heading-section mb-4">Ready to Apply?</h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            If you meet these requirements, you&apos;re ready to join the FX Weekly family. Start your application today!
+            If you meet these requirements, you&apos;re ready to join the GigWheels family. Start your application today!
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/contact" className="btn btn-primary text-lg px-8 py-4 w-full sm:w-auto">
@@ -393,7 +393,7 @@ export default function RequirementsPage() {
                 FX<span className="text-orange-500">Weekly</span>
               </Link>
               <p className="mt-4 text-gray-400">
-                Premium vehicle leasing with flexible weekly payments.
+                Weekly car rentals for gig drivers, with flexible weekly payments.
               </p>
             </div>
             <div>
@@ -425,7 +425,7 @@ export default function RequirementsPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; {new Date().getFullYear()} FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Customer API
-Salvage-to-Lux Fleet Management
+GigWheels - Customer API
+Weekly car rentals for gig drivers
 
 Customer profile management endpoints.
 """

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Inquiry API Endpoints
-Salvage-to-Lux Fleet Management
+GigWheels - Inquiry API Endpoints
+Weekly car rentals for gig drivers
 
 API endpoints for customer inquiry submission and management.
 """

@@ -2,7 +2,7 @@
 
 /**
  * Theme Toggle Component
- * Weekly Vehicle Leasing Platform - Salvage-to-Lux Fleet Management
+ * GigWheels
  *
  * Provides dark mode toggle with system preference detection
  * and persistent storage of user preference.

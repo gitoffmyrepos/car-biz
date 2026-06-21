@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Auth E2E Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Auth E2E Tests
+ * Weekly car rentals for gig drivers
  *
  * End-to-end tests for authentication flows.
  */

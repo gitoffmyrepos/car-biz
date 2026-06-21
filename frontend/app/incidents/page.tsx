@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Incident Report Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Incident Report Page
+ * Weekly car rentals for gig drivers
  *
  * Customer incident report submission and viewing.
  */

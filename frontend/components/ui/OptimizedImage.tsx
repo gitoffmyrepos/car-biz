@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Optimized Image Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Optimized Image Component
+ * Weekly car rentals for gig drivers
  *
  * Wrapper around Next.js Image component with:
  * - Automatic lazy loading

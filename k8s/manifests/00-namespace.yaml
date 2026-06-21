@@ -1,4 +1,4 @@
-# Namespace for FX Weekly Lease (car-biz) — PROD.
+# Namespace for GigWheels (car-biz) — PROD.
 # Follows FX homelab naming conventions.
 #
 # 2026-06-19: reduced to a single (prod) namespace + SA. The kustomization's
@@ -10,9 +10,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: fx-weekly-lease-prod
+  name: gigwheels-prod
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     environment: prod
     # kgateway only discovers/attaches HTTPRoutes in namespaces carrying this
     # label (KGW_DISCOVERY_NAMESPACE_SELECTORS). Without it the routes get
@@ -26,7 +26,7 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: fx-weekly-lease-sa
-  namespace: fx-weekly-lease-prod
+  name: gigwheels-sa
+  namespace: gigwheels-prod
   labels:
-    app: fx-weekly-lease
+    app: gigwheels

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Rate Limiting
-Salvage-to-Lux Fleet Management
+GigWheels - Rate Limiting
+Weekly car rentals for gig drivers
 
 Redis-backed rate limiting for API endpoints.
 """

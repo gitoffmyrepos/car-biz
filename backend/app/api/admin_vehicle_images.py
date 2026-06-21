@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Admin Vehicle Image API
-Salvage-to-Lux Fleet Management
+GigWheels - Admin Vehicle Image API
+Weekly car rentals for gig drivers
 
 Admin endpoints for managing a vehicle's public photo gallery:
   - POST   /admin/vehicles/{id}/images            multipart upload

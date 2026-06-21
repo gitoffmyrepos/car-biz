@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Root Loading
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Root Loading
+ * Weekly car rentals for gig drivers
  *
  * Global loading state for Next.js App Router.
  * Displays during route transitions and initial page loads.

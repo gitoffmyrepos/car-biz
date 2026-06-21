@@ -1,29 +1,29 @@
-# Frontend Deployment for FX Weekly Lease
+# Frontend Deployment for GigWheels
 # Next.js application serving the web UI
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fx-weekly-lease-frontend
+  name: gigwheels-frontend
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: frontend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: fx-weekly-lease
+      app: gigwheels
       component: frontend
   template:
     metadata:
       labels:
-        app: fx-weekly-lease
+        app: gigwheels
         component: frontend
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: fx-weekly-lease-sa
+      serviceAccountName: gigwheels-sa
       # Pod anti-affinity for high availability
       affinity:
         podAntiAffinity:
@@ -39,7 +39,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: frontend
-        image: harbor.strategybase.io/sb-custom-docker-images/car-biz-frontend:prod-latest
+        image: harbor.strategybase.io/sb-custom-docker-images/gigwheels-frontend:prod-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -61,22 +61,22 @@ spec:
         - name: NEXT_PUBLIC_API_URL
           valueFrom:
             configMapKeyRef:
-              name: fx-weekly-lease-config
+              name: gigwheels-config
               key: NEXT_PUBLIC_API_URL
         - name: NEXT_PUBLIC_API_BASE_URL
           valueFrom:
             configMapKeyRef:
-              name: fx-weekly-lease-config
+              name: gigwheels-config
               key: NEXT_PUBLIC_API_BASE_URL
         - name: NEXT_PUBLIC_APP_URL
           valueFrom:
             configMapKeyRef:
-              name: fx-weekly-lease-config
+              name: gigwheels-config
               key: NEXT_PUBLIC_APP_URL
         - name: INTERNAL_API_BASE_URL
           valueFrom:
             configMapKeyRef:
-              name: fx-weekly-lease-config
+              name: gigwheels-config
               key: INTERNAL_API_BASE_URL
         - name: NODE_ENV
           value: "production"
@@ -153,7 +153,7 @@ kind: Service
 metadata:
   name: frontend-service
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: frontend
 spec:
   type: ClusterIP
@@ -163,5 +163,5 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: fx-weekly-lease
+    app: gigwheels
     component: frontend

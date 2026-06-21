@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Custom Hooks
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Custom Hooks
+ * Weekly car rentals for gig drivers
  *
  * Export all custom hooks.
  */

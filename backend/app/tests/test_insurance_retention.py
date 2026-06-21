@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Insurance Retention Service Tests
-Salvage-to-Lux Fleet Management
+GigWheels - Insurance Retention Service Tests
+Weekly car rentals for gig drivers
 
 Unit tests for the insurance document retention service.
 """

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Storage Service Tests
-Salvage-to-Lux Fleet Management
+GigWheels - Storage Service Tests
+Weekly car rentals for gig drivers
 
 Unit tests for the file storage service.
 """

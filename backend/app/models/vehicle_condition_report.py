@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Vehicle Condition Report Model
-Salvage-to-Lux Fleet Management
+GigWheels - Vehicle Condition Report Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for vehicle condition reports.
 """

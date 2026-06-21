@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - API Router
-Salvage-to-Lux Fleet Management
+GigWheels - API Router
+Weekly car rentals for gig drivers
 
 Main API router that includes all sub-routers.
 """

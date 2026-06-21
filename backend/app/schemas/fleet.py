@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Public Fleet Schemas
-Salvage-to-Lux Fleet Management
+GigWheels - Public Fleet Schemas
+Weekly car rentals for gig drivers
 
 Pydantic response schemas for the public fleet inventory API.
 """

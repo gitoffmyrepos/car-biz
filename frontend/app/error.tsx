@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Error Boundary
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Error Boundary
+ * Weekly car rentals for gig drivers
  *
  * Global error boundary for Next.js App Router.
  * Catches runtime errors and displays a user-friendly error page.

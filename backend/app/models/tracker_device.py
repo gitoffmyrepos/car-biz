@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Tracker Device Model
-Salvage-to-Lux Fleet Management
+GigWheels - Tracker Device Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for GPS tracker devices inventory and management.
 """

@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Form Validation Hook
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Form Validation Hook
+ * Weekly car rentals for gig drivers
  *
  * React hook for form validation with real-time feedback.
  */

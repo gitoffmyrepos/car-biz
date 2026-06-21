@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - File Upload Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - File Upload Component
+ * Weekly car rentals for gig drivers
  *
  * Drag-and-drop file upload with progress indicator and preview.
  */

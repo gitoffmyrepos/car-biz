@@ -380,7 +380,7 @@ export default function PrivacyPage() {
                   If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
                 </p>
                 <div className="bg-glossy-black rounded-lg p-6 mt-4">
-                  <p className="font-semibold text-white">FX Weekly Lease - Privacy Team</p>
+                  <p className="font-semibold text-white">GigWheels - Privacy Team</p>
                   <p>123 Main Street</p>
                   <p>City, State 12345</p>
                   <p className="mt-4">
@@ -402,7 +402,7 @@ export default function PrivacyPage() {
             {/* Footer Actions */}
             <div className="border-t border-glossy-border pt-8 mt-8 text-center">
               <p className="text-gray-300 mb-6">
-                By using FX Weekly Lease services, you acknowledge that you have read and understood this Privacy Policy.
+                By using GigWheels services, you acknowledge that you have read and understood this Privacy Policy.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
@@ -433,7 +433,7 @@ export default function PrivacyPage() {
                 <span className="text-orange-500">Weekly</span>
               </Link>
               <p className="text-gray-400 text-sm">
-                Premium weekly vehicle leasing made simple and accessible.
+                Weekly car rentals for gig drivers — simple and accessible.
               </p>
             </div>
             <div>
@@ -465,7 +465,7 @@ export default function PrivacyPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500 text-sm">
-            <p>&copy; 2026 FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; 2026 GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

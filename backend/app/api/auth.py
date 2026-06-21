@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Auth API
-Salvage-to-Lux Fleet Management
+GigWheels - Auth API
+Weekly car rentals for gig drivers
 
 Authentication endpoints for OIDC integration.
 """
@@ -69,11 +69,11 @@ async def get_oidc_config():
 
     Returns the necessary endpoints for frontend to initiate OIDC flow.
     """
-    issuer_url = settings.OIDC_ISSUER_URL or "http://localhost:8080/realms/fx-weekly-lease"
+    issuer_url = settings.OIDC_ISSUER_URL or "http://localhost:8080/realms/gigwheels"
 
     return OIDCConfigResponse(
         issuer_url=issuer_url,
-        client_id=settings.OIDC_CLIENT_ID or "fx-weekly-lease-app",
+        client_id=settings.OIDC_CLIENT_ID or "gigwheels-app",
         authorization_endpoint=f"{issuer_url}/protocol/openid-connect/auth",
         token_endpoint=f"{issuer_url}/protocol/openid-connect/token",
         end_session_endpoint=f"{issuer_url}/protocol/openid-connect/logout",

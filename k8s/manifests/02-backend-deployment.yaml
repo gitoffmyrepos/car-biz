@@ -1,29 +1,29 @@
-# Backend Deployment for FX Weekly Lease
+# Backend Deployment for GigWheels
 # FastAPI application serving API endpoints
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fx-weekly-lease-backend
+  name: gigwheels-backend
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: backend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: fx-weekly-lease
+      app: gigwheels
       component: backend
   template:
     metadata:
       labels:
-        app: fx-weekly-lease
+        app: gigwheels
         component: backend
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: fx-weekly-lease-sa
+      serviceAccountName: gigwheels-sa
       # Pod anti-affinity for high availability
       affinity:
         podAntiAffinity:
@@ -52,12 +52,12 @@ spec:
           echo "postgres is ready"
         envFrom:
         - configMapRef:
-            name: fx-weekly-lease-config
+            name: gigwheels-config
         env:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: database-user
         resources:
           requests:
@@ -77,7 +77,7 @@ spec:
             - ALL
       containers:
       - name: backend
-        image: harbor.strategybase.io/sb-custom-docker-images/car-biz-backend:prod-latest
+        image: harbor.strategybase.io/sb-custom-docker-images/gigwheels-backend:prod-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -85,7 +85,7 @@ spec:
           protocol: TCP
         envFrom:
         - configMapRef:
-            name: fx-weekly-lease-config
+            name: gigwheels-config
         env:
         - name: POD_NAME
           valueFrom:
@@ -107,47 +107,47 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: database-url
         - name: REDIS_URL
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: redis-url
         - name: VAULT_TOKEN
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: vault-token
         - name: RESEND_API_KEY
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: resend-api-key
         - name: MINIO_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: minio-access-key
         - name: S3_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: minio-access-key
         - name: MINIO_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: minio-secret-key
         - name: S3_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: minio-secret-key
         - name: OIDC_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: oidc-client-secret
         resources:
           requests:
@@ -220,7 +220,7 @@ kind: Service
 metadata:
   name: backend-service
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: backend
 spec:
   type: ClusterIP
@@ -230,5 +230,5 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: fx-weekly-lease
+    app: gigwheels
     component: backend

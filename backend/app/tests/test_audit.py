@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Audit Service Tests
-Salvage-to-Lux Fleet Management
+GigWheels - Audit Service Tests
+Weekly car rentals for gig drivers
 
 Unit tests for the audit logging service.
 """

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Email Worker
-Salvage-to-Lux Fleet Management
+GigWheels - Email Worker
+Weekly car rentals for gig drivers
 
 Background worker for processing email notification jobs via Redis queue.
 

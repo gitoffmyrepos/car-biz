@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Form Field Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Form Field Component
+ * Weekly car rentals for gig drivers
  *
  * Reusable form field component with validation feedback.
  */

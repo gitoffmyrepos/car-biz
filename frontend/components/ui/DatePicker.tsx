@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Date Picker Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Date Picker Component
+ * Weekly car rentals for gig drivers
  *
  * Custom date picker with calendar view.
  */

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - FastAPI Backend
-Salvage-to-Lux Fleet Management
+GigWheels - FastAPI Backend
+Weekly car rentals for gig drivers
 
 Main application entry point with health check and API routing.
 """
@@ -113,7 +113,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Weekly vehicle leasing platform for salvage-to-lux fleet management",
+    description="Weekly car rentals for gig drivers",
     version=settings.APP_VERSION,
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,

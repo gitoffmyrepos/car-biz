@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Modal Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Modal Component
+ * Weekly car rentals for gig drivers
  *
  * Accessible modal dialog with various sizes and confirmation variants.
  */

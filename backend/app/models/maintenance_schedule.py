@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - MaintenanceSchedule Model
-Salvage-to-Lux Fleet Management
+GigWheels - MaintenanceSchedule Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for vehicle maintenance scheduling.
 """

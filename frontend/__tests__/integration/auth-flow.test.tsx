@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - Auth Flow Integration Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Auth Flow Integration Tests
+ * Weekly car rentals for gig drivers
  *
  * Integration tests for authentication flow including login, logout, and session management.
  */

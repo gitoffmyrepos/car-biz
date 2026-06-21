@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Payments/Invoices Page
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Payments/Invoices Page
+ * Weekly car rentals for gig drivers
  *
  * Customer page for viewing weekly invoices and payment history.
  */

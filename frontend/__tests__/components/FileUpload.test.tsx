@@ -1,6 +1,6 @@
 /**
- * Weekly Vehicle Leasing Platform - FileUpload Component Tests
- * Salvage-to-Lux Fleet Management
+ * GigWheels - FileUpload Component Tests
+ * Weekly car rentals for gig drivers
  *
  * Unit tests for the file upload component.
  */

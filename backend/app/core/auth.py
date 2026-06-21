@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Authentication
-Salvage-to-Lux Fleet Management
+GigWheels - Authentication
+Weekly car rentals for gig drivers
 
 OIDC authentication with Keycloak integration.
 Supports development mode with mock authentication.

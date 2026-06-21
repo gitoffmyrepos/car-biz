@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Recovery Action Model
-Salvage-to-Lux Fleet Management
+GigWheels - Recovery Action Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for tracking vehicle recovery actions with tow vendor details.
 """

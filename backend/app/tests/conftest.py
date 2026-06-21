@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Test Configuration
-Salvage-to-Lux Fleet Management
+GigWheels - Test Configuration
+Weekly car rentals for gig drivers
 
 Pytest fixtures and configuration for backend tests.
 """

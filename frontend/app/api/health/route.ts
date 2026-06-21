@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   return NextResponse.json({
     status: 'healthy',
-    service: 'fx-weekly-lease-frontend',
+    service: 'gigwheels-frontend',
     timestamp: new Date().toISOString(),
   });
 }

@@ -125,7 +125,7 @@ export default function AdminLayout({
   useEffect(() => {
     // Check authentication and authorization
     const checkAuth = async () => {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
 
       if (!token) {
         router.push('/login?redirect=/admin');
@@ -140,7 +140,7 @@ export default function AdminLayout({
         });
 
         if (!response.ok) {
-          localStorage.removeItem('fx_weekly_lease_token');
+          localStorage.removeItem('gigwheels_token');
           router.push('/login?redirect=/admin');
           return;
         }

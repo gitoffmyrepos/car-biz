@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Printable Invoice Component
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Printable Invoice Component
+ * Weekly car rentals for gig drivers
  *
  * Print-friendly invoice display with print button.
  */

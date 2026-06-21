@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Weekly Vehicle Leasing Platform - Global Error Boundary
- * Salvage-to-Lux Fleet Management
+ * GigWheels - Global Error Boundary
+ * Weekly car rentals for gig drivers
  *
  * Root-level error boundary that catches errors in the root layout.
  * Must include its own html and body tags.

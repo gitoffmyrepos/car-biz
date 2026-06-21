@@ -8,7 +8,7 @@ export function SiteJsonLd() {
   const data = {
     '@context': 'https://schema.org',
     '@type': 'CarRental',
-    name: 'FX Weekly Lease',
+    name: 'GigWheels',
     url: SITE_URL,
     description:
       'Affordable weekly car leasing for gig and delivery drivers. Published weekly prices, real fleet inventory, fast approval, no credit check.',

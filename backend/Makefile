@@ -1,4 +1,4 @@
-# FX Weekly Lease Backend Makefile
+# GigWheels Backend Makefile
 
 .PHONY: lint lint-fix test
 

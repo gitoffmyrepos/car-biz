@@ -138,7 +138,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      const token = localStorage.getItem('fx_weekly_lease_token');
+      const token = localStorage.getItem('gigwheels_token');
 
       try {
         // Fetch dashboard stats from admin endpoint

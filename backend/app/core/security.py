@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Security Middleware
-Salvage-to-Lux Fleet Management
+GigWheels - Security Middleware
+Weekly car rentals for gig drivers
 
 Security headers and middleware for API protection.
 """

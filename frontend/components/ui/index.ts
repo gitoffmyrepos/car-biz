@@ -1,6 +1,6 @@
 /**
  * UI Components Index
- * Weekly Vehicle Leasing Platform - Salvage-to-Lux Fleet Management
+ * GigWheels
  *
  * Central export for all reusable UI components
  */

@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Weekly Invoice Model
-Salvage-to-Lux Fleet Management
+GigWheels - Weekly Invoice Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for weekly invoices and payment tracking.
 """

@@ -23,27 +23,27 @@ const display = Fraunces({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://fxweekly.com'),
   title: {
-    default: 'FX Weekly Lease | Affordable Weekly Car Leasing',
-    template: '%s | FX Weekly Lease',
+    default: 'GigWheels | Weekly Car Rentals for Gig Drivers',
+    template: '%s | GigWheels',
   },
   description:
     'Get a car today, pay just $150/week. Perfect for DoorDash, Uber, and delivery drivers. No credit check needed. Quick approval in 24 hours.',
   keywords: ['car leasing', 'weekly payments', 'DoorDash car', 'Uber driver', 'delivery driver', 'affordable car rental', 'no credit check'],
-  authors: [{ name: 'FX Weekly Lease' }],
+  authors: [{ name: 'GigWheels' }],
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'FX Weekly Lease | Affordable Weekly Car Leasing',
+    title: 'GigWheels | Weekly Car Rentals for Gig Drivers',
     description:
       'Get a car today, pay just $150/week. Perfect for DoorDash, Uber, and delivery drivers. No credit check needed.',
     type: 'website',
     locale: 'en_US',
-    siteName: 'FX Weekly Lease',
+    siteName: 'GigWheels',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FX Weekly Lease | Affordable Weekly Car Leasing',
+    title: 'GigWheels | Weekly Car Rentals for Gig Drivers',
     description:
       'Get a car today, pay just $150/week. Perfect for gig workers and delivery drivers.',
   },

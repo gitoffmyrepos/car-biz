@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Email Service
-Salvage-to-Lux Fleet Management
+GigWheels - Email Service
+Weekly car rentals for gig drivers
 
 Email service using Resend for sending transactional emails.
 """
@@ -55,7 +55,7 @@ class EmailService:
                 "simulated": True
             }
 
-        subject = "Thank You for Your Inquiry - FX Weekly Lease"
+        subject = "Thank You for Your Inquiry - GigWheels"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -124,12 +124,12 @@ class EmailService:
         </head>
         <body>
             <div class="header">
-                <h1>FX Weekly Lease</h1>
+                <h1>GigWheels</h1>
             </div>
             <div class="content">
                 <p>Dear <span class="highlight">{customer_name}</span>,</p>
 
-                <p>Thank you for your interest in FX Weekly Lease! We have received your inquiry and our team is excited to help you find the perfect vehicle.</p>
+                <p>Thank you for your interest in GigWheels! We have received your inquiry and our team is excited to help you find the perfect vehicle.</p>
 
                 <div class="reference">
                     <strong>Reference Number:</strong> INQ-{inquiry_id:06d}
@@ -152,9 +152,9 @@ class EmailService:
                 </center>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -163,7 +163,7 @@ class EmailService:
         text_content = f"""
 Dear {customer_name},
 
-Thank you for your interest in FX Weekly Lease! We have received your inquiry and our team is excited to help you find the perfect vehicle.
+Thank you for your interest in GigWheels! We have received your inquiry and our team is excited to help you find the perfect vehicle.
 
 Reference Number: INQ-{inquiry_id:06d}
 
@@ -176,9 +176,9 @@ What happens next?
 In the meantime, feel free to browse our fleet or learn more about how our weekly leasing works.
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 Questions? Contact us at support@fxweeklylease.com
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -373,7 +373,7 @@ Questions? Contact us at support@fxweeklylease.com
             }
 
         urgency = "soon" if days_until_due > 1 else "tomorrow" if days_until_due == 1 else "today"
-        subject = f"Payment Reminder - ${amount:.2f} Due {urgency.title()} - FX Weekly Lease"
+        subject = f"Payment Reminder - ${amount:.2f} Due {urgency.title()} - GigWheels"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -506,7 +506,7 @@ Questions? Contact us at support@fxweeklylease.com
                 <p><strong>How to Pay:</strong></p>
                 <ol>
                     <li>Make your payment via Zelle, CashApp, or cash</li>
-                    <li>Log in to your FX Weekly account</li>
+                    <li>Log in to your GigWheels account</li>
                     <li>Upload your payment proof screenshot</li>
                     <li>We'll verify within 48 hours</li>
                 </ol>
@@ -522,9 +522,9 @@ Questions? Contact us at support@fxweeklylease.com
                 </p>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -545,7 +545,7 @@ Due Date: {due_date}
 
 HOW TO PAY:
 1. Make your payment via Zelle, CashApp, or cash
-2. Log in to your FX Weekly account
+2. Log in to your GigWheels account
 3. Upload your payment proof screenshot
 4. We'll verify within 48 hours
 
@@ -554,9 +554,9 @@ Upload your payment proof at: {settings.API_BASE_URL.replace('8100', '3002')}/pa
 Note: Late payments may incur a $25 late fee. To avoid additional charges, please ensure your payment proof is uploaded by the due date.
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 Questions? Contact us at support@fxweeklylease.com
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -614,7 +614,7 @@ Questions? Contact us at support@fxweeklylease.com
                 "simulated": True
             }
 
-        subject = f"Payment Proof Received - {invoice_number} - FX Weekly Lease"
+        subject = f"Payment Proof Received - {invoice_number} - GigWheels"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -742,7 +742,7 @@ Questions? Contact us at support@fxweeklylease.com
                 </div>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
             </div>
         </body>
@@ -771,7 +771,7 @@ Payment Details:
 - Uploaded: {uploaded_at}
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 Questions? Contact us at support@fxweeklylease.com
         """
 
@@ -839,7 +839,7 @@ Questions? Contact us at support@fxweeklylease.com
         # Determine urgency based on escalation level
         is_final_warning = escalation_level in ['level_3', 'level_4', 'level_5']
         urgency_text = "FINAL WARNING" if is_final_warning else "URGENT"
-        subject = f"{urgency_text}: Payment Escalation Notice - {case_number} - FX Weekly Lease"
+        subject = f"{urgency_text}: Payment Escalation Notice - {case_number} - GigWheels"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -1009,7 +1009,7 @@ Questions? Contact us at support@fxweeklylease.com
                 <p><strong>To resolve this immediately:</strong></p>
                 <ol>
                     <li>Make your full payment of <strong>${total_owed:.2f}</strong> via Zelle, CashApp, or cash</li>
-                    <li>Upload your payment proof to your FX Weekly account</li>
+                    <li>Upload your payment proof to your GigWheels account</li>
                     <li>Or contact us immediately to discuss payment arrangements</li>
                 </ol>
 
@@ -1025,10 +1025,10 @@ Questions? Contact us at support@fxweeklylease.com
                 </div>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>This is an automated message regarding your account status.</p>
                 <p>Case Reference: {case_number}</p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -1060,7 +1060,7 @@ TOTAL DUE NOW: ${total_owed:.2f}
 
 TO RESOLVE THIS IMMEDIATELY:
 1. Make your full payment of ${total_owed:.2f} via Zelle, CashApp, or cash
-2. Upload your payment proof to your FX Weekly account
+2. Upload your payment proof to your GigWheels account
 3. Or contact us immediately to discuss payment arrangements
 
 Upload payment proof at: {settings.API_BASE_URL.replace('8100', '3002')}/payments
@@ -1069,9 +1069,9 @@ Need to discuss payment options?
 Contact us immediately at support@fxweeklylease.com
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 Case Reference: {case_number}
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -1133,7 +1133,7 @@ Case Reference: {case_number}
                 "simulated": True
             }
 
-        subject = f"Late Payment Notice - ${total_owed:.2f} Due Immediately - FX Weekly Lease"
+        subject = f"Late Payment Notice - ${total_owed:.2f} Due Immediately - GigWheels"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -1249,7 +1249,7 @@ Case Reference: {case_number}
                 <p><strong>To avoid further action:</strong></p>
                 <ol>
                     <li>Make your payment immediately via Zelle, CashApp, or cash</li>
-                    <li>Upload your payment proof to your FX Weekly account</li>
+                    <li>Upload your payment proof to your GigWheels account</li>
                 </ol>
 
                 <center>
@@ -1259,9 +1259,9 @@ Case Reference: {case_number}
                 </center>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -1288,14 +1288,14 @@ A delinquency case has been opened: {case_number}
 
 TO AVOID FURTHER ACTION:
 1. Make your payment immediately via Zelle, CashApp, or cash
-2. Upload your payment proof to your FX Weekly account
+2. Upload your payment proof to your GigWheels account
 
 Upload payment proof at: {settings.API_BASE_URL.replace('8100', '3002')}/payments
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 Questions? Contact us at support@fxweeklylease.com
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -1358,7 +1358,7 @@ Questions? Contact us at support@fxweeklylease.com
                 "simulated": True
             }
 
-        subject = "IMPORTANT: Lease Termination Notice - FX Weekly Lease"
+        subject = "IMPORTANT: Lease Termination Notice - GigWheels"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -1485,9 +1485,9 @@ Questions? Contact us at support@fxweeklylease.com
                 <p>If you believe this action was taken in error or wish to discuss this matter, please contact us immediately at the contact information below. All actions are logged for compliance purposes.</p>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>For urgent matters: <a href="mailto:legal@fxweeklylease.com">legal@fxweeklylease.com</a></p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -1525,9 +1525,9 @@ YOUR RIGHTS:
 If you believe this action was taken in error or wish to discuss this matter, please contact us immediately. All actions are logged for compliance purposes.
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 For urgent matters: legal@fxweeklylease.com
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -1588,7 +1588,7 @@ For urgent matters: legal@fxweeklylease.com
                 "simulated": True
             }
 
-        subject = "IMPORTANT: Account Permanently Banned - FX Weekly Lease"
+        subject = "IMPORTANT: Account Permanently Banned - GigWheels"
 
         # Amount section if there's outstanding balance
         amount_section = ""
@@ -1704,7 +1704,7 @@ For urgent matters: legal@fxweeklylease.com
                 <p>Dear <span class="highlight">{customer_name}</span>,</p>
 
                 <p>
-                    We regret to inform you that your FX Weekly Lease account has been
+                    We regret to inform you that your GigWheels account has been
                     <strong class="highlight">permanently banned</strong> effective immediately.
                 </p>
 
@@ -1724,7 +1724,7 @@ For urgent matters: legal@fxweeklylease.com
                     <h3 style="margin-top: 0; color: #7F1D1D;">Account Restrictions</h3>
                     <p>As a result of this ban, you are <strong>permanently prohibited</strong> from:</p>
                     <ul>
-                        <li>Requesting or leasing any vehicles from FX Weekly Lease</li>
+                        <li>Requesting or leasing any vehicles from GigWheels</li>
                         <li>Creating new lease agreements with our company</li>
                         <li>Submitting new inquiries or applications</li>
                         <li>Accessing vehicle-related services</li>
@@ -1754,9 +1754,9 @@ For urgent matters: legal@fxweeklylease.com
 
             <div class="footer">
                 <p style="margin: 0;">
-                    FX Weekly Lease - Premium Weekly Vehicle Leasing<br>
+                    GigWheels - Weekly car rentals for gig drivers<br>
                     This email was sent regarding ban reference {ban_number}<br>
-                    © 2026 FX Weekly Lease. All rights reserved.
+                    © 2026 GigWheels. All rights reserved.
                 </p>
             </div>
         </body>
@@ -1764,13 +1764,13 @@ For urgent matters: legal@fxweeklylease.com
         """
 
         text_content = f"""
-IMPORTANT: Account Permanently Banned - FX Weekly Lease
+IMPORTANT: Account Permanently Banned - GigWheels
 
 Ban Reference: {ban_number}
 {case_text}
 Dear {customer_name},
 
-We regret to inform you that your FX Weekly Lease account has been PERMANENTLY BANNED effective immediately.
+We regret to inform you that your GigWheels account has been PERMANENTLY BANNED effective immediately.
 
 REASON FOR BAN:
 {ban_reason}
@@ -1778,7 +1778,7 @@ REASON FOR BAN:
 {amount_text}
 ACCOUNT RESTRICTIONS:
 As a result of this ban, you are permanently prohibited from:
-- Requesting or leasing any vehicles from FX Weekly Lease
+- Requesting or leasing any vehicles from GigWheels
 - Creating new lease agreements with our company
 - Submitting new inquiries or applications
 - Accessing vehicle-related services
@@ -1794,9 +1794,9 @@ If you believe this action was taken in error, you may submit a formal appeal wi
 All ban decisions are logged and subject to review.
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 For urgent matters: legal@fxweeklylease.com
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -1848,7 +1848,7 @@ For urgent matters: legal@fxweeklylease.com
                 "simulated": True
             }
 
-        subject = "Welcome to FX Weekly Lease! 🚗"
+        subject = "Welcome to GigWheels! 🚗"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -1953,8 +1953,8 @@ For urgent matters: legal@fxweeklylease.com
         </head>
         <body>
             <div class="header">
-                <h1>Welcome to FX Weekly Lease!</h1>
-                <div class="subtitle">Premium Weekly Vehicle Leasing</div>
+                <h1>Welcome to GigWheels!</h1>
+                <div class="subtitle">Weekly car rentals for gig drivers</div>
             </div>
             <div class="content">
                 <p>Dear <span class="highlight">{customer_name}</span>,</p>
@@ -1963,7 +1963,7 @@ For urgent matters: legal@fxweeklylease.com
                     <div class="welcome-icon">🎉</div>
                     <h2 style="margin: 0; color: #1A1A1A;">Your Account is Ready!</h2>
                     <p style="color: #666; margin: 10px 0 0 0;">
-                        Thank you for joining FX Weekly Lease. We're excited to help you find your perfect vehicle.
+                        Thank you for joining GigWheels. We're excited to help you find your perfect vehicle.
                     </p>
                 </div>
 
@@ -1999,7 +1999,7 @@ For urgent matters: legal@fxweeklylease.com
                     </div>
                 </div>
 
-                <p><strong>Why FX Weekly?</strong></p>
+                <p><strong>Why GigWheels?</strong></p>
                 <ul>
                     <li><strong>Flexible Weekly Payments</strong> - Starting from just $150/week</li>
                     <li><strong>No Long-Term Commitment</strong> - Week-to-week flexibility</li>
@@ -2019,20 +2019,20 @@ For urgent matters: legal@fxweeklylease.com
                 </p>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
         """
 
         text_content = f"""
-WELCOME TO FX WEEKLY LEASE! 🎉
+WELCOME TO GIGWHEELS! 🎉
 
 Dear {customer_name},
 
-Your account is ready! Thank you for joining FX Weekly Lease. We're excited to help you find your perfect vehicle.
+Your account is ready! Thank you for joining GigWheels. We're excited to help you find your perfect vehicle.
 
 GETTING STARTED
 ---------------
@@ -2041,7 +2041,7 @@ GETTING STARTED
 3. Request a Vehicle - Browse our fleet and submit your vehicle request
 4. Drive Away - Once approved, pick up your vehicle and enjoy!
 
-WHY FX WEEKLY?
+WHY GIGWHEELS?
 - Flexible Weekly Payments - Starting from just $150/week
 - No Long-Term Commitment - Week-to-week flexibility
 - Premium Vehicles - Quality, well-maintained fleet
@@ -2052,8 +2052,8 @@ Visit your dashboard: {settings.API_BASE_URL.replace('8100', '3002')}/dashboard
 Need help? Contact us at support@fxweeklylease.com
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
-© 2026 FX Weekly Lease. All rights reserved.
+GigWheels - Weekly car rentals for gig drivers
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -2113,7 +2113,7 @@ FX Weekly Lease - Premium Weekly Vehicle Leasing
                 "simulated": True
             }
 
-        subject = f"Payment Approved - ${amount:.2f} - FX Weekly Lease"
+        subject = f"Payment Approved - ${amount:.2f} - GigWheels"
 
         next_due_section = ""
         next_due_text = ""
@@ -2223,7 +2223,7 @@ FX Weekly Lease - Premium Weekly Vehicle Leasing
                     <p style="margin: 10px 0 0 0; color: #666;">Invoice {invoice_number}</p>
                 </div>
 
-                <p>Great news! Your payment has been verified and approved. Thank you for your continued trust in FX Weekly Lease.</p>
+                <p>Great news! Your payment has been verified and approved. Thank you for your continued trust in GigWheels.</p>
 
                 <div class="details-box">
                     <h4 style="margin-top: 0; color: #166534;">Payment Details</h4>
@@ -2253,9 +2253,9 @@ FX Weekly Lease - Premium Weekly Vehicle Leasing
                 </p>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -2275,14 +2275,14 @@ Amount Paid: ${amount:.2f}
 Verification Date: {payment_date}
 Status: ✅ Paid
 {next_due_text}
-Thank you for your continued trust in FX Weekly Lease.
+Thank you for your continued trust in GigWheels.
 
 View your payment history at: {settings.API_BASE_URL.replace('8100', '3002')}/dashboard
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 Questions? Contact us at support@fxweeklylease.com
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:
@@ -2340,7 +2340,7 @@ Questions? Contact us at support@fxweeklylease.com
                 "simulated": True
             }
 
-        subject = f"Payment Requires Attention - {invoice_number} - FX Weekly Lease"
+        subject = f"Payment Requires Attention - {invoice_number} - GigWheels"
 
         html_content = f"""
         <!DOCTYPE html>
@@ -2495,9 +2495,9 @@ Questions? Contact us at support@fxweeklylease.com
                 </center>
             </div>
             <div class="footer">
-                <p>FX Weekly Lease - Premium Weekly Vehicle Leasing</p>
+                <p>GigWheels - Weekly car rentals for gig drivers</p>
                 <p>Questions? Contact us at <a href="mailto:support@fxweeklylease.com">support@fxweeklylease.com</a></p>
-                <p>© 2026 FX Weekly Lease. All rights reserved.</p>
+                <p>© 2026 GigWheels. All rights reserved.</p>
             </div>
         </body>
         </html>
@@ -2532,9 +2532,9 @@ If you believe this rejection was made in error, please contact our support team
 Upload new payment proof at: {settings.API_BASE_URL.replace('8100', '3002')}/payments
 
 ---
-FX Weekly Lease - Premium Weekly Vehicle Leasing
+GigWheels - Weekly car rentals for gig drivers
 Questions? Contact us at support@fxweeklylease.com
-© 2026 FX Weekly Lease. All rights reserved.
+© 2026 GigWheels. All rights reserved.
         """
 
         try:

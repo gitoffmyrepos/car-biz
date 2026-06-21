@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Inquiry API Tests
-Salvage-to-Lux Fleet Management
+GigWheels - Inquiry API Tests
+Weekly car rentals for gig drivers
 
 Unit tests for the inquiry API endpoints.
 """

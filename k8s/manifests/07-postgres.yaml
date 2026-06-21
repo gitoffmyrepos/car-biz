@@ -1,24 +1,24 @@
-# PostgreSQL for FX Weekly Lease (car-biz)
-# Dedicated, single-replica Postgres in-namespace (fx-weekly-lease-prod).
+# PostgreSQL for GigWheels (car-biz)
+# Dedicated, single-replica Postgres in-namespace (gigwheels-prod).
 # The ConfigMap (01-configmap.yaml) points the backend at:
 #   POSTGRES_HOST: postgresql-service
 #   POSTGRES_PORT: 5432
-#   POSTGRES_DB:   fx_weekly_lease
+#   POSTGRES_DB:   gigwheels
 # Credentials are sourced from the Vault-backed ExternalSecret
-# `fx-weekly-lease-secrets` (06-external-secrets.yaml), keys:
+# `gigwheels-secrets` (06-external-secrets.yaml), keys:
 #   database-user, database-password, database-name
 #
 # =============================================================================
 # OPERATOR — Vault properties that MUST be populated before deploy
 # =============================================================================
-#   fx-weekly-lease/prod/database = { url, user, password, database }
-#       url      -> postgresql+asyncpg://<user>:<password>@postgresql-service:5432/fx_weekly_lease
-#       user     -> e.g. fx_weekly_lease
+#   gigwheels/prod/database = { url, user, password, database }
+#       url      -> postgresql+asyncpg://<user>:<password>@postgresql-service:5432/gigwheels
+#       user     -> e.g. gigwheels
 #       password -> generated strong password
-#       database -> fx_weekly_lease   (must match POSTGRES_DB in the ConfigMap)
-#   fx-weekly-lease/prod/redis    = { url, password }
-#   fx-weekly-lease/common/harbor = { username, password }   (operator-minted harbor robot account)
-#   fx-weekly-lease/prod/minio    = { access_key, secret_key } (scoped key for bucket car-biz-vehicle-images)
+#       database -> gigwheels   (must match POSTGRES_DB in the ConfigMap)
+#   gigwheels/prod/redis    = { url, password }
+#   gigwheels/common/harbor = { username, password }   (operator-minted harbor robot account)
+#   gigwheels/prod/minio    = { access_key, secret_key } (scoped key for bucket gigwheels-vehicle-images)
 # =============================================================================
 ---
 apiVersion: v1
@@ -26,7 +26,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: postgresql-data
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: postgresql
 spec:
   accessModes:
@@ -38,9 +38,9 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fx-weekly-lease-postgresql
+  name: gigwheels-postgresql
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: postgresql
 spec:
   replicas: 1
@@ -48,15 +48,15 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: fx-weekly-lease
+      app: gigwheels
       component: postgresql
   template:
     metadata:
       labels:
-        app: fx-weekly-lease
+        app: gigwheels
         component: postgresql
     spec:
-      serviceAccountName: fx-weekly-lease-sa
+      serviceAccountName: gigwheels-sa
       securityContext:
         runAsNonRoot: true
         runAsUser: 70
@@ -77,17 +77,17 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: database-user
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: database-password
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
-              name: fx-weekly-lease-secrets
+              name: gigwheels-secrets
               key: database-name
         # data dir lives in a subPath so the PVC root (lost+found etc.) does not
         # collide with initdb's empty-dir requirement
@@ -168,7 +168,7 @@ kind: Service
 metadata:
   name: postgresql-service
   labels:
-    app: fx-weekly-lease
+    app: gigwheels
     component: postgresql
 spec:
   type: ClusterIP
@@ -178,5 +178,5 @@ spec:
     protocol: TCP
     name: postgresql
   selector:
-    app: fx-weekly-lease
+    app: gigwheels
     component: postgresql

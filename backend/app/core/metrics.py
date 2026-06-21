@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Prometheus Metrics
-Salvage-to-Lux Fleet Management
+GigWheels - Prometheus Metrics
+Weekly car rentals for gig drivers
 
 Application metrics for monitoring API latency, error rates, and business metrics.
 Exposes Prometheus-compatible metrics endpoint.

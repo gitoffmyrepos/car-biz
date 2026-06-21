@@ -63,7 +63,7 @@ const faqItems: FAQItem[] = [
   {
     category: 'Insurance',
     question: 'What type of insurance do I need?',
-    answer: 'You must have full coverage insurance that includes: Bodily Injury Liability ($100K/$300K minimum), Property Damage ($50K minimum), and Comprehensive & Collision coverage. FX Weekly Lease must be listed as an additional insured or lienholder on your policy.'
+    answer: 'You must have full coverage insurance that includes: Bodily Injury Liability ($100K/$300K minimum), Property Damage ($50K minimum), and Comprehensive & Collision coverage. GigWheels must be listed as an additional insured or lienholder on your policy.'
   },
   {
     category: 'Insurance',
@@ -191,7 +191,7 @@ export default function FAQPage() {
               Frequently Asked <span className="text-gradient-glow">Questions</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
-              Find answers to common questions about our weekly vehicle leasing service.
+              Find answers to common questions about our weekly car-rental service.
             </p>
           </div>
         </div>
@@ -350,7 +350,7 @@ export default function FAQPage() {
                 FX<span className="text-orange-500">Weekly</span>
               </Link>
               <p className="mt-4 text-gray-400">
-                Premium vehicle leasing with flexible weekly payments.
+                Weekly car rentals for gig drivers, with flexible weekly payments.
               </p>
             </div>
             <div>
@@ -382,7 +382,7 @@ export default function FAQPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; {new Date().getFullYear()} FX Weekly Lease. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} GigWheels. All rights reserved.</p>
           </div>
         </div>
       </footer>

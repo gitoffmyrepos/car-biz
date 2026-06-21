@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     canonical: '/fleet',
   },
   openGraph: {
-    title: 'Our Fleet | FX Weekly Lease',
+    title: 'Our Fleet | GigWheels',
     description:
       'Browse our diverse collection of premium vehicles available for weekly lease.',
   },

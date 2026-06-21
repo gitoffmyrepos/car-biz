@@ -1,17 +1,17 @@
-# Kustomization for FX Weekly Lease
+# Kustomization for GigWheels
 # Use: kubectl apply -k k8s/manifests/
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: fx-weekly-lease
+  name: gigwheels
 
-namespace: fx-weekly-lease-prod
+namespace: gigwheels-prod
 
 labels:
 - includeSelectors: true
   pairs:
-    app: fx-weekly-lease
+    app: gigwheels
 
 resources:
 - 00-namespace.yaml
@@ -28,13 +28,13 @@ resources:
 # Image customization (set via CI/CD).
 # Images are pulled from Harbor; deployments pin prod-latest by default.
 images:
-- name: harbor.strategybase.io/sb-custom-docker-images/car-biz-backend
+- name: harbor.strategybase.io/sb-custom-docker-images/gigwheels-backend
   newTag: prod-latest
-- name: harbor.strategybase.io/sb-custom-docker-images/car-biz-frontend
+- name: harbor.strategybase.io/sb-custom-docker-images/gigwheels-frontend
   newTag: prod-latest
 
 # Common annotations
 commonAnnotations:
-  app.kubernetes.io/name: fx-weekly-lease
+  app.kubernetes.io/name: gigwheels
   app.kubernetes.io/managed-by: kustomize
   app.kubernetes.io/version: "1.0.0"

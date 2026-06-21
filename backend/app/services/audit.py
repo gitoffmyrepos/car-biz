@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Audit Logging Service
-Salvage-to-Lux Fleet Management
+GigWheels - Audit Logging Service
+Weekly car rentals for gig drivers
 
 Service for creating immutable audit log entries for all sensitive operations.
 """

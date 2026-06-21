@@ -2,7 +2,7 @@
 
 /**
  * Toast Notification Component
- * Weekly Vehicle Leasing Platform - Salvage-to-Lux Fleet Management
+ * GigWheels
  *
  * Provides user feedback via toast messages for:
  * - Success notifications (form submissions, approvals)

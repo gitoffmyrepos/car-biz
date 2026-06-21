@@ -1,6 +1,6 @@
 """
-Weekly Vehicle Leasing Platform - Audit Log Model
-Salvage-to-Lux Fleet Management
+GigWheels - Audit Log Model
+Weekly car rentals for gig drivers
 
 SQLAlchemy model for audit logging all sensitive operations.
 """
