@@ -88,6 +88,10 @@ export function Breadcrumb({
         {allItems.map((item, index) => {
           const isLast = index === allItems.length - 1;
           const isFirst = index === 0;
+          const linkHref =
+            item.href && (!isLast || (isFirst && allItems.length === 1))
+              ? item.href
+              : null;
 
           return (
             <li key={index} className="flex items-center">
@@ -99,9 +103,9 @@ export function Breadcrumb({
               )}
 
               {/* Breadcrumb link or text */}
-              {item.href && !isLast ? (
+              {linkHref ? (
                 <Link
-                  href={item.href}
+                  href={linkHref}
                   className={clsx(
                     'flex items-center gap-1 text-sm transition-colors',
                     'text-gray-500 hover:text-gold'
@@ -121,7 +125,12 @@ export function Breadcrumb({
                   aria-current={isLast ? 'page' : undefined}
                 >
                   {item.icon}
-                  <span className={isFirst && item.icon ? 'sr-only sm:not-sr-only' : ''}>
+                  <span
+                    className={clsx(
+                      isFirst && item.icon ? 'sr-only sm:not-sr-only' : '',
+                      isLast ? 'font-medium' : ''
+                    )}
+                  >
                     {item.label}
                   </span>
                 </span>
@@ -171,17 +180,15 @@ export function generateBreadcrumbsFromPath(
   }
 
   const items: BreadcrumbItem[] = [];
-  let currentPath = '';
+  const visibleSegments = segments
+    .map((segment, index) => ({
+      segment,
+      path: `/${segments.slice(0, index + 1).join('/')}`,
+    }))
+    .filter(({ segment }) => !/^\d+$/.test(segment));
 
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
-    currentPath += `/${segment}`;
-
-    // Skip dynamic route segments that are IDs (all numeric)
-    if (/^\d+$/.test(segment)) {
-      continue;
-    }
-
+  for (let i = 0; i < visibleSegments.length; i++) {
+    const { segment, path } = visibleSegments[i];
     // Get label from map or format segment
     const label =
       labelMap?.[segment] ||
@@ -192,7 +199,7 @@ export function generateBreadcrumbsFromPath(
 
     items.push({
       label,
-      href: i === segments.length - 1 ? undefined : currentPath,
+      href: i === visibleSegments.length - 1 ? undefined : path,
     });
   }
 

@@ -198,24 +198,28 @@ export function useFormValidation<T extends string>({
   // Validate all fields
   const validateAll = useCallback((): boolean => {
     let isFormValid = true;
-    const newState = { ...formState };
 
-    for (const field of fields) {
-      const rules = validationRules[field] ?? [];
-      const error = validateField(formState[field]?.value ?? '', rules);
-      newState[field] = {
-        ...newState[field],
-        error,
-        touched: true,
-      };
-      if (error) {
-        isFormValid = false;
+    setFormState((prev) => {
+      const newState = { ...prev };
+
+      for (const field of fields) {
+        const rules = validationRules[field] ?? [];
+        const error = validateField(prev[field]?.value ?? '', rules);
+        newState[field] = {
+          ...newState[field],
+          error,
+          touched: true,
+        };
+        if (error) {
+          isFormValid = false;
+        }
       }
-    }
 
-    setFormState(newState);
+      return newState;
+    });
+
     return isFormValid;
-  }, [formState, fields, validationRules]);
+  }, [fields, validationRules]);
 
   // Reset form to initial values
   const reset = useCallback(

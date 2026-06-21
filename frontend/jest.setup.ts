@@ -6,6 +6,32 @@
  */
 
 import '@testing-library/jest-dom';
+import 'whatwg-fetch';
+import React from 'react';
+import { TextDecoder, TextEncoder } from 'util';
+import { ReadableStream, TransformStream, WritableStream } from 'stream/web';
+
+Object.assign(globalThis, { ReadableStream, TextDecoder, TextEncoder, TransformStream, WritableStream });
+
+class MockBroadcastChannel {
+  name: string;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onmessageerror: ((event: MessageEvent) => void) | null = null;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  postMessage() {}
+  close() {}
+  addEventListener() {}
+  removeEventListener() {}
+  dispatchEvent() {
+    return true;
+  }
+}
+
+Object.assign(globalThis, { BroadcastChannel: MockBroadcastChannel });
 
 // Mock next/router
 jest.mock('next/navigation', () => ({
@@ -29,8 +55,7 @@ jest.mock('next/navigation', () => ({
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props: any) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} alt={props.alt || ''} />;
+    return React.createElement('img', { ...props, alt: props.alt || '' });
   },
 }));
 
