@@ -124,7 +124,12 @@
 @layer base {
   :root {
     --ed-background: #0d0d0d;
-    --ed-card: #111111;
+    /* Card fill — semi-transparent so the fixed car backdrop shows faintly
+       through panels/sections, while backdrop-blur keeps text crisp. The
+       former solid value lives on as --ed-card-solid for the rare surface
+       that needs to fully occlude the backdrop. */
+    --ed-card: rgba(17, 17, 17, 0.78);
+    --ed-card-solid: #111111;
     /* Brand red accent (replaces former champagne-gold) */
     --ed-accent: #e11d2a;
     --ed-accent-strong: #ff3b40;
@@ -138,7 +143,11 @@
   }
 
   .editorial {
-    background: var(--ed-background);
+    /* Transparent so the app-wide fixed car backdrop (SiteBackground) stays
+       visible while scrolling ANY public page — no hard black cutoff. The
+       fixed layer + its scrim provide the dark base; sections/cards add only
+       light translucent fills on top. */
+    background: transparent;
     color: var(--ed-text);
     font-family: 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
     letter-spacing: 0.005em;
@@ -179,12 +188,38 @@
   /* Cards — sharp corners, hairline border, gold hover */
   .ed-card {
     background: var(--ed-card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--ed-border);
     border-radius: var(--ed-radius);
     transition: border-color 0.3s ease, transform 0.3s ease;
   }
   .ed-card:hover {
     border-color: rgba(225, 29, 42, 0.5);
+  }
+
+  /* --- Let the fixed car backdrop show through page surfaces ---------------
+     Pages use opaque Tailwind fills (bg-ink-card #111, bg-ink #0D0D0D) for
+     panels, sticky filter bars, inputs and inline tiles. Inside the public
+     `.editorial` surface we relax those to translucent + blurred so the car
+     reads faintly behind them while text stays crisp. Admin/dashboard live
+     outside `.editorial`, so their fills are untouched. Cards/inputs keep a
+     higher opacity than bare sections for legibility. */
+  .editorial .bg-ink-card {
+    background-color: rgba(17, 17, 17, 0.74) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .editorial .bg-ink {
+    background-color: rgba(13, 13, 13, 0.62) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  /* Inputs/selects/textareas need solid-enough contrast for typed text. */
+  .editorial input.bg-ink-card,
+  .editorial select.bg-ink-card,
+  .editorial textarea.bg-ink-card {
+    background-color: rgba(17, 17, 17, 0.88) !important;
   }
 
   /* CTAs */

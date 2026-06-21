@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Fraunces } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
-import { CarBackgroundCarousel } from '@/components/ui/CarBackgroundCarousel';
+import { SiteBackground } from '@/components/site/SiteBackground';
 import { SiteJsonLd } from '@/components/site/SiteJsonLd';
 import { ChatwootWidget } from '@/components/site/ChatwootWidget';
 
@@ -70,7 +70,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${display.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased bg-glossy-black text-white min-h-screen relative" suppressHydrationWarning>
         <SiteJsonLd />
-        <CarBackgroundCarousel />
+        <SiteBackground />
         <Providers>{children}</Providers>
         <ChatwootWidget />
       </body>
