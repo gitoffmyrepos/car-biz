@@ -37,6 +37,44 @@ spec:
                   values:
                   - backend
               topologyKey: kubernetes.io/hostname
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:16-alpine
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
+            echo "waiting for postgres at $POSTGRES_HOST:$POSTGRES_PORT ..."
+            sleep 2
+          done
+          echo "postgres is ready"
+        envFrom:
+        - configMapRef:
+            name: fx-weekly-lease-config
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: fx-weekly-lease-secrets
+              key: database-user
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 70
+          runAsGroup: 70
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
       containers:
       - name: backend
         image: harbor.strategybase.io/sb-custom-docker-images/car-biz-backend:prod-latest
