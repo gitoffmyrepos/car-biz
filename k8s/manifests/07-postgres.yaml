@@ -63,6 +63,8 @@ spec:
         runAsGroup: 70
         fsGroup: 70
         fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: postgresql
         image: postgres:16-alpine
