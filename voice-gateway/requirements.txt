@@ -1,2 +1,3 @@
 pipecat-ai[openai,websocket]==0.0.108
 uvicorn[standard]==0.34.0
+tzdata==2025.2
