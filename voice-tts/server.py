@@ -52,10 +52,22 @@ async def speech(req: Request) -> Response:
     body = await req.json()
     text = (body.get("input") or body.get("text") or "").strip()
     voice = body.get("voice") or DEFAULT_VOICE
-    out_sr = int(body.get("sample_rate") or NATIVE_SR)
+    # OpenAI-compatible response_format. pipecat (voice-gateway) requests "pcm" and
+    # expects RAW 24kHz s16le mono (no WAV header), then resamples itself. Other
+    # callers (curl/tests) get a WAV container at the sample_rate they ask for.
+    fmt = (body.get("response_format") or "wav").lower()
     chunks = [audio for _gs, _ps, audio in _pipeline()(text, voice=voice)]
     audio = np.concatenate(chunks) if chunks else np.zeros(1, dtype=np.float32)
-    audio = _resample(np.asarray(audio, dtype=np.float32), NATIVE_SR, out_sr)
+    audio = np.asarray(audio, dtype=np.float32)
+
+    if fmt == "pcm":
+        # OpenAI "pcm" is always 24kHz raw little-endian s16 mono — no resample.
+        pcm16 = np.clip(audio, -1.0, 1.0)
+        pcm16 = (pcm16 * 32767.0).astype("<i2").tobytes()
+        return Response(content=pcm16, media_type="audio/L16")
+
+    out_sr = int(body.get("sample_rate") or NATIVE_SR)
+    audio = _resample(audio, NATIVE_SR, out_sr)
     buf = io.BytesIO()
     sf.write(buf, audio, out_sr, format="WAV", subtype="PCM_16")
     return Response(content=buf.getvalue(), media_type="audio/wav")
