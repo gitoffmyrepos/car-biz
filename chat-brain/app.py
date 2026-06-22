@@ -15,6 +15,7 @@ sections, so in-memory cosine over precomputed embeddings is plenty — no vecto
 from __future__ import annotations
 
 import logging
+import json
 import math
 import os
 import pathlib
@@ -170,6 +171,55 @@ def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False, full_
     return humanize(out)
 
 
+_SENTENCE_END = re.compile(r"[.!?](?:\s|$)")
+
+
+async def answer_stream(question: str, *, model: str = CHAT_MODEL, full_context: bool = True):
+    """Stream a voice reply sentence-by-sentence so the gateway can start TTS on
+    the first sentence instead of waiting for the whole answer (cuts perceived
+    latency). Each emitted sentence is humanized before it goes out."""
+    context = "\n\n".join(t for t, _ in _KB) if (full_context and _KB) else _retrieve(question)
+    if not context:
+        yield ("I'm not able to look that up right now. Please reach us through the "
+               "Contact page and a team member will help.")
+        return
+    sys_prompt = (SYSTEM_PROMPT + "\n\n" + HUMANIZE_GUIDANCE +
+                  " This is SPOKEN on a phone call: 1-2 short sentences, no markdown, "
+                  "lists, emoji, or URLs.")
+    payload = {
+        "model": model, "stream": True, "keep_alive": "30m",
+        "messages": [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": f"CONTEXT:\n{context}\n\nQUESTION: {question}"},
+        ],
+        "options": {"temperature": 0.2, "num_predict": 80},
+    }
+    buf = ""
+    async with httpx.AsyncClient(timeout=120) as client:
+        async with client.stream("POST", f"{OLLAMA_URL}/api/chat", json=payload) as r:
+            r.raise_for_status()
+            async for line in r.aiter_lines():
+                if not line:
+                    continue
+                try:
+                    tok = json.loads(line).get("message", {}).get("content", "")
+                except ValueError:
+                    continue
+                buf += tok
+                # Flush each complete sentence as it lands.
+                while True:
+                    m = _SENTENCE_END.search(buf)
+                    if not m:
+                        break
+                    sent, buf = buf[:m.end()], buf[m.end():]
+                    clean = humanize(sent.strip())
+                    if clean:
+                        yield clean + " "
+    tail = humanize(buf.strip())
+    if tail:
+        yield tail
+
+
 # ---- Chatwoot polling ----
 def _cw(method: str, path: str, **kw) -> httpx.Response:
     return httpx.request(method, f"{CW_API}{path}", headers={"api_access_token": CW_BOT_TOKEN}, timeout=30, **kw)
@@ -295,19 +345,22 @@ async def openai_completions(req: Request):
     body = await req.json()
     msgs = body.get("messages", [])
     question = next((m.get("content", "") for m in reversed(msgs) if m.get("role") == "user"), "")
-    reply = answer(question.strip(), model=VOICE_MODEL, brief=True, full_context=True)
     model = body.get("model", "gigwheels")
     created = int(time.time())
     if body.get("stream"):
-        def _gen():
-            delta = {"id": "cb", "object": "chat.completion.chunk", "created": created, "model": model,
-                     "choices": [{"index": 0, "delta": {"role": "assistant", "content": reply}, "finish_reason": None}]}
-            yield f"data: {_json.dumps(delta)}\n\n"
+        # Stream sentence-by-sentence: the gateway starts speaking the first
+        # sentence while the rest still generates (lower perceived latency).
+        async def _gen():
+            async for sent in answer_stream(question.strip(), model=VOICE_MODEL, full_context=True):
+                delta = {"id": "cb", "object": "chat.completion.chunk", "created": created, "model": model,
+                         "choices": [{"index": 0, "delta": {"role": "assistant", "content": sent}, "finish_reason": None}]}
+                yield f"data: {_json.dumps(delta)}\n\n"
             stop = {"id": "cb", "object": "chat.completion.chunk", "created": created, "model": model,
                     "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]}
             yield f"data: {_json.dumps(stop)}\n\n"
             yield "data: [DONE]\n\n"
         return StreamingResponse(_gen(), media_type="text/event-stream")
+    reply = answer(question.strip(), model=VOICE_MODEL, brief=True, full_context=True)
     return {"id": "cb", "object": "chat.completion", "created": created, "model": model,
             "choices": [{"index": 0, "message": {"role": "assistant", "content": reply}, "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
