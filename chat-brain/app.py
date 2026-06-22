@@ -44,6 +44,9 @@ POLL_INTERVAL = float(os.environ.get("POLL_INTERVAL", "4"))
 # replies stay snappy. VOICE_BASE_URL is the public origin Telnyx fetched us at.
 VOICE_MODEL = os.environ.get("VOICE_MODEL", "gemma3:4b")
 VOICE_BASE_URL = os.environ.get("VOICE_BASE_URL", "https://gigwheels.strategybase.io").rstrip("/")
+# TeXML <Say> voice — neural female by default (Amazon Polly via Telnyx).
+VOICE_TTS = os.environ.get("VOICE_TTS", "Polly.Joanna-Neural")
+VOICE_LANG = os.environ.get("VOICE_LANG", "en-US")
 
 # Email agent (Gmail via OAuth2 / XOAUTH2). Enabled when a refresh token is set.
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
@@ -271,11 +274,15 @@ def _texml(inner: str) -> _Resp:
                  media_type="application/xml")
 
 
+def _say(text: str) -> str:
+    return f'<Say voice="{VOICE_TTS}" language="{VOICE_LANG}">{_xesc(text)}</Say>'
+
+
 def _gather(say_text: str) -> str:
     """A <Say> followed by a speech <Gather> that posts back to /voice/gather."""
-    return (f'<Gather input="speech" language="en-US" speechTimeout="auto" '
+    return (f'<Gather input="speech" language="{VOICE_LANG}" speechTimeout="auto" '
             f'action="{VOICE_BASE_URL}/voice/gather" method="POST">'
-            f'<Say>{_xesc(say_text)}</Say></Gather>'
+            f'{_say(say_text)}</Gather>'
             f'<Redirect>{VOICE_BASE_URL}/voice</Redirect>')
 
 
@@ -299,7 +306,7 @@ async def voice_gather(req: Request) -> _Resp:
     except Exception as e:  # noqa: BLE001
         log.error("voice answer failed: %s", e)
         reply = "Sorry, I'm having trouble right now. Please try our website's contact page."
-    return _texml(f'<Say>{_xesc(reply)}</Say>{_gather("Is there anything else I can help with?")}')
+    return _texml(f'{_say(reply)}{_gather("Is there anything else I can help with?")}')
 
 
 # ---- Email agent (Gmail XOAUTH2) ----
