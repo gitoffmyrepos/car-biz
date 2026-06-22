@@ -51,6 +51,15 @@ VOICE_LANG = os.environ.get("VOICE_LANG", "en-US")
 # fallback after repeated unrecognized speech so callers are never stuck.
 HUMAN_FORWARD_NUMBER = os.environ.get("HUMAN_FORWARD_NUMBER", "+18328003103")
 
+# Real-time media-streaming voice path (pipecat voice-gateway: Whisper STT +
+# Kokoro TTS + this brain as the LLM). When enabled, /voice returns a TeXML
+# <Connect><Stream> that hands the call to the gateway WebSocket instead of the
+# turn-by-turn <Gather>/<Say> (Telnyx STT + Polly) path. Default OFF so the
+# proven TeXML path keeps working until the gateway is deployed + the number is
+# pointed at it.
+VOICE_STREAM_ENABLED = os.environ.get("VOICE_STREAM_ENABLED", "false").lower() == "true"
+VOICE_WS_URL = os.environ.get("VOICE_WS_URL", "wss://gigwheels.strategybase.io/ws")
+
 # Email agent (Gmail via OAuth2 / XOAUTH2). Enabled when a refresh token is set.
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
 GMAIL_CLIENT_ID = os.environ.get("GMAIL_CLIENT_ID", "")
@@ -346,9 +355,18 @@ def _dial_human() -> str:
             f'<Dial>{_xesc(HUMAN_FORWARD_NUMBER)}</Dial>')
 
 
+def _connect_stream() -> str:
+    """Hand the whole call to the pipecat voice-gateway over a bidirectional
+    media stream (Telnyx streams 8kHz μ-law both ways)."""
+    return f'<Connect><Stream url="{_xesc(VOICE_WS_URL)}"/></Connect>'
+
+
 @app.api_route("/voice", methods=["GET", "POST"])
 async def voice() -> _Resp:
-    """Telnyx voice webhook entrypoint — greet + listen."""
+    """Telnyx voice webhook entrypoint. With streaming enabled, connect the call
+    to the real-time gateway (Whisper+Kokoro); otherwise greet + <Gather>."""
+    if VOICE_STREAM_ENABLED:
+        return _texml(_connect_stream())
     return _texml(_gather(_GREETING))
 
 
