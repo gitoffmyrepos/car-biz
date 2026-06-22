@@ -47,6 +47,9 @@ VOICE_BASE_URL = os.environ.get("VOICE_BASE_URL", "https://gigwheels.strategybas
 # TeXML <Say> voice — neural female by default (Amazon Polly via Telnyx).
 VOICE_TTS = os.environ.get("VOICE_TTS", "Polly.Joanna-Neural")
 VOICE_LANG = os.environ.get("VOICE_LANG", "en-US")
+# Forward to a human (Google Voice) when the caller asks for a rep, or as a
+# fallback after repeated unrecognized speech so callers are never stuck.
+HUMAN_FORWARD_NUMBER = os.environ.get("HUMAN_FORWARD_NUMBER", "+18328003103")
 
 # Email agent (Gmail via OAuth2 / XOAUTH2). Enabled when a refresh token is set.
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
@@ -282,15 +285,30 @@ _VOICE_HINTS = ("price, weekly rate, how much, rent a car, lease, insurance, req
                 "payment, deposit, credit check, gps, fleet, switch vehicle, contact")
 
 
-def _gather(say_text: str) -> str:
+def _gather(say_text: str, empties: int = 0) -> str:
     """A <Say> followed by a speech <Gather> that posts back to /voice/gather.
     Telnyx 'auto' speechTimeout is unreliable — use a numeric end-of-speech timeout
-    and bias the recognizer with domain hints."""
+    and bias the recognizer with domain hints. `empties` tracks consecutive
+    no-speech rounds through the action URL so we can fall back to a human."""
     return (f'<Gather input="speech" language="{VOICE_LANG}" speechTimeout="3" '
             f'speechModel="default" hints="{_xesc(_VOICE_HINTS)}" '
-            f'action="{VOICE_BASE_URL}/voice/gather" method="POST">'
+            f'action="{VOICE_BASE_URL}/voice/gather?empties={empties}" method="POST">'
             f'{_say(say_text)}</Gather>'
             f'<Redirect>{VOICE_BASE_URL}/voice</Redirect>')
+
+
+_HUMAN_WORDS = ("human", "representative", "rep ", "real person", "someone", "agent",
+                "customer service", "customer rep", "person", "operator", "talk to a")
+
+
+def _wants_human(said: str) -> bool:
+    s = said.lower()
+    return any(w in s for w in _HUMAN_WORDS)
+
+
+def _dial_human() -> str:
+    return (f'{_say("Sure, connecting you with a team member now. Please hold.")}'
+            f'<Dial>{_xesc(HUMAN_FORWARD_NUMBER)}</Dial>')
 
 
 @app.api_route("/voice", methods=["GET", "POST"])
@@ -312,8 +330,15 @@ async def voice_gather(req: Request) -> _Resp:
         if data.get(key, [""])[0].strip():
             said = data[key][0].strip()
             break
+    empties = int((req.query_params.get("empties") or "0") or "0")
+    # No speech recognized → after 2 misses, hand to a human so callers aren't stuck.
     if not said:
-        return _texml(_gather("Sorry, I didn't catch that. What would you like to know?"))
+        if empties >= 2:
+            return _texml(_dial_human())
+        return _texml(_gather("Sorry, I didn't catch that. What would you like to know?", empties + 1))
+    # Explicit request for a person → forward to the human line.
+    if _wants_human(said):
+        return _texml(_dial_human())
     try:
         reply = answer(said, model=VOICE_MODEL, brief=True)
     except Exception as e:  # noqa: BLE001
