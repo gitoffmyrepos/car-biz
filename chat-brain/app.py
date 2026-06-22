@@ -279,8 +279,10 @@ async def voice() -> _Resp:
 @app.post("/voice/gather")
 async def voice_gather(req: Request) -> _Resp:
     """Telnyx posts the recognized speech (SpeechResult); answer via RAG, then keep listening."""
-    form = await req.form()
-    said = (str(form.get("SpeechResult") or form.get("Result") or "")).strip()
+    # Parse x-www-form-urlencoded manually (avoids the python-multipart dep).
+    from urllib.parse import parse_qs
+    data = parse_qs((await req.body()).decode("utf-8", "ignore"))
+    said = (data.get("SpeechResult", [""])[0] or data.get("Result", [""])[0]).strip()
     if not said:
         return _texml(_gather("Sorry, I didn't catch that. What would you like to know?"))
     try:
