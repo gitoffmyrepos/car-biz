@@ -39,6 +39,25 @@ from pipecat.transports.websocket.fastapi import (
 import httpx
 
 
+class TelnyxStreamSerializer(TelnyxFrameSerializer):
+    """pipecat 0.0.108's TelnyxFrameSerializer omits `stream_id` from OUTBOUND
+    media messages. Telnyx needs it to route audio back to the caller, so without
+    it the bot's speech is silently dropped (the caller hears nothing). Inject it.
+    """
+
+    async def serialize(self, frame):
+        out = await super().serialize(frame)
+        if isinstance(out, str):
+            try:
+                d = json.loads(out)
+            except ValueError:
+                return out
+            if d.get("event") == "media" and "stream_id" not in d:
+                d["stream_id"] = self._stream_id
+                return json.dumps(d)
+        return out
+
+
 class KokoroHTTPTTSService(TTSService):
     """Kokoro TTS over a plain full-body POST to our server.
 
@@ -133,7 +152,7 @@ async def ws(ws: WebSocket) -> None:
     stream_id, call_control_id = await _read_stream_ids(ws)
     logger.info(f"call connected stream={stream_id} call={call_control_id}")
 
-    serializer = TelnyxFrameSerializer(
+    serializer = TelnyxStreamSerializer(
         stream_id=stream_id,
         outbound_encoding="PCMU",
         inbound_encoding="PCMU",
