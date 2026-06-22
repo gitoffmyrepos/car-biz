@@ -39,6 +39,12 @@ CW_BOT_TOKEN = os.environ.get("CHATWOOT_BOT_TOKEN", "")
 CW_ACCOUNT_ID = int(os.environ.get("CHATWOOT_ACCOUNT_ID", "1"))
 POLL_INTERVAL = float(os.environ.get("POLL_INTERVAL", "4"))
 
+# Voice agent (Telnyx TeXML). Telnyx does STT (Gather) + TTS (Say); we bridge the
+# transcript to the RAG brain. VOICE_MODEL defaults to a fast model so spoken
+# replies stay snappy. VOICE_BASE_URL is the public origin Telnyx fetched us at.
+VOICE_MODEL = os.environ.get("VOICE_MODEL", "gemma3:4b")
+VOICE_BASE_URL = os.environ.get("VOICE_BASE_URL", "https://gigwheels.strategybase.io").rstrip("/")
+
 # EspoCRM lead-sync (optional — enabled when ESPOCRM_URL is set). Auth as a
 # regular EspoCRM user via the Espo-Authorization header (base64 user:pass).
 ESPOCRM_URL = os.environ.get("ESPOCRM_URL", "").rstrip("/")
@@ -99,23 +105,28 @@ def _retrieve(question: str) -> str:
     return "\n\n".join(text for text, _ in ranked[:TOP_K])
 
 
-def answer(question: str) -> str:
+def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False) -> str:
     context = _retrieve(question)
     if not context:
-        return ("I'm not able to look that up right now. Please reach us via the "
-                "Contact page at https://gigwheels.strategybase.io/contact and a "
-                "team member will help.")
-    prompt = f"CONTEXT:\n{context}\n\nQUESTION: {question}"
+        return ("I'm not able to look that up right now. Please reach us through the "
+                "Contact page and a team member will help.")
+    sys_prompt = SYSTEM_PROMPT
+    if brief:
+        sys_prompt += (" This answer will be SPOKEN aloud on a phone call — keep it to "
+                       "1-2 short sentences, no URLs, no markdown, no lists.")
+    opts = {"temperature": 0.2}
+    if brief:
+        opts["num_predict"] = 120  # cap length so phone replies stay snappy
     r = httpx.post(
         f"{OLLAMA_URL}/api/chat",
         json={
-            "model": CHAT_MODEL,
+            "model": model,
             "stream": False,
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": f"CONTEXT:\n{context}\n\nQUESTION: {question}"},
             ],
-            "options": {"temperature": 0.2},
+            "options": opts,
         },
         timeout=120,
     )
@@ -236,6 +247,50 @@ async def chat(req: Request) -> dict:
     """Direct test endpoint (cluster-internal): {"message": "..."} -> {"reply": "..."}."""
     body = await req.json()
     return {"reply": answer((body.get("message") or "").strip())}
+
+
+# ---- Voice agent (Telnyx TeXML) ----
+from fastapi.responses import Response as _Resp  # noqa: E402
+from xml.sax.saxutils import escape as _xesc  # noqa: E402
+
+_GREETING = ("Hi, thanks for calling GigWheels, the weekly car rental service. "
+             "How can I help you today?")
+
+
+def _texml(inner: str) -> _Resp:
+    return _Resp(content=f'<?xml version="1.0" encoding="UTF-8"?>\n<Response>{inner}</Response>',
+                 media_type="application/xml")
+
+
+def _gather(say_text: str) -> str:
+    """A <Say> followed by a speech <Gather> that posts back to /voice/gather."""
+    return (f'<Gather input="speech" language="en-US" speechTimeout="auto" '
+            f'action="{VOICE_BASE_URL}/voice/gather" method="POST">'
+            f'<Say>{_xesc(say_text)}</Say></Gather>'
+            f'<Redirect>{VOICE_BASE_URL}/voice</Redirect>')
+
+
+@app.api_route("/voice", methods=["GET", "POST"])
+async def voice() -> _Resp:
+    """Telnyx voice webhook entrypoint — greet + listen."""
+    return _texml(_gather(_GREETING))
+
+
+@app.post("/voice/gather")
+async def voice_gather(req: Request) -> _Resp:
+    """Telnyx posts the recognized speech (SpeechResult); answer via RAG, then keep listening."""
+    # Parse x-www-form-urlencoded manually (avoids the python-multipart dep).
+    from urllib.parse import parse_qs
+    data = parse_qs((await req.body()).decode("utf-8", "ignore"))
+    said = (data.get("SpeechResult", [""])[0] or data.get("Result", [""])[0]).strip()
+    if not said:
+        return _texml(_gather("Sorry, I didn't catch that. What would you like to know?"))
+    try:
+        reply = answer(said, model=VOICE_MODEL, brief=True)
+    except Exception as e:  # noqa: BLE001
+        log.error("voice answer failed: %s", e)
+        reply = "Sorry, I'm having trouble right now. Please try our website's contact page."
+    return _texml(f'<Say>{_xesc(reply)}</Say>{_gather("Is there anything else I can help with?")}')
 
 
 if __name__ == "__main__":  # ponytail self-check: KB splits + cosine + latest-message logic
