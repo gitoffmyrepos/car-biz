@@ -29,10 +29,20 @@ from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.serializers.telnyx import TelnyxFrameSerializer
 from pipecat.services.openai.llm import OpenAILLMService
 from pipecat.services.openai.stt import OpenAISTTService
+from pipecat.services.openai import tts as _openai_tts
 from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
+)
+
+# pipecat's OpenAITTSService validates `voice` against OpenAI's fixed voice list
+# (VALID_VOICES[...]), which would KeyError on Kokoro voices like "af_heart".
+# Register our voice so the lookup passes it straight through to our Kokoro
+# server (which is what actually resolves the voice).
+_openai_tts.VALID_VOICES.setdefault(
+    os.environ.get("TTS_VOICE", "af_heart"),
+    os.environ.get("TTS_VOICE", "af_heart"),
 )
 
 # Engines + brain (all cluster-internal, OpenAI-compatible HTTP).
