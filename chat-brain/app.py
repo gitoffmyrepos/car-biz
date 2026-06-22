@@ -126,16 +126,19 @@ def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False) -> st
                 "Contact page and a team member will help.")
     sys_prompt = SYSTEM_PROMPT
     if brief:
-        sys_prompt += (" This answer will be SPOKEN aloud on a phone call — keep it to "
-                       "1-2 short sentences, no URLs, no markdown, no lists.")
+        sys_prompt += (" This answer will be SPOKEN aloud on a phone call. Reply with ONLY "
+                       "the spoken words — 1-2 short sentences, no labels, brackets, stage "
+                       "directions, emoji, URLs, markdown, or lists.")
     opts = {"temperature": 0.2}
     if brief:
-        opts["num_predict"] = 120  # cap length so phone replies stay snappy
+        opts["num_predict"] = 80  # shorter = faster spoken replies
     r = httpx.post(
         f"{OLLAMA_URL}/api/chat",
         json={
             "model": model,
             "stream": False,
+            # Keep the model resident so phone replies don't pay a cold-load each call.
+            "keep_alive": "30m",
             "messages": [
                 {"role": "system", "content": sys_prompt},
                 {"role": "user", "content": f"CONTEXT:\n{context}\n\nQUESTION: {question}"},
@@ -145,7 +148,10 @@ def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False) -> st
         timeout=120,
     )
     r.raise_for_status()
-    return r.json()["message"]["content"].strip()
+    out = r.json()["message"]["content"].strip()
+    if brief:  # belt-and-braces: strip any leading [label]/*stage direction* a small model may emit
+        out = re.sub(r"^\s*(\[[^\]]*\]|\*[^*]*\*)\s*", "", out).strip()
+    return out
 
 
 # ---- Chatwoot polling ----
