@@ -119,8 +119,10 @@ def _retrieve(question: str) -> str:
     return "\n\n".join(text for text, _ in ranked[:TOP_K])
 
 
-def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False) -> str:
-    context = _retrieve(question)
+def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False, full_context: bool = False) -> str:
+    # The KB is tiny, so for latency-critical voice we skip the embed/retrieve
+    # round-trip and pass the whole KB as context (one model call, no embed).
+    context = "\n\n".join(t for t, _ in _KB) if (full_context and _KB) else _retrieve(question)
     if not context:
         return ("I'm not able to look that up right now. Please reach us through the "
                 "Contact page and a team member will help.")
@@ -346,7 +348,7 @@ async def voice_gather(req: Request) -> _Resp:
     if _wants_human(said):
         return _texml(_dial_human())
     try:
-        reply = answer(said, model=VOICE_MODEL, brief=True)
+        reply = answer(said, model=VOICE_MODEL, brief=True, full_context=True)
     except Exception as e:  # noqa: BLE001
         log.error("voice answer failed: %s", e)
         reply = "Sorry, I'm having trouble right now. Please try our website's contact page."
