@@ -45,6 +45,14 @@ POLL_INTERVAL = float(os.environ.get("POLL_INTERVAL", "4"))
 VOICE_MODEL = os.environ.get("VOICE_MODEL", "gemma3:4b")
 VOICE_BASE_URL = os.environ.get("VOICE_BASE_URL", "https://gigwheels.strategybase.io").rstrip("/")
 
+# Email agent (Gmail via OAuth2 / XOAUTH2). Enabled when a refresh token is set.
+GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+GMAIL_CLIENT_ID = os.environ.get("GMAIL_CLIENT_ID", "")
+GMAIL_CLIENT_SECRET = os.environ.get("GMAIL_CLIENT_SECRET", "")
+GMAIL_REFRESH_TOKEN = os.environ.get("GMAIL_REFRESH_TOKEN", "")
+EMAIL_POLL_INTERVAL = float(os.environ.get("EMAIL_POLL_INTERVAL", "60"))
+EMAIL_AUTO_SEND = os.environ.get("EMAIL_AUTO_SEND", "true").lower() == "true"
+
 # EspoCRM lead-sync (optional — enabled when ESPOCRM_URL is set). Auth as a
 # regular EspoCRM user via the Espo-Authorization header (base64 user:pass).
 ESPOCRM_URL = os.environ.get("ESPOCRM_URL", "").rstrip("/")
@@ -235,6 +243,7 @@ def _poll_loop() -> None:
 def _startup() -> None:
     threading.Thread(target=_load_kb, daemon=True).start()  # don't block serving on embeds
     threading.Thread(target=_poll_loop, daemon=True).start()
+    threading.Thread(target=_email_loop, daemon=True).start()
 
 
 @app.get("/healthz")
@@ -291,6 +300,149 @@ async def voice_gather(req: Request) -> _Resp:
         log.error("voice answer failed: %s", e)
         reply = "Sorry, I'm having trouble right now. Please try our website's contact page."
     return _texml(f'<Say>{_xesc(reply)}</Say>{_gather("Is there anything else I can help with?")}')
+
+
+# ---- Email agent (Gmail XOAUTH2) ----
+import base64  # noqa: E402
+import email as _email  # noqa: E402
+import imaplib  # noqa: E402
+import smtplib  # noqa: E402
+import time as _time  # noqa: E402
+from email.header import decode_header as _decode_header  # noqa: E402
+from email.message import EmailMessage, Message as _Message  # noqa: E402
+from email.utils import mktime_tz as _mktime_tz, parseaddr as _parseaddr, parsedate_tz as _parsedate_tz  # noqa: E402
+
+_gmail_tok: dict = {"access": "", "exp": 0.0}
+
+
+def _gmail_access_token() -> str:
+    """Mint + cache a Gmail access token from the refresh token."""
+    now = _time.time()
+    if _gmail_tok["access"] and _gmail_tok["exp"] - 60 > now:
+        return _gmail_tok["access"]
+    r = httpx.post("https://oauth2.googleapis.com/token", data={
+        "client_id": GMAIL_CLIENT_ID, "client_secret": GMAIL_CLIENT_SECRET,
+        "refresh_token": GMAIL_REFRESH_TOKEN, "grant_type": "refresh_token"}, timeout=20)
+    r.raise_for_status()
+    j = r.json()
+    _gmail_tok["access"] = j["access_token"]
+    _gmail_tok["exp"] = now + float(j.get("expires_in", 3600))
+    return _gmail_tok["access"]
+
+
+def _xoauth2(access_token: str) -> bytes:
+    return base64.b64encode(f"user={GMAIL_ADDRESS}\x01auth=Bearer {access_token}\x01\x01".encode())
+
+
+def _hdr(raw: str) -> str:
+    out = []
+    for txt, enc in _decode_header(raw or ""):
+        out.append(txt.decode(enc or "utf-8", "ignore") if isinstance(txt, bytes) else txt)
+    return "".join(out)
+
+
+def _plain_body(msg: "_Message") -> str:
+    if msg.is_multipart():
+        for part in msg.walk():
+            if part.get_content_type() == "text/plain" and "attachment" not in str(part.get("Content-Disposition")):
+                try:
+                    return part.get_payload(decode=True).decode(part.get_content_charset() or "utf-8", "ignore")
+                except Exception:  # noqa: BLE001
+                    continue
+        return ""
+    try:
+        return msg.get_payload(decode=True).decode(msg.get_content_charset() or "utf-8", "ignore")
+    except Exception:  # noqa: BLE001
+        return str(msg.get_payload())
+
+
+def _skip_sender(from_addr: str, msg: "_Message") -> bool:
+    """Don't auto-reply to bots, lists, our own address, or bulk mail (loop-safe)."""
+    a = (from_addr or "").lower()
+    if not a or a == GMAIL_ADDRESS.lower():
+        return True
+    if any(s in a for s in ("no-reply", "noreply", "donotreply", "mailer-daemon", "postmaster", "notifications@")):
+        return True
+    if msg.get("List-Unsubscribe") or msg.get("Auto-Submitted", "no").lower() != "no":
+        return True
+    if (msg.get("Precedence") or "").lower() in ("bulk", "list", "junk"):
+        return True
+    return False
+
+
+def _send_reply(to_addr: str, subject: str, body: str, in_reply_to: str) -> None:
+    msg = EmailMessage()
+    msg["From"] = GMAIL_ADDRESS
+    msg["To"] = to_addr
+    msg["Subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+    if in_reply_to:
+        msg["In-Reply-To"] = in_reply_to
+        msg["References"] = in_reply_to
+    msg["Auto-Submitted"] = "auto-replied"  # tell other auto-responders not to loop
+    msg.set_content(body + "\n\n— GigWheels Assistant (automated). For anything else: "
+                           "https://gigwheels.strategybase.io/contact")
+    at = _gmail_access_token()
+    s = smtplib.SMTP("smtp.gmail.com", 587, timeout=30)
+    s.starttls()
+    s.ehlo()
+    s.docmd("AUTH", "XOAUTH2 " + _xoauth2(at).decode())
+    s.send_message(msg)
+    s.quit()
+
+
+def _email_once(imap: imaplib.IMAP4_SSL, start_epoch: float) -> None:
+    imap.select("INBOX")
+    typ, data = imap.search(None, "UNSEEN")
+    if typ != "OK":
+        return
+    for num in (data[0].split() if data and data[0] else []):
+        typ, raw = imap.fetch(num, "(RFC822)")
+        if typ != "OK" or not raw or not raw[0]:
+            continue
+        msg = _email.message_from_bytes(raw[0][1])
+        # only handle mail that arrived after this agent started (skip the backlog)
+        try:
+            if _mktime_tz(_parsedate_tz(msg.get("Date"))) < start_epoch:
+                imap.store(num, "+FLAGS", "\\Seen")
+                continue
+        except Exception:  # noqa: BLE001
+            pass
+        from_name, from_addr = _parseaddr(msg.get("From", ""))
+        if _skip_sender(from_addr, msg):
+            imap.store(num, "+FLAGS", "\\Seen")
+            continue
+        subject = _hdr(msg.get("Subject", ""))
+        body = _plain_body(msg).strip()
+        question = f"{subject}\n\n{body}"[:2000]
+        log.info("email from %s subj=%r", from_addr, subject[:60])
+        try:
+            reply = answer(question)
+            if EMAIL_AUTO_SEND:
+                _send_reply(from_addr, subject, reply, msg.get("Message-ID", ""))
+                log.info("email replied to %s", from_addr)
+            else:
+                log.info("email DRAFT (auto-send off) to %s: %s", from_addr, reply[:120])
+            _ensure_lead({"id": from_addr, "name": from_name or from_addr, "email": from_addr}, 0, question)
+        except Exception as e:  # noqa: BLE001
+            log.error("email handle failed for %s: %s", from_addr, e)
+        imap.store(num, "+FLAGS", "\\Seen")
+
+
+def _email_loop() -> None:
+    if not (GMAIL_REFRESH_TOKEN and GMAIL_ADDRESS):
+        log.info("email agent disabled (no GMAIL_REFRESH_TOKEN)")
+        return
+    start_epoch = _time.time()
+    log.info("email agent started: %s every %ss (auto_send=%s)", GMAIL_ADDRESS, EMAIL_POLL_INTERVAL, EMAIL_AUTO_SEND)
+    while True:
+        try:
+            imap = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+            imap.authenticate("XOAUTH2", lambda x: base64.b64decode(_xoauth2(_gmail_access_token())))
+            _email_once(imap, start_epoch)
+            imap.logout()
+        except Exception as e:  # noqa: BLE001 — never let the loop die
+            log.error("email loop error: %s", e)
+        _time.sleep(EMAIL_POLL_INTERVAL)
 
 
 if __name__ == "__main__":  # ponytail self-check: KB splits + cosine + latest-message logic
