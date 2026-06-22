@@ -278,9 +278,16 @@ def _say(text: str) -> str:
     return f'<Say voice="{VOICE_TTS}" language="{VOICE_LANG}">{_xesc(text)}</Say>'
 
 
+_VOICE_HINTS = ("price, weekly rate, how much, rent a car, lease, insurance, requirements, "
+                "payment, deposit, credit check, gps, fleet, switch vehicle, contact")
+
+
 def _gather(say_text: str) -> str:
-    """A <Say> followed by a speech <Gather> that posts back to /voice/gather."""
-    return (f'<Gather input="speech" language="{VOICE_LANG}" speechTimeout="auto" '
+    """A <Say> followed by a speech <Gather> that posts back to /voice/gather.
+    Telnyx 'auto' speechTimeout is unreliable — use a numeric end-of-speech timeout
+    and bias the recognizer with domain hints."""
+    return (f'<Gather input="speech" language="{VOICE_LANG}" speechTimeout="3" '
+            f'speechModel="default" hints="{_xesc(_VOICE_HINTS)}" '
             f'action="{VOICE_BASE_URL}/voice/gather" method="POST">'
             f'{_say(say_text)}</Gather>'
             f'<Redirect>{VOICE_BASE_URL}/voice</Redirect>')
