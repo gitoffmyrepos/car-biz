@@ -14,14 +14,17 @@ Pinned to pipecat-ai 0.0.108 (the context-aggregator API this file uses).
 """
 from __future__ import annotations
 
+import datetime
 import json
 import os
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, WebSocket
 from loguru import logger
 
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.frames.frames import TTSSpeakFrame
+from pipecat.frames.frames import EndFrame, TTSSpeakFrame, UserStartedSpeakingFrame
+from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -116,12 +119,44 @@ GREETING = os.environ.get(
     "VOICE_GREETING",
     "Hi, thanks for calling GigWheels, the weekly car rental service. How can I help you today?",
 )
+# Inbound calls cost us per minute, so don't let a silent line sit open. After
+# the bot finishes speaking, if the caller is silent for IDLE_SECS we re-prompt
+# once; if still silent, we say a time-appropriate goodbye and hang up.
+IDLE_SECS = float(os.environ.get("VOICE_IDLE_SECS", "5"))
+REPROMPT = os.environ.get(
+    "VOICE_REPROMPT", "Are you still there? Is there anything else I can help you with?")
+CENTRAL = ZoneInfo("America/Chicago")
+
+
+def _day_or_night() -> str:
+    """day vs night by US Central time (when the caller is on the line)."""
+    hour = datetime.datetime.now(CENTRAL).hour
+    return "day" if 5 <= hour < 18 else "night"
+
+
+def _signoff() -> str:
+    return f"No worries. Thanks for calling GigWheels, and have an awesome {_day_or_night()}."
 SYSTEM = (
     "You are the GigWheels assistant on a weekly car-rental phone line. Answer "
     "ONLY from what the knowledge base provides (the brain handles retrieval). "
     "Speak in 1-2 short, natural sentences — no markdown, lists, or URLs. If you "
     "are unsure, offer to connect the caller with a team member."
 )
+
+class IdleStrikeReset(FrameProcessor):
+    """Resets the idle-strike counter when the caller speaks, so a re-prompt only
+    escalates to hang-up on *consecutive* silence (not after they re-engaged)."""
+
+    def __init__(self, strikes: dict):
+        super().__init__()
+        self._strikes = strikes
+
+    async def process_frame(self, frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, UserStartedSpeakingFrame):
+            self._strikes["n"] = 0
+        await self.push_frame(frame, direction)
+
 
 app = FastAPI()
 
@@ -180,8 +215,10 @@ async def ws(ws: WebSocket) -> None:
     context = OpenAILLMContext([{"role": "system", "content": SYSTEM}])
     agg = llm.create_context_aggregator(context)
 
+    idle_strikes = {"n": 0}
     pipeline = Pipeline([
         transport.input(),
+        IdleStrikeReset(idle_strikes),
         stt,
         agg.user(),
         llm,
@@ -189,17 +226,38 @@ async def ws(ws: WebSocket) -> None:
         transport.output(),
         agg.assistant(),
     ])
-    task = PipelineTask(pipeline, params=PipelineParams(
-        audio_in_sample_rate=TELEPHONY_SR,
-        audio_out_sample_rate=TELEPHONY_SR,
-        allow_interruptions=True,
-    ))
+    # Idle = no Bot/User speaking frames for IDLE_SECS. We handle it ourselves
+    # (don't auto-cancel) so we can re-prompt once, then sign off + hang up.
+    task = PipelineTask(
+        pipeline,
+        params=PipelineParams(
+            audio_in_sample_rate=TELEPHONY_SR,
+            audio_out_sample_rate=TELEPHONY_SR,
+            allow_interruptions=True,
+        ),
+        idle_timeout_secs=IDLE_SECS,
+        cancel_on_idle_timeout=False,
+    )
 
     @transport.event_handler("on_client_connected")
     async def _greet(_t, _c):
         # Speak a fixed greeting immediately (no LLM round-trip for the open).
         await task.queue_frames([TTSSpeakFrame(GREETING)])
 
+    @task.event_handler("on_idle_timeout")
+    async def _on_idle(_t):
+        idle_strikes["n"] += 1
+        if idle_strikes["n"] == 1:
+            logger.info("idle: re-prompting caller")
+            await task.queue_frames([TTSSpeakFrame(REPROMPT)])
+        else:
+            # Still silent: polite goodbye, then EndFrame ends the pipeline +
+            # closes the WS, which completes the TeXML so Telnyx drops the call
+            # (auto-hangup via the Telnyx API also fires if TELNYX_API_KEY is set).
+            logger.info("idle: signing off + hanging up")
+            await task.queue_frames([TTSSpeakFrame(_signoff()), EndFrame()])
+
+    # A caller turn resets the strike counter (they're engaged again).
     @transport.event_handler("on_client_disconnected")
     async def _bye(_t, _c):
         await task.cancel()
