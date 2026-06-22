@@ -25,6 +25,8 @@ import time
 import httpx
 from fastapi import FastAPI, Request
 
+from humanize import HUMANIZE_GUIDANCE, humanize
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("chat-brain")
 
@@ -135,10 +137,10 @@ def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False, full_
     if not context:
         return ("I'm not able to look that up right now. Please reach us through the "
                 "Contact page and a team member will help.")
-    sys_prompt = SYSTEM_PROMPT
+    sys_prompt = SYSTEM_PROMPT + "\n\n" + HUMANIZE_GUIDANCE
     if brief:
         sys_prompt += (" This answer will be SPOKEN aloud on a phone call. Reply with ONLY "
-                       "the spoken words — 1-2 short sentences, no labels, brackets, stage "
+                       "the spoken words, 1-2 short sentences, no labels, brackets, stage "
                        "directions, emoji, URLs, markdown, or lists.")
     opts = {"temperature": 0.2}
     if brief:
@@ -162,7 +164,10 @@ def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False, full_
     out = r.json()["message"]["content"].strip()
     if brief:  # belt-and-braces: strip any leading [label]/*stage direction* a small model may emit
         out = re.sub(r"^\s*(\[[^\]]*\]|\*[^*]*\*)\s*", "", out).strip()
-    return out
+    # Deterministic humanizer pass: scrub mechanical AI tells (em dashes, AI
+    # vocabulary, throat-clearing, emoji) the model may still leak. Covers web
+    # chat, phone voice, and email since they all return through here.
+    return humanize(out)
 
 
 # ---- Chatwoot polling ----
