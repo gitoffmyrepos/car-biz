@@ -119,8 +119,10 @@ def _retrieve(question: str) -> str:
     return "\n\n".join(text for text, _ in ranked[:TOP_K])
 
 
-def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False) -> str:
-    context = _retrieve(question)
+def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False, full_context: bool = False) -> str:
+    # The KB is tiny, so for latency-critical voice we skip the embed/retrieve
+    # round-trip and pass the whole KB as context (one model call, no embed).
+    context = "\n\n".join(t for t, _ in _KB) if (full_context and _KB) else _retrieve(question)
     if not context:
         return ("I'm not able to look that up right now. Please reach us through the "
                 "Contact page and a team member will help.")
@@ -252,24 +254,10 @@ def _poll_loop() -> None:
 
 
 @app.on_event("startup")
-def _warm_loop() -> None:
-    """Keep the voice model resident on the GPU so phone replies never pay a cold
-    load (12b is ~0.4s warm but ~5-10s to load). Pings every 20 min."""
-    while True:
-        try:
-            httpx.post(f"{OLLAMA_URL}/api/generate",
-                       json={"model": VOICE_MODEL, "prompt": "hi", "keep_alive": "30m", "stream": False},
-                       timeout=60)
-        except Exception as e:  # noqa: BLE001
-            log.error("warm ping failed: %s", e)
-        time.sleep(1200)
-
-
 def _startup() -> None:
     threading.Thread(target=_load_kb, daemon=True).start()  # don't block serving on embeds
     threading.Thread(target=_poll_loop, daemon=True).start()
     threading.Thread(target=_email_loop, daemon=True).start()
-    threading.Thread(target=_warm_loop, daemon=True).start()
 
 
 @app.get("/healthz")
@@ -360,7 +348,7 @@ async def voice_gather(req: Request) -> _Resp:
     if _wants_human(said):
         return _texml(_dial_human())
     try:
-        reply = answer(said, model=VOICE_MODEL, brief=True)
+        reply = answer(said, model=VOICE_MODEL, brief=True, full_context=True)
     except Exception as e:  # noqa: BLE001
         log.error("voice answer failed: %s", e)
         reply = "Sorry, I'm having trouble right now. Please try our website's contact page."
