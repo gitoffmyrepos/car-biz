@@ -41,5 +41,47 @@ Vehicle switches may be possible depending on availability and account standing.
 ## GPS tracking
 All vehicles have GPS tracking devices for fleet management and security, disclosed in the GPS Disclosure policy and the lease agreement. Tracking data is used to locate a vehicle in theft or recovery situations.
 
+## Rideshare and delivery use
+GigWheels is built for gig drivers. Using the vehicle for rideshare and delivery work (Uber, Lyft, DoorDash, Uber Eats, Instacart, Amazon Flex, and similar) is welcome and expected. Make sure your insurance includes rideshare or commercial coverage for the platforms you drive for.
+
+## Mileage
+There is no strict mileage cap for normal gig driving. Any specific mileage terms for your category are confirmed by the team during approval.
+
+## Minimum term and how long you can keep it
+The lease runs week to week and renews each week as long as payments are current. There is no long fixed contract. Keep the vehicle as long as your account is in good standing; give the team notice when you want to return it.
+
+## Returning the vehicle / ending the lease
+To end the lease, contact the team and return the vehicle to the agreed location. The refundable security deposit is returned at the end of the term, minus any damages or outstanding fees.
+
+## Additional drivers
+Only approved drivers listed on the lease and the insurance policy may drive the vehicle. To add a driver, contact the team so they can be screened and added to coverage.
+
+## Breakdowns and roadside help
+Routine maintenance is included and the 24/7 support line is there for problems. If the vehicle breaks down, call the 24/7 support line and the team will arrange help. Do not pay for major repairs yourself without approval.
+
+## Accidents
+First make sure everyone is safe and call 911 if anyone is hurt. Then notify GigWheels right away through the 24/7 support line and file a claim with your insurance. Get the other driver's information and a police report number if possible.
+
+## Tolls, tickets, and parking
+The driver is responsible for all tolls, traffic tickets, parking citations, and red-light or camera violations during the lease.
+
+## Maintenance responsibility
+GigWheels covers scheduled maintenance (the monthly service in the weekly rate). The driver handles fuel, keeping the vehicle clean, and basic upkeep like tire pressure and washer fluid. Report anything that needs service to the team.
+
+## Cleanliness, smoking, and pets
+Return the vehicle in clean condition. Smoking in the vehicle and transporting unapproved pets can lead to cleaning fees. If you carry pets for delivery or personal reasons, ask the team first.
+
+## Taking the vehicle out of state
+Normal in-region driving is fine. If you plan to travel out of state or over a long distance, contact the team first so they can confirm it is allowed for your lease.
+
+## Documents to apply
+Have these ready for the application: a valid driver's license, proof of full-coverage insurance (with GigWheels listed as additional insured or lienholder), and a government-issued ID. The team confirms anything else needed during review.
+
+## Buying the vehicle
+For questions about purchasing a vehicle or any rent-to-own option, contact the team to discuss what is available.
+
+## Pickup location and hours
+Pickup location and times are arranged with the team after approval, usually the same day or the next business day. Contact the team to schedule.
+
 ## Contact / escalation
-For anything not covered here — specific pricing, availability, account issues, or to speak with a person — direct the customer to the Contact page at https://gigwheels.strategybase.io/contact, or let them know a human agent will follow up.
+For anything not covered here — specific pricing, deposit amounts, availability, account issues, or to speak with a person — direct the customer to the Contact page at https://gigwheels.strategybase.io/contact, or let them know a human agent will follow up.
