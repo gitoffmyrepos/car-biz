@@ -272,6 +272,33 @@ async def chat(req: Request) -> dict:
     return {"reply": answer((body.get("message") or "").strip())}
 
 
+@app.post("/v1/chat/completions")
+async def openai_completions(req: Request):
+    """OpenAI-compatible chat endpoint so the pipecat voice-gateway can use this
+    RAG brain as its LLM. Answers the last user turn from the KB (voice-brief)."""
+    from fastapi.responses import StreamingResponse
+    import json as _json
+    body = await req.json()
+    msgs = body.get("messages", [])
+    question = next((m.get("content", "") for m in reversed(msgs) if m.get("role") == "user"), "")
+    reply = answer(question.strip(), model=VOICE_MODEL, brief=True, full_context=True)
+    model = body.get("model", "gigwheels")
+    created = int(time.time())
+    if body.get("stream"):
+        def _gen():
+            delta = {"id": "cb", "object": "chat.completion.chunk", "created": created, "model": model,
+                     "choices": [{"index": 0, "delta": {"role": "assistant", "content": reply}, "finish_reason": None}]}
+            yield f"data: {_json.dumps(delta)}\n\n"
+            stop = {"id": "cb", "object": "chat.completion.chunk", "created": created, "model": model,
+                    "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]}
+            yield f"data: {_json.dumps(stop)}\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(_gen(), media_type="text/event-stream")
+    return {"id": "cb", "object": "chat.completion", "created": created, "model": model,
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": reply}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
+
+
 # ---- Voice agent (Telnyx TeXML) ----
 from fastapi.responses import Response as _Resp  # noqa: E402
 from xml.sax.saxutils import escape as _xesc  # noqa: E402
