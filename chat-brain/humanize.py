@@ -98,10 +98,23 @@ def _drop_filler(text: str) -> str:
     return text
 
 
+def _strip_labels(text: str) -> str:
+    # Small models sometimes prefix a stage-direction label like "[Chat bubble]"
+    # or "*friendly*" (echoing the prompt). Strip leading labels so they never
+    # get spoken on a voice call or shown in chat.
+    prev = None
+    while prev != text:
+        prev = text
+        text = re.sub(r"^\s*[\[(*][^\])*\n]{0,40}[\])*]\s*", "", text)
+        text = re.sub(r"^\s*(Chat bubble|Assistant|AI|Bot|Response)\s*[:\-]\s*", "", text, flags=re.IGNORECASE)
+    return text
+
+
 def humanize(text: str) -> str:
     """Deterministic, meaning-preserving scrub of mechanical AI tells."""
     if not text:
         return text
+    text = _strip_labels(text)
     text = _EMOJI.sub("", text)
     text = _strip_dashes(text)
     text = _drop_filler(text)
@@ -125,6 +138,10 @@ def _demo() -> None:
          lambda o: "🚗" not in o and "worth noting" not in o.lower() and "!" not in o),
         ("We delve into your needs and leverage great cars.",
          lambda o: "delve" not in o.lower() and "leverage" not in o.lower()),
+        ("[Chat bubble]\nYes, you can use it for Uber and Lyft.",
+         lambda o: not o.lower().startswith("[chat") and "bubble" not in o.lower() and o.startswith("Yes")),
+        ("*friendly* Sure, weekly rates start at $150.",
+         lambda o: not o.startswith("*") and "friendly" not in o.lower()),
     ]
     for src, ok in cases:
         out = humanize(src)
