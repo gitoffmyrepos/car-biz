@@ -390,27 +390,39 @@ def _send_reply(to_addr: str, subject: str, body: str, in_reply_to: str) -> None
     s.quit()
 
 
+_email_handled: set = set()  # UIDs we've already acted on this process (mailbox flags untouched)
+
+
 def _email_once(imap: imaplib.IMAP4_SSL, start_epoch: float) -> None:
     imap.select("INBOX")
     typ, data = imap.search(None, "UNSEEN")
     if typ != "OK":
         return
-    for num in (data[0].split() if data and data[0] else []):
-        typ, raw = imap.fetch(num, "(RFC822)")
-        if typ != "OK" or not raw or not raw[0]:
+    ids = data[0].split() if data and data[0] else []
+    # Newest first; PEEK so we never mark the owner's mail read. Once we reach a
+    # message older than startup, every remaining one is too — stop (don't churn
+    # the whole backlog of an active personal mailbox).
+    for num in reversed(ids):
+        uid = num.decode() if isinstance(num, bytes) else str(num)
+        if uid in _email_handled:
             continue
-        msg = _email.message_from_bytes(raw[0][1])
-        # only handle mail that arrived after this agent started (skip the backlog)
+        typ, hraw = imap.fetch(num, "(BODY.PEEK[HEADER])")
+        if typ != "OK" or not hraw or not hraw[0]:
+            continue
+        hmsg = _email.message_from_bytes(hraw[0][1])
         try:
-            if _mktime_tz(_parsedate_tz(msg.get("Date"))) < start_epoch:
-                imap.store(num, "+FLAGS", "\\Seen")
-                continue
+            if _mktime_tz(_parsedate_tz(hmsg.get("Date"))) < start_epoch:
+                break
         except Exception:  # noqa: BLE001
             pass
-        from_name, from_addr = _parseaddr(msg.get("From", ""))
-        if _skip_sender(from_addr, msg):
-            imap.store(num, "+FLAGS", "\\Seen")
+        _email_handled.add(uid)
+        from_name, from_addr = _parseaddr(hmsg.get("From", ""))
+        if _skip_sender(from_addr, hmsg):
             continue
+        typ, fraw = imap.fetch(num, "(BODY.PEEK[])")
+        if typ != "OK" or not fraw or not fraw[0]:
+            continue
+        msg = _email.message_from_bytes(fraw[0][1])
         subject = _hdr(msg.get("Subject", ""))
         body = _plain_body(msg).strip()
         question = f"{subject}\n\n{body}"[:2000]
@@ -421,18 +433,17 @@ def _email_once(imap: imaplib.IMAP4_SSL, start_epoch: float) -> None:
                 _send_reply(from_addr, subject, reply, msg.get("Message-ID", ""))
                 log.info("email replied to %s", from_addr)
             else:
-                log.info("email DRAFT (auto-send off) to %s: %s", from_addr, reply[:120])
+                log.info("email DRAFT (auto-send off) to %s: %s", from_addr, reply[:160])
             _ensure_lead({"id": from_addr, "name": from_name or from_addr, "email": from_addr}, 0, question)
         except Exception as e:  # noqa: BLE001
             log.error("email handle failed for %s: %s", from_addr, e)
-        imap.store(num, "+FLAGS", "\\Seen")
 
 
 def _email_loop() -> None:
     if not (GMAIL_REFRESH_TOKEN and GMAIL_ADDRESS):
         log.info("email agent disabled (no GMAIL_REFRESH_TOKEN)")
         return
-    start_epoch = _time.time()
+    start_epoch = float(os.environ.get("EMAIL_START_EPOCH", "0")) or _time.time()
     log.info("email agent started: %s every %ss (auto_send=%s)", GMAIL_ADDRESS, EMAIL_POLL_INTERVAL, EMAIL_AUTO_SEND)
     while True:
         try:
