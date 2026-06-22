@@ -39,6 +39,14 @@ CW_BOT_TOKEN = os.environ.get("CHATWOOT_BOT_TOKEN", "")
 CW_ACCOUNT_ID = int(os.environ.get("CHATWOOT_ACCOUNT_ID", "1"))
 POLL_INTERVAL = float(os.environ.get("POLL_INTERVAL", "4"))
 
+# EspoCRM lead-sync (optional — enabled when ESPOCRM_URL is set). Auth as a
+# regular EspoCRM user via the Espo-Authorization header (base64 user:pass).
+ESPOCRM_URL = os.environ.get("ESPOCRM_URL", "").rstrip("/")
+ESPOCRM_USER = os.environ.get("ESPOCRM_USER", "admin")
+ESPOCRM_PASSWORD = os.environ.get("ESPOCRM_PASSWORD", "")
+import base64 as _b64
+_ESPO_AUTH = _b64.b64encode(f"{ESPOCRM_USER}:{ESPOCRM_PASSWORD}".encode()).decode()
+
 # Chatwoot message_type ints.
 INCOMING, OUTGOING, ACTIVITY = 0, 1, 2
 
@@ -135,6 +143,42 @@ def _latest_meaningful(messages: list[dict]) -> dict | None:
     return None
 
 
+# ---- EspoCRM lead-sync ----
+def _espo(method: str, path: str, **kw) -> httpx.Response:
+    return httpx.request(method, f"{ESPOCRM_URL}{path}",
+                         headers={"Espo-Authorization": _ESPO_AUTH}, timeout=30, **kw)
+
+
+def _ensure_lead(contact: dict, conv_id: int, first_msg: str) -> None:
+    """Upsert a Chatwoot contact as an EspoCRM Lead (deduped by a description marker)."""
+    if not ESPOCRM_URL or not contact:
+        return
+    contact_id = contact.get("id")
+    marker = f"chatwoot:contact={contact_id}"
+    try:
+        # dedupe: skip if a lead already carries this contact's marker
+        q = _espo("GET", "/api/v1/Lead", params={
+            "where[0][type]": "contains", "where[0][attribute]": "description",
+            "where[0][value]": marker, "maxSize": 1})
+        if q.status_code < 300 and (q.json() or {}).get("total", 0) > 0:
+            return
+        name = (contact.get("name") or "Chat Visitor").strip()
+        payload = {
+            "lastName": name or "Chat Visitor",
+            "emailAddress": contact.get("email") or None,
+            "phoneNumber": contact.get("phone_number") or contact.get("phone") or None,
+            "source": "Web Site",
+            "description": f"{marker} conv={conv_id}. First chat: {first_msg[:240]}",
+        }
+        cr = _espo("POST", "/api/v1/Lead", json=payload)
+        if cr.status_code < 300:
+            log.info("CRM lead created for chatwoot contact=%s conv=%s", contact_id, conv_id)
+        else:
+            log.warning("CRM lead create %s: %s", cr.status_code, cr.text[:160])
+    except Exception as e:  # noqa: BLE001 — sync is best-effort, never break the poll
+        log.error("lead-sync error conv=%s: %s", conv_id, e)
+
+
 def _poll_once() -> None:
     r = _cw("GET", f"/api/v1/accounts/{CW_ACCOUNT_ID}/conversations", params={"status": "open"})
     if r.status_code >= 300:
@@ -148,6 +192,10 @@ def _poll_once() -> None:
             continue
         payload = mr.json().get("payload") if isinstance(mr.json(), dict) else mr.json()
         last = _latest_meaningful(payload or [])
+        # Sync the contact into the CRM as a lead (deduped, best-effort).
+        sender = (c.get("meta") or {}).get("sender") or {}
+        first_in = next((m.get("content") for m in (payload or []) if m.get("message_type") == INCOMING and m.get("content")), "")
+        _ensure_lead(sender, cid, first_in or "")
         # Only act when the customer's message is the most recent thing said.
         if last and last.get("message_type") == INCOMING:
             content = (last.get("content") or "").strip()
