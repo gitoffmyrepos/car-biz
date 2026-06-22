@@ -298,7 +298,13 @@ async def voice_gather(req: Request) -> _Resp:
     # Parse x-www-form-urlencoded manually (avoids the python-multipart dep).
     from urllib.parse import parse_qs
     data = parse_qs((await req.body()).decode("utf-8", "ignore"))
-    said = (data.get("SpeechResult", [""])[0] or data.get("Result", [""])[0]).strip()
+    log.info("voice gather fields: %s", {k: v[0][:80] for k, v in data.items()})
+    # Telnyx/Twilio post the transcript under one of these (be liberal).
+    said = ""
+    for key in ("SpeechResult", "Result", "speech_result", "TranscriptionText", "UnstableSpeechResult"):
+        if data.get(key, [""])[0].strip():
+            said = data[key][0].strip()
+            break
     if not said:
         return _texml(_gather("Sorry, I didn't catch that. What would you like to know?"))
     try:
