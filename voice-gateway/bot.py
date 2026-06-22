@@ -29,21 +29,54 @@ from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.serializers.telnyx import TelnyxFrameSerializer
 from pipecat.services.openai.llm import OpenAILLMService
 from pipecat.services.openai.stt import OpenAISTTService
-from pipecat.services.openai import tts as _openai_tts
-from pipecat.services.openai.tts import OpenAITTSService
+from pipecat.frames.frames import ErrorFrame, TTSAudioRawFrame
+from pipecat.services.tts_service import TTSService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
 )
 
-# pipecat's OpenAITTSService validates `voice` against OpenAI's fixed voice list
-# (VALID_VOICES[...]), which would KeyError on Kokoro voices like "af_heart".
-# Register our voice so the lookup passes it straight through to our Kokoro
-# server (which is what actually resolves the voice).
-_openai_tts.VALID_VOICES.setdefault(
-    os.environ.get("TTS_VOICE", "af_heart"),
-    os.environ.get("TTS_VOICE", "af_heart"),
-)
+import httpx
+
+
+class KokoroHTTPTTSService(TTSService):
+    """Kokoro TTS over a plain full-body POST to our server.
+
+    We do NOT use pipecat's OpenAITTSService here: it (a) validates `voice`
+    against OpenAI's fixed list (KeyErrors on "af_heart") and (b) reads the
+    response with the OpenAI client's *streaming* reader, which deadlocks on our
+    server's blocking synth (the response only completes once, so a streaming
+    read hangs while a full-body read — what we do here — works). The base class
+    handles TTSStarted/TTSStopped frames; we just yield 24kHz PCM audio.
+    """
+
+    def __init__(self, *, base_url: str, voice: str, sample_rate: int = 24000, **kwargs):
+        super().__init__(sample_rate=sample_rate, **kwargs)
+        self._url = base_url.rstrip("/") + "/audio/speech"
+        self._voice = voice
+
+    def can_generate_metrics(self) -> bool:
+        return True
+
+    async def run_tts(self, text: str, context_id: str):
+        await self.start_ttfb_metrics()
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                r = await client.post(
+                    self._url,
+                    json={"input": text, "voice": self._voice, "response_format": "pcm"},
+                )
+            if r.status_code != 200:
+                yield ErrorFrame(error=f"kokoro tts status {r.status_code}")
+                return
+            await self.start_tts_usage_metrics(text)
+            await self.stop_ttfb_metrics()
+            pcm = r.content  # raw 24kHz s16le mono (full body — the working path)
+            chunk = 9600     # ~0.2s @ 24kHz s16 mono
+            for i in range(0, len(pcm), chunk):
+                yield TTSAudioRawFrame(pcm[i : i + chunk], self.sample_rate, 1, context_id=context_id)
+        except Exception as e:  # noqa: BLE001
+            yield ErrorFrame(error=f"kokoro tts error: {e}")
 
 # Engines + brain (all cluster-internal, OpenAI-compatible HTTP).
 WHISPER_URL = os.environ.get("WHISPER_URL", "http://faster-whisper.gigwheels-voice:8000/v1")
@@ -121,10 +154,9 @@ async def ws(ws: WebSocket) -> None:
     # STT / LLM / TTS all speak the OpenAI API — point them at our in-cluster engines.
     stt = OpenAISTTService(api_key="x", base_url=WHISPER_URL, model=STT_MODEL)
     llm = OpenAILLMService(api_key="x", base_url=BRAIN_URL, model=BRAIN_MODEL)
-    # sample_rate MUST be Kokoro's native 24kHz: pipecat requests response_format=pcm
-    # and labels the raw PCM frames at this rate, then resamples to the 8kHz transport.
-    tts = OpenAITTSService(api_key="x", base_url=KOKORO_URL, model=TTS_MODEL,
-                           voice=TTS_VOICE, sample_rate=KOKORO_NATIVE_SR)
+    # sample_rate is Kokoro's native 24kHz; pipecat resamples to the 8kHz transport.
+    tts = KokoroHTTPTTSService(base_url=KOKORO_URL, voice=TTS_VOICE,
+                               sample_rate=KOKORO_NATIVE_SR)
 
     context = OpenAILLMContext([{"role": "system", "content": SYSTEM}])
     agg = llm.create_context_aggregator(context)
