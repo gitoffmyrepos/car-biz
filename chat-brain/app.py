@@ -362,8 +362,12 @@ def _dial_human() -> str:
 
 def _connect_stream() -> str:
     """Hand the whole call to the pipecat voice-gateway over a bidirectional
-    media stream (Telnyx streams 8kHz μ-law both ways)."""
-    return f'<Connect><Stream url="{_xesc(VOICE_WS_URL)}"/></Connect>'
+    media stream. bidirectionalMode="rtp" is REQUIRED for Telnyx to PLAY the
+    audio we send back; without it the stream is inbound-only and the caller
+    hears nothing even though the bot is speaking. Codec PCMU matches the
+    serializer (8kHz μ-law both ways)."""
+    return (f'<Connect><Stream url="{_xesc(VOICE_WS_URL)}" '
+            f'bidirectionalMode="rtp" bidirectionalCodec="PCMU"/></Connect>')
 
 
 @app.api_route("/voice", methods=["GET", "POST"])
