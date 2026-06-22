@@ -1,14 +1,16 @@
 """
 GigWheels chat-brain — a tiny RAG agent for the Chatwoot live-chat widget.
 
-Flow: Chatwoot agent-bot POSTs message events here → we embed the customer's
-question with Ollama `nomic-embed-text`, cosine-retrieve the most relevant KB
-chunks, ask `gemma3:12b` to answer ONLY from that context, then post the reply
-back to Chatwoot. Out-of-scope questions are handed to a human.
+Chatwoot's agent-bot webhook delivery refuses private/internal hostnames, so
+instead of receiving pushes we POLL: a background loop lists open conversations
+via the Chatwoot API (with the agent-bot token) and, whenever a conversation's
+latest message is an unanswered incoming customer message, embeds it with Ollama
+`nomic-embed-text`, cosine-retrieves the KB, asks `gemma3:12b` to answer ONLY
+from that context, and posts the reply back. Everything stays cluster-internal.
 
-Deliberately dependency-light: the KB is a handful of markdown sections, so an
-in-memory cosine search over precomputed embeddings is plenty — no vector DB.
-# ponytail: in-memory KB; swap to pgvector only if the KB grows past ~hundreds of chunks.
+Out-of-scope questions are handed to a human. The KB is a handful of markdown
+sections, so in-memory cosine over precomputed embeddings is plenty — no vector DB.
+# ponytail: poll loop, in-memory KB; swap to webhook+pgvector only if scale demands.
 """
 from __future__ import annotations
 
@@ -17,6 +19,8 @@ import math
 import os
 import pathlib
 import re
+import threading
+import time
 
 import httpx
 from fastapi import FastAPI, Request
@@ -30,9 +34,13 @@ CHAT_MODEL = os.environ.get("CHAT_MODEL", "gemma3:12b")
 KB_DIR = pathlib.Path(os.environ.get("KB_DIR", "/app/kb"))
 TOP_K = int(os.environ.get("TOP_K", "4"))
 
-# Chatwoot reply target (cluster-internal) + agent-bot token.
 CW_API = os.environ.get("CHATWOOT_API_URL", "http://chatwoot-web.gigwheels-chat:3000").rstrip("/")
 CW_BOT_TOKEN = os.environ.get("CHATWOOT_BOT_TOKEN", "")
+CW_ACCOUNT_ID = int(os.environ.get("CHATWOOT_ACCOUNT_ID", "1"))
+POLL_INTERVAL = float(os.environ.get("POLL_INTERVAL", "4"))
+
+# Chatwoot message_type ints.
+INCOMING, OUTGOING, ACTIVITY = 0, 1, 2
 
 SYSTEM_PROMPT = (
     "You are the GigWheels assistant on a weekly car-leasing website. "
@@ -65,13 +73,12 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (na * nb)
 
 
-@app.on_event("startup")
 def _load_kb() -> None:
     for f in sorted(KB_DIR.glob("*.md")):
         for ch in _chunks(f.read_text()):
             try:
                 _KB.append((ch, _embed(ch)))
-            except Exception as e:  # noqa: BLE001 — startup best-effort; log and continue
+            except Exception as e:  # noqa: BLE001 — startup best-effort
                 log.error("embed failed for a chunk in %s: %s", f.name, e)
     log.info("KB loaded: %d chunks from %s", len(_KB), KB_DIR)
 
@@ -108,19 +115,67 @@ def answer(question: str) -> str:
     return r.json()["message"]["content"].strip()
 
 
-def _cw_reply(account_id: int, conversation_id: int, content: str) -> None:
-    if not CW_BOT_TOKEN:
-        log.warning("CHATWOOT_BOT_TOKEN unset — cannot post reply")
+# ---- Chatwoot polling ----
+def _cw(method: str, path: str, **kw) -> httpx.Response:
+    return httpx.request(method, f"{CW_API}{path}", headers={"api_access_token": CW_BOT_TOKEN}, timeout=30, **kw)
+
+
+def _post_reply(conversation_id: int, content: str) -> None:
+    r = _cw("POST", f"/api/v1/accounts/{CW_ACCOUNT_ID}/conversations/{conversation_id}/messages",
+            json={"content": content, "message_type": "outgoing"})
+    if r.status_code >= 300:
+        log.error("reply failed conv=%s %s: %s", conversation_id, r.status_code, r.text[:200])
+
+
+def _latest_meaningful(messages: list[dict]) -> dict | None:
+    """Last non-activity message (Chatwoot returns messages oldest→newest)."""
+    for m in reversed(messages):
+        if m.get("message_type") != ACTIVITY:
+            return m
+    return None
+
+
+def _poll_once() -> None:
+    r = _cw("GET", f"/api/v1/accounts/{CW_ACCOUNT_ID}/conversations", params={"status": "open"})
+    if r.status_code >= 300:
+        log.warning("list conversations %s: %s", r.status_code, r.text[:160])
         return
-    url = f"{CW_API}/api/v1/accounts/{account_id}/conversations/{conversation_id}/messages"
-    resp = httpx.post(
-        url,
-        headers={"api_access_token": CW_BOT_TOKEN},
-        json={"content": content, "message_type": "outgoing"},
-        timeout=30,
-    )
-    if resp.status_code >= 300:
-        log.error("chatwoot reply failed %s: %s", resp.status_code, resp.text[:200])
+    convs = (r.json().get("data") or {}).get("payload") or []
+    for c in convs:
+        cid = c.get("id")
+        mr = _cw("GET", f"/api/v1/accounts/{CW_ACCOUNT_ID}/conversations/{cid}/messages")
+        if mr.status_code >= 300:
+            continue
+        payload = mr.json().get("payload") if isinstance(mr.json(), dict) else mr.json()
+        last = _latest_meaningful(payload or [])
+        # Only act when the customer's message is the most recent thing said.
+        if last and last.get("message_type") == INCOMING:
+            content = (last.get("content") or "").strip()
+            if content:
+                log.info("answering conv=%s msg=%s", cid, last.get("id"))
+                try:
+                    _post_reply(cid, answer(content))
+                except Exception as e:  # noqa: BLE001
+                    log.error("answer/post failed conv=%s: %s", cid, e)
+
+
+def _poll_loop() -> None:
+    if not CW_BOT_TOKEN:
+        log.warning("CHATWOOT_BOT_TOKEN unset — poller disabled")
+        return
+    log.info("poller started: every %ss against %s account %s", POLL_INTERVAL, CW_API, CW_ACCOUNT_ID)
+    while True:
+        try:
+            _poll_once()
+        except Exception as e:  # noqa: BLE001 — never let the loop die
+            log.error("poll error: %s", e)
+        time.sleep(POLL_INTERVAL)
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    threading.Thread(target=_load_kb, daemon=True).start()  # don't block serving on embeds
+    threading.Thread(target=_poll_loop, daemon=True).start()
 
 
 @app.get("/healthz")
@@ -130,34 +185,17 @@ def healthz() -> dict:
 
 @app.post("/chat")
 async def chat(req: Request) -> dict:
-    """Direct test endpoint: {"message": "..."} -> {"reply": "..."}."""
+    """Direct test endpoint (cluster-internal): {"message": "..."} -> {"reply": "..."}."""
     body = await req.json()
     return {"reply": answer((body.get("message") or "").strip())}
 
 
-@app.post("/chatwoot")
-async def chatwoot(req: Request) -> dict:
-    """Chatwoot agent-bot webhook. Reply only to incoming customer messages."""
-    body = await req.json()
-    if body.get("event") != "message_created" or body.get("message_type") != "incoming":
-        return {"status": "ignored"}
-    content = (body.get("content") or "").strip()
-    conv = (body.get("conversation") or {}).get("id")
-    account = (body.get("account") or {}).get("id")
-    if not (content and conv and account):
-        return {"status": "ignored"}
-    try:
-        _cw_reply(int(account), int(conv), answer(content))
-    except Exception as e:  # noqa: BLE001
-        log.error("handler error: %s", e)
-        return {"status": "error"}
-    return {"status": "ok"}
-
-
-if __name__ == "__main__":  # ponytail self-check: KB splits + cosine sanity, no network
+if __name__ == "__main__":  # ponytail self-check: KB splits + cosine + latest-message logic
     sample = "# GigWheels Knowledge\nintro\n\n## Pricing\n$150/week.\n\n## GPS\nAll cars tracked."
     cs = _chunks(sample)
     assert cs == ["## Pricing\n$150/week.", "## GPS\nAll cars tracked."], cs
-    assert abs(_cosine([1, 0], [1, 0]) - 1.0) < 1e-9
-    assert abs(_cosine([1, 0], [0, 1])) < 1e-9
-    print("self-check ok:", cs)
+    assert abs(_cosine([1, 0], [1, 0]) - 1.0) < 1e-9 and abs(_cosine([1, 0], [0, 1])) < 1e-9
+    msgs = [{"message_type": 0, "content": "hi"}, {"message_type": 2, "content": "x joined"}]
+    assert _latest_meaningful(msgs)["content"] == "hi"
+    assert _latest_meaningful([{"message_type": 1, "content": "bot"}])["message_type"] == 1
+    print("self-check ok")
