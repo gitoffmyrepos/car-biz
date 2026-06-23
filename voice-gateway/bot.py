@@ -23,7 +23,8 @@ from fastapi import FastAPI, WebSocket
 from loguru import logger
 
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.frames.frames import EndFrame, TTSSpeakFrame, UserStartedSpeakingFrame
+from pipecat.frames.frames import (EndFrame, TTSSpeakFrame, UserStartedSpeakingFrame,
+                                    BotStoppedSpeakingFrame)
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -143,18 +144,29 @@ SYSTEM = (
     "are unsure, offer to connect the caller with a team member."
 )
 
-class IdleStrikeReset(FrameProcessor):
-    """Resets the idle-strike counter when the caller speaks, so a re-prompt only
-    escalates to hang-up on *consecutive* silence (not after they re-engaged)."""
+class CallState(FrameProcessor):
+    """Tracks call state so the idle handler never fires over the bot's own
+    speech or during LLM/TTS latency.
 
-    def __init__(self, strikes: dict):
+    - caller speaks  -> reset strikes AND set responding=True (we now owe a reply,
+      and the next several seconds are *bot latency*, not caller silence).
+    - bot finishes   -> responding=False (reply delivered; real silence can start).
+
+    BotStartedSpeaking/StoppedSpeaking frames travel upstream from the output
+    transport, so this processor (placed early) sees both the caller's and the
+    bot's speaking frames."""
+
+    def __init__(self, state: dict):
         super().__init__()
-        self._strikes = strikes
+        self._st = state
 
     async def process_frame(self, frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
         if isinstance(frame, UserStartedSpeakingFrame):
-            self._strikes["n"] = 0
+            self._st["strikes"] = 0
+            self._st["responding"] = True
+        elif isinstance(frame, BotStoppedSpeakingFrame):
+            self._st["responding"] = False
         await self.push_frame(frame, direction)
 
 
@@ -215,10 +227,10 @@ async def ws(ws: WebSocket) -> None:
     context = OpenAILLMContext([{"role": "system", "content": SYSTEM}])
     agg = llm.create_context_aggregator(context)
 
-    idle_strikes = {"n": 0}
+    call_state = {"strikes": 0, "responding": False, "done": False}
     pipeline = Pipeline([
         transport.input(),
-        IdleStrikeReset(idle_strikes),
+        CallState(call_state),
         stt,
         agg.user(),
         llm,
@@ -246,14 +258,24 @@ async def ws(ws: WebSocket) -> None:
 
     @task.event_handler("on_idle_timeout")
     async def _on_idle(_t):
-        idle_strikes["n"] += 1
-        if idle_strikes["n"] == 1:
+        # Already saying goodbye -> never re-fire (was repeating the signoff 4x
+        # because the timer kept tripping during the goodbye's own TTS latency).
+        if call_state["done"]:
+            return
+        # Bot is mid-answer or the LLM/TTS is still producing the reply: this is
+        # OUR latency, not caller silence. Don't talk over ourselves — wait.
+        if call_state["responding"]:
+            logger.info("idle: bot still responding, ignoring")
+            return
+        call_state["strikes"] += 1
+        if call_state["strikes"] == 1:
             logger.info("idle: re-prompting caller")
             await task.queue_frames([TTSSpeakFrame(REPROMPT)])
         else:
-            # Still silent: polite goodbye, then EndFrame ends the pipeline +
-            # closes the WS, which completes the TeXML so Telnyx drops the call
-            # (auto-hangup via the Telnyx API also fires if TELNYX_API_KEY is set).
+            # Still genuinely silent: polite goodbye once, then EndFrame ends the
+            # pipeline + closes the WS, completing the TeXML so Telnyx drops the
+            # call (the Telnyx API hangup also fires if TELNYX_API_KEY is set).
+            call_state["done"] = True
             logger.info("idle: signing off + hanging up")
             await task.queue_frames([TTSSpeakFrame(_signoff()), EndFrame()])
 

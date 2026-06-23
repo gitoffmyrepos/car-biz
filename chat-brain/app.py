@@ -152,7 +152,26 @@ def _retrieve(question: str) -> str:
     return "\n\n".join(text for text, _ in ranked[:TOP_K])
 
 
+# Bare greetings / acknowledgements carry no question. Passing the whole KB as
+# context made the model answer "Hello?" by dumping the application steps. Catch
+# these and greet back briefly, inviting the real question — no RAG, no spiel.
+_SMALLTALK = re.compile(
+    r"^((hi|hello|hey) there|hi|hello|hey|yo|hiya|howdy|good (morning|afternoon|evening)|"
+    r"yes|yeah|yep|yup|ok|okay|sure|uh+|um+|hmm+|you there|are you there|"
+    r"can you hear me)[\s.!?,]*$",
+    re.I,
+)
+_SMALLTALK_REPLY = ("Hey, thanks for calling GigWheels. How can I help — weekly rates, "
+                    "the cars we have, or getting started?")
+
+
+def _is_smalltalk(q: str) -> bool:
+    return bool(_SMALLTALK.fullmatch(q.strip()))
+
+
 def answer(question: str, *, model: str = CHAT_MODEL, brief: bool = False, full_context: bool = False) -> str:
+    if _is_smalltalk(question):
+        return _SMALLTALK_REPLY
     # The KB is tiny, so for latency-critical voice we skip the embed/retrieve
     # round-trip and pass the whole KB as context (one model call, no embed).
     context = "\n\n".join(t for t, _ in _KB) if (full_context and _KB) else _retrieve(question)
@@ -199,6 +218,9 @@ async def answer_stream(question: str, *, model: str = CHAT_MODEL, full_context:
     """Stream a voice reply sentence-by-sentence so the gateway can start TTS on
     the first sentence instead of waiting for the whole answer (cuts perceived
     latency). Each emitted sentence is humanized before it goes out."""
+    if _is_smalltalk(question):
+        yield _SMALLTALK_REPLY
+        return
     context = "\n\n".join(t for t, _ in _KB) if (full_context and _KB) else _retrieve(question)
     if not context:
         yield ("I'm not able to look that up right now. Please reach us through the "
