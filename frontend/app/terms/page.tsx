@@ -310,13 +310,13 @@ export default function TermsPage() {
                 </p>
                 <div className="bg-ink-card border ed-hairline p-6 mt-4">
                   <p className="font-semibold text-white">GigWheels</p>
-                  <p>123 Main Street</p>
-                  <p>City, State 12345</p>
+                  <p>Katy, TX</p>
+                  <p>Greater Houston Area</p>
                   <p className="mt-4">
-                    <strong>Email:</strong> legal@gigwheels.com
+                    <strong>Email:</strong> apply@gigwheels.strategybase.io
                   </p>
                   <p>
-                    <strong>Phone:</strong> (555) 123-4567
+                    <strong>Phone:</strong> (346) 587-1177
                   </p>
                   <p>
                     <strong>Hours:</strong> Mon-Sat, 9AM - 7PM

@@ -284,7 +284,7 @@ export default function FAQPage() {
                   Contact Us
                 </Link>
                 <a href="tel:5551234567" className="ed-cta ed-cta-ghost w-full sm:w-auto">
-                  Call (555) 123-4567
+                  Call (346) 587-1177
                 </a>
               </div>
             </div>

@@ -227,7 +227,7 @@ export default function PrivacyPage() {
                     <li><strong>Restrict Processing:</strong> Request that we limit how we use your data</li>
                   </ul>
                   <p className="mt-4">
-                    To exercise any of these rights, please contact us at privacy@gigwheels.com. We will respond to your request within 30 days.
+                    To exercise any of these rights, please contact us at apply@gigwheels.strategybase.io. We will respond to your request within 30 days.
                   </p>
                   <div className="bg-ink-card border ed-hairline p-4 mt-4">
                     <p className="text-sm">
@@ -352,13 +352,13 @@ export default function PrivacyPage() {
                   </p>
                   <div className="bg-ink-card border ed-hairline p-6 mt-4">
                     <p className="font-semibold text-white">GigWheels - Privacy Team</p>
-                    <p>123 Main Street</p>
-                    <p>City, State 12345</p>
+                    <p>Katy, TX</p>
+                    <p>Greater Houston Area</p>
                     <p className="mt-4">
-                      <strong>Email:</strong> privacy@gigwheels.com
+                      <strong>Email:</strong> apply@gigwheels.strategybase.io
                     </p>
                     <p>
-                      <strong>Phone:</strong> (555) 123-4567
+                      <strong>Phone:</strong> (346) 587-1177
                     </p>
                     <p>
                       <strong>Hours:</strong> Mon-Fri, 9AM - 5PM

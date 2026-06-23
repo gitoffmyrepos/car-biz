@@ -426,8 +426,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-sm ed-muted mb-1">Phone</p>
-                      <p className="text-white font-medium">(555) 123-4567</p>
-                      <p className="text-sm ed-muted">Mon-Sat: 9AM - 7PM</p>
+                      <a href="tel:+13465871177" className="text-white font-medium hover:text-gold-light transition-colors">(346) 587-1177</a>
+                      <p className="text-sm ed-muted">Mon-Sat: 9AM - 7PM CT</p>
                     </div>
                   </div>
 
@@ -439,7 +439,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-sm ed-muted mb-1">Email</p>
-                      <p className="text-white font-medium">info@gigwheels.com</p>
+                      <a href="mailto:apply@gigwheels.strategybase.io" className="text-white font-medium hover:text-gold-light transition-colors break-all">apply@gigwheels.strategybase.io</a>
                       <p className="text-sm ed-muted">24-hour response time</p>
                     </div>
                   </div>
@@ -452,9 +452,9 @@ export default function ContactPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm ed-muted mb-1">Office</p>
-                      <p className="text-white font-medium">123 Main Street</p>
-                      <p className="text-sm ed-muted">City, State 12345</p>
+                      <p className="text-sm ed-muted mb-1">Location</p>
+                      <p className="text-white font-medium">Katy, TX</p>
+                      <p className="text-sm ed-muted">Serving the greater Houston area</p>
                     </div>
                   </div>
                 </div>
@@ -506,7 +506,7 @@ export default function ContactPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <p className="font-medium text-white">Map Integration Coming Soon</p>
-              <p className="text-sm">Visit us at 123 Main Street, City, State 12345</p>
+              <p className="text-sm">Based in Katy, TX — serving the greater Houston area</p>
             </div>
           </div>
         </Section>

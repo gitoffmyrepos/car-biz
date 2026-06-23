@@ -294,10 +294,10 @@ export default function AdminLayout({
               Contact support for assistance with the admin portal.
             </p>
             <a
-              href="mailto:support@gigwheels.com"
+              href="mailto:apply@gigwheels.strategybase.io"
               className="text-xs text-gold-600 dark:text-gold-400 hover:text-gold-700 dark:hover:text-gold-300 font-medium"
             >
-              support@gigwheels.com
+              apply@gigwheels.strategybase.io
             </a>
           </div>
         </div>
