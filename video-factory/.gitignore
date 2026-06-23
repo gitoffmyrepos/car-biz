@@ -2,3 +2,5 @@ scenes/
 build_ep1/
 narration/out/
 *.mp4
+assets/*.png
+assets/*.wav

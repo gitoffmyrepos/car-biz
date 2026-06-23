@@ -21,20 +21,28 @@ NARR = os.path.join(ROOT, "narration", "out")
 WORK = os.path.join(ROOT, "build_ep1")
 KOKORO = os.environ.get("KOKORO", "http://localhost:8880")
 W, H = 1080, 1920
-TITAN = ("asetrate=24000*0.80,atempo=1/0.80,aresample=24000,bass=g=6:f=100:w=0.5,"
-         "aecho=0.85:0.9:55:0.18,alimiter=limit=0.95")
+# Bright, vibrant narration treatment (NOT the old dull deep titan): clean low
+# rumble, a touch quicker for energy, lift presence/air for an optimistic tone.
+UPLIFT = ("highpass=f=90,atempo=1.04,treble=g=2.5:f=3500:w=0.7,bass=g=1:f=120,"
+          "dynaudnorm=f=200,alimiter=limit=0.95")
+LOGO = os.path.join(ROOT, "assets", "gigwheels_logo.png")    # real web-app logo
+MUSIC = os.path.join(ROOT, "assets", "music_bed.wav")        # soft ambient bed
+# Scenes that show the GigWheels brand (Kelvin's lot/office) get the real logo
+# overlaid (FLUX garbles rendered text); the end card gets a big hero logo.
+LOGO_SCENES = {"07_lot": "badge", "08_intro": "badge", "09_explain": "badge",
+               "11_keys": "badge", "13_card": "hero"}
 
 # Story timeline: each segment = (scene id-prefix, audio source, subtitle text).
 # audio source: ("narr", beat_index) uses a pre-rendered narration beat (titan);
 #               ("char", voice, text) synthesizes a character line via Kokoro.
 NARR_BEATS = [  # subtitle text per narration beat (order matches episode01.txt)
     "A new city has a way of testing you.",
-    "Chara had just arrived — ready for anything but the one thing the work demanded.",
+    "Chara had just arrived. Ready for anything but one thing.",
     "A car.",
     "The apps were hiring. But with no wheels, the city stayed out of reach.",
     "Then she met Alex.",
-    "Alex had driven these streets a while. And Alex knew a name.",
-    "Go see Kelvin, he said. Down at GigWheels. He puts new drivers on the road.",
+    "Alex had driven these streets. And Alex knew a name.",
+    "Go see Kelvin, he said. He puts new drivers on the road.",
     "So the two of them went to find him.",
     "No car, and new in town? That is not the end of the road.",
     "It is where GigWheels begins.",
@@ -102,7 +110,7 @@ def main():
         aud = os.path.join(WORK, f"a{i:02d}.wav")
         if kind == "narr":
             src = os.path.join(NARR, f"ep01_{payload:02d}.wav")
-            sh("ffmpeg", "-y", "-i", src, "-af", TITAN, aud)          # titan-color narration
+            sh("ffmpeg", "-y", "-i", src, "-af", UPLIFT, aud)         # bright/vibrant narration
             text = NARR_BEATS[payload]
         else:
             voice, text = CONVO[payload]
@@ -112,11 +120,20 @@ def main():
         # Ken Burns: slow zoom-in on the still, scaled/cropped to 9:16
         clip = os.path.join(WORK, f"c{i:02d}.mp4")
         zoom = "z='min(zoom+0.0010,1.12)'" if i % 2 == 0 else "z='if(lte(zoom,1.0),1.12,max(1.001,zoom-0.0010))'"
-        vf = (f"scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
-              f"zoompan={zoom}:d={int(dur*25)}:s={W}x{H}:fps=25,setsar=1")
-        sh("ffmpeg", "-y", "-loop", "1", "-i", png, "-i", aud,
-           "-t", f"{dur:.2f}", "-vf", vf, "-c:v", "libx264", "-pix_fmt", "yuv420p",
-           "-c:a", "aac", "-shortest", clip)
+        base = (f"[0:v]scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
+                f"zoompan={zoom}:d={int(dur*25)}:s={W}x{H}:fps=25,setsar=1")
+        kind_logo = LOGO_SCENES.get(prefix)
+        if kind_logo:  # overlay the real GigWheels logo (brand-consistent, no FLUX text)
+            lw = int(W * 0.78) if kind_logo == "hero" else int(W * 0.40)
+            ly = "(H-h)/2" if kind_logo == "hero" else "140"
+            fc = f"{base}[bg];[2:v]scale={lw}:-1[lg];[bg][lg]overlay=(W-w)/2:{ly}[v]"
+            sh("ffmpeg", "-y", "-loop", "1", "-i", png, "-i", aud, "-i", LOGO,
+               "-t", f"{dur:.2f}", "-filter_complex", fc, "-map", "[v]", "-map", "1:a",
+               "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", clip)
+        else:
+            sh("ffmpeg", "-y", "-loop", "1", "-i", png, "-i", aud, "-t", f"{dur:.2f}",
+               "-filter_complex", f"{base}[v]", "-map", "[v]", "-map", "1:a",
+               "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", clip)
         clips.append(clip)
         srt.append(f"{i+1}\n{ts(t)} --> {ts(t+dur-0.2)}\n{text}\n")
         t += dur
@@ -132,10 +149,16 @@ def main():
     silent = os.path.join(WORK, "ep01_silent.mp4")
     sh("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listf, "-c", "copy", silent)
     out = os.path.join(ROOT, "ep01.mp4")
-    style = ("FontName=DejaVu Sans,Bold=1,Fontsize=14,PrimaryColour=&H00FFFFFF,"
-             "OutlineColour=&H00000000,Outline=2,Shadow=1,Alignment=2,MarginV=120")
-    sh("ffmpeg", "-y", "-i", silent, "-vf", f"subtitles={srtf}:force_style='{style}'",
-       "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", out)
+    # Subtitles: smaller, lower, thin outline, auto-wrapped — no longer covering the frame.
+    style = ("FontName=DejaVu Sans,Bold=1,Fontsize=9,PrimaryColour=&H00FFFFFF,"
+             "OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=0,"
+             "Alignment=2,MarginV=60,MarginL=70,MarginR=70,WrapStyle=0")
+    # Burn subtitles + duck the soft music bed under the voice.
+    sh("ffmpeg", "-y", "-i", silent, "-i", MUSIC,
+       "-filter_complex",
+       f"[0:v]subtitles={srtf}:force_style='{style}'[v];"
+       "[1:a]volume=0.16[m];[0:a][m]amix=inputs=2:duration=first:dropout_transition=0[a]",
+       "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", out)
     print(f"\nEPISODE -> {out}  ({t:.1f}s)")
 
 
