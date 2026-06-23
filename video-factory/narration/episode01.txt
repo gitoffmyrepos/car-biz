@@ -1,0 +1,18 @@
+# "Wheels Up" — Episode 1: "No Car, No Problem"
+# Storyteller VO. Morgan-Freeman cadence: warm, measured, a little awe.
+# One line = one beat. narrate.py turns this into ep01_vo.wav.
+
+[exag=0.6 cfg=0.3]
+Every morning, a city wakes up hungry. And somebody has to feed it.
+Her name is Mia. No car of her own. But a phone full of orders, waiting.
+The old way meant dealerships. Credit checks. A mountain of paperwork, and weeks she did not have.
+Then Mia found GigWheels.
+
+[exag=0.55 cfg=0.32]
+One weekly price. Insurance and maintenance, taken care of. Approved in a single day.
+By sunrise, Mia was not waiting on a ride.
+She was the ride.
+
+[exag=0.7 cfg=0.28]
+No car? No problem.
+GigWheels. Your week starts here.
