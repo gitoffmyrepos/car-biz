@@ -22,6 +22,27 @@ import requests
 NARRATOR = os.environ.get("NARRATOR_URL", "http://localhost:8890")
 PAUSE_S = float(os.environ.get("BEAT_PAUSE_S", "0.6"))
 
+# Voice presets. "titan" colors the raw synth into a thick, deep, slow, menacing
+# narrator (the imposing-villain archetype) WITHOUT cloning any real actor:
+#   - DEEPEN<1 drops pitch (asetrate) then restores duration (atempo) = deeper,
+#     not chipmunk-fast. 0.82 is heavy; raise toward 0.90 for less.
+#   - bass adds chest resonance; aecho a touch of cinematic space.
+PRESETS = {
+    "storyteller": "",  # no coloring — file [exag/cfg] markers carry the delivery
+    # Calibrated to a measured reference profile (f0 ~80Hz, dark/chesty, slow).
+    # asetrate<1 drops pitch AND formants together = a physically bigger speaker
+    # (the "thickness"), then atempo restores duration. 0.80 takes a ~150Hz
+    # Chatterbox base to ~120Hz; recalibrate the ratio once the service is live
+    # (synth a probe, measure f0, aim ~95-100Hz — deep but ad-intelligible).
+    "titan": (
+        "asetrate=24000*0.80,atempo=1/0.80,aresample=24000,"
+        "bass=g=6:f=100:w=0.5,"
+        "aecho=0.85:0.9:55:0.18,"
+        "alimiter=limit=0.95"
+    ),
+}
+VOICE = os.environ.get("NARRATOR_VOICE", "storyteller")
+
 
 def beats(path):
     exag, cfg = None, None
@@ -73,12 +94,22 @@ def main():
         for p in parts:
             f.write(f"file '{os.path.abspath(p)}'\n")
             f.write(f"file '{os.path.abspath(silence)}'\n")
-    out = f"{prefix}_vo.wav"
+    raw = f"{prefix}_raw.wav"
     subprocess.run(
-        ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listfile, "-c", "copy", out],
+        ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listfile, "-c", "copy", raw],
         check=True, capture_output=True,
     )
-    print(f"\nVO -> {out}")
+    out = f"{prefix}_vo.wav"
+    flt = PRESETS.get(VOICE, "")
+    if flt:
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", raw, "-af", flt, out],
+            check=True, capture_output=True,
+        )
+        print(f"\nVO ({VOICE}) -> {out}")
+    else:
+        os.replace(raw, out)
+        print(f"\nVO -> {out}")
 
 
 if __name__ == "__main__":
