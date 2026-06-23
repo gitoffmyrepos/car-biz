@@ -5,12 +5,14 @@
 # push before. torch/torchaudio CPU are installed FIRST so chatterbox-tts sees
 # its torch requirement already satisfied and does not pull the CUDA build.
 #
-# The Chatterbox weights are BAKED at build time (zero runtime egress, same as
-# the whisper/kokoro images) — the gigwheels-video namespace has no internet.
+# The Chatterbox weights are NOT baked — they're ~2GB and baking them made the
+# kaniko snapshot/push fail. gigwheels-video HAS egress (same as ComfyUI pulling
+# FLUX/Wan at runtime), so the model is downloaded on first request into HF_HOME,
+# which the Deployment points at the PVC (/data/hf) so it persists across restarts.
 FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/opt/hf NUMBA_CACHE_DIR=/tmp/numba
+    HF_HOME=/data/hf NUMBA_CACHE_DIR=/tmp/numba
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 ffmpeg git && rm -rf /var/lib/apt/lists/*
@@ -25,9 +27,7 @@ RUN pip install --no-cache-dir torch==2.6.0 torchaudio==2.6.0 \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Bake the model weights into the image (HF_HOME cached at build time).
-RUN python -c "from chatterbox.tts import ChatterboxTTS; ChatterboxTTS.from_pretrained(device='cpu')"
-
+# Model is pulled at runtime into the PVC (HF_HOME=/data/hf), not baked — see header.
 COPY server.py .
 EXPOSE 8890
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8890"]
