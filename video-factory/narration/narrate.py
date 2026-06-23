@@ -76,12 +76,15 @@ def main():
         sys.exit("usage: narrate.py <script.txt> <out-prefix>")
     script, prefix = sys.argv[1], sys.argv[2]
     os.makedirs(os.path.dirname(prefix) or ".", exist_ok=True)
-    parts, sr = [], 24000
+    parts, sr, cues = [], 24000, []
     for i, (text, exag, cfg) in enumerate(beats(script)):
         dest = f"{prefix}_{i:02d}.wav"
         sr = synth(text, exag, cfg, dest)
+        with wave.open(dest) as w:
+            dur = w.getnframes() / w.getframerate()
         parts.append(dest)
-        print(f"[{i:02d}] {len(text):>3}c -> {dest}")
+        cues.append((text, dur))
+        print(f"[{i:02d}] {len(text):>3}c {dur:4.1f}s -> {dest}")
     # concat with silence padding between beats via ffmpeg concat filter
     silence = f"{prefix}_sil.wav"
     subprocess.run(
@@ -110,6 +113,24 @@ def main():
     else:
         os.replace(raw, out)
         print(f"\nVO -> {out}")
+
+    # Subtitles: one cue per beat, timed by cumulative WAV duration + the same
+    # PAUSE_S silence the concat inserts. Text is our exact script (no STT drift),
+    # so it stays perfectly in sync with the VO. titan's atempo restores duration
+    # so timing holds for colored output too.
+    srt = f"{prefix}.srt"
+    with open(srt, "w", encoding="utf-8") as f:
+        t = 0.0
+        for i, (text, dur) in enumerate(cues, 1):
+            f.write(f"{i}\n{ts(t)} --> {ts(t + dur)}\n{text}\n\n")
+            t += dur + PAUSE_S
+    print(f"SRT -> {srt}")
+
+
+def ts(s):
+    h, s = divmod(s, 3600)
+    m, s = divmod(s, 60)
+    return f"{int(h):02d}:{int(m):02d}:{int(s):02d},{int(round((s%1)*1000)):03d}"
 
 
 if __name__ == "__main__":
