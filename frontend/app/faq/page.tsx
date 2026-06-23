@@ -283,7 +283,7 @@ export default function FAQPage() {
                 <Link href="/contact" className="ed-cta ed-cta-primary w-full sm:w-auto">
                   Contact Us
                 </Link>
-                <a href="tel:5551234567" className="ed-cta ed-cta-ghost w-full sm:w-auto">
+                <a href="tel:+13465871177" className="ed-cta ed-cta-ghost w-full sm:w-auto">
                   Call (346) 587-1177
                 </a>
               </div>
