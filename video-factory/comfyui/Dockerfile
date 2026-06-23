@@ -17,17 +17,15 @@ WORKDIR /opt
 RUN pip3 install --break-system-packages \
     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
-# ComfyUI + manager + the custom nodes our pipeline needs (controlnet aux for
-# DWPose, video helpers, image utils). Pinned to a recent commit at build time.
+# Base ComfyUI only. The custom nodes (controlnet_aux, WanVideoWrapper, KJNodes,
+# essentials) are NOT installed here: cloning 5 repos + their heavy requirements
+# (mediapipe, onnxruntime, ...) blew past the CI's 3600s build deadline. The
+# first render (FLUX text-to-image) needs ZERO custom nodes. They're installed
+# at runtime via ComfyUI-Manager onto the PVC when the video stage needs them,
+# or added in a later dedicated build. Base + torch builds well within budget.
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /opt/ComfyUI
 WORKDIR /opt/ComfyUI
 RUN pip3 install --break-system-packages -r requirements.txt
-RUN git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
-    git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git custom_nodes/comfyui_controlnet_aux && \
-    git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git custom_nodes/ComfyUI-WanVideoWrapper && \
-    git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git custom_nodes/ComfyUI-KJNodes && \
-    git clone --depth 1 https://github.com/cubiq/ComfyUI_essentials.git custom_nodes/ComfyUI_essentials || true
-RUN for d in custom_nodes/*/; do [ -f "$d/requirements.txt" ] && pip3 install --break-system-packages -r "$d/requirements.txt" || true; done
 
 # Models, inputs, outputs all live on the PVC (mounted at /data) — symlink the
 # ComfyUI dirs to it so a model pull persists across restarts.
