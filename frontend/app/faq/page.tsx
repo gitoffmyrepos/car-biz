@@ -123,6 +123,26 @@ const faqItems: FAQItem[] = [
     question: 'How do I report an accident or incident?',
     answer: 'In case of an accident, first ensure everyone\'s safety and call emergency services if needed. Then contact us immediately through our 24/7 support line. You can also submit an incident report with photos through your customer dashboard.'
   },
+  {
+    category: 'List Your Car',
+    question: 'I own an extra car. Can GigWheels lease it out for me?',
+    answer: 'Yes. Through our owner partner program, GigWheels manages leasing your spare car to vetted gig drivers on a weekly basis, so you earn passive weekly income while keeping ownership. We handle the driver screening, payments, GPS tracking, maintenance coordination, and recovery. To get started, tell us about your car on the Contact page.'
+  },
+  {
+    category: 'List Your Car',
+    question: 'How much do I earn, and what does GigWheels take?',
+    answer: 'You earn a weekly payout from your car\'s lease. GigWheels keeps a percentage of the weekly rate as a management fee for handling everything end to end. The exact fee and your payout split are agreed before your car goes on the road. Contact us for a quote on your specific vehicle.'
+  },
+  {
+    category: 'List Your Car',
+    question: 'What does GigWheels handle when I list my car?',
+    answer: 'Everything operational: screening and approving drivers, collecting and tracking weekly payments, GPS tracking for security, coordinating maintenance, and vehicle recovery if a driver defaults. You stay the owner and get paid weekly.'
+  },
+  {
+    category: 'List Your Car',
+    question: 'What kind of car can I list?',
+    answer: 'Your car should be in good, safe, well-maintained condition and meet our insurance and documentation standards. Our team confirms the specifics during onboarding and lets you know if it qualifies. Reach out through the Contact page to check your vehicle.'
+  },
 ];
 
 // Get unique categories

@@ -241,11 +241,41 @@ export default function HomePage() {
           </div>
         </Section>
 
-        {/* 05 — FAQ */}
+        {/* 05 — List Your Car (owner partner program) */}
+        <Section className="border-t ed-hairline">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <Reveal><Eyebrow index="05" label="Earn — List Your Car" /></Reveal>
+              <Reveal delay={0.05}>
+                <h2 className="ed-h2 mt-5 mb-6 max-w-md">Own an extra car? Let it earn for you.</h2>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <p className="ed-muted text-sm leading-relaxed mb-6 max-w-md">
+                  GigWheels manages leasing your spare car to vetted gig drivers, week after
+                  week. You earn passive income and keep ownership — we handle screening,
+                  payments, tracking, and the rest.
+                </p>
+                <GhostCta href="/list-your-car">How it works</GhostCta>
+              </Reveal>
+            </div>
+            <Reveal delay={0.1}>
+              <ul className="border-t ed-hairline">
+                {['You keep ownership', 'Weekly payouts', 'We vet every driver', 'Fully managed, hands-off'].map((r) => (
+                  <li key={r} className="border-b ed-hairline py-4 flex items-center gap-4">
+                    <span className="text-gold-light font-display">—</span>
+                    <span className="text-sm">{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          </div>
+        </Section>
+
+        {/* 06 — FAQ */}
         <Section className="border-t ed-hairline">
           <div className="grid md:grid-cols-[0.4fr_0.6fr] gap-12">
             <div>
-              <Reveal><Eyebrow index="05" label="FAQ" /></Reveal>
+              <Reveal><Eyebrow index="06" label="FAQ" /></Reveal>
               <Reveal delay={0.05}>
                 <h2 className="ed-h2 mt-5 max-w-xs">Questions, answered.</h2>
               </Reveal>
