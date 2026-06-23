@@ -1,31 +1,36 @@
 # GigWheels video factory — ComfyUI render backend.
 #
-# The RTX 5080/5090 are Blackwell (sm_120), which REQUIRES CUDA 12.8 + PyTorch
-# >= 2.7. Older CUDA 12.4 images fail with "sm_120 not supported". Models are NOT
-# baked (FLUX/Wan are tens of GB) — they live on a PVC mounted at /models and are
-# pulled once at deploy time. The build env has egress; runtime pulls models from
-# HF into the PVC.
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+# Base is python-slim, NOT nvidia/cuda: torch's cu128 wheels already bundle the
+# full CUDA + cuDNN runtime (nvidia-*-cu12), and the GPU driver comes from the
+# nvidia runtimeClass at run time. The nvidia/cuda:12.8-cudnn base added ~4GB of
+# redundant libraries, ballooning the image to 13GB — too big for kaniko to
+# snapshot/push in CI. python-slim + the cu128 wheels still gives Blackwell
+# sm_120 support (it lives in the torch kernels, not the base) at ~8.9GB, which
+# the CI build can push. Verified to build + serve locally (HTTP 200).
+#
+# Models are NOT baked (FLUX/Wan are tens of GB) — they live on the PVC at /data
+# and are pulled at runtime (the build/run env has egress).
+FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv git ffmpeg libgl1 libglib2.0-0 wget \
+    git ffmpeg libgl1 libglib2.0-0 wget \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
-# PyTorch for Blackwell (cu128 wheels — first stable sm_120 support is 2.7).
-RUN pip3 install --break-system-packages \
+# PyTorch for Blackwell (cu128 wheels — first stable sm_120 support is 2.7; the
+# wheels carry their own CUDA/cuDNN, so no CUDA base image is needed).
+RUN pip3 install \
     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
-# Base ComfyUI only. The custom nodes (controlnet_aux, WanVideoWrapper, KJNodes,
+# Base ComfyUI only. Custom nodes (controlnet_aux, WanVideoWrapper, KJNodes,
 # essentials) are NOT installed here: cloning 5 repos + their heavy requirements
-# (mediapipe, onnxruntime, ...) blew past the CI's 3600s build deadline. The
-# first render (FLUX text-to-image) needs ZERO custom nodes. They're installed
-# at runtime via ComfyUI-Manager onto the PVC when the video stage needs them,
-# or added in a later dedicated build. Base + torch builds well within budget.
+# (mediapipe, onnxruntime, ...) blew the CI build budget. The first render (FLUX
+# text-to-image) needs ZERO custom nodes — they're added at runtime via
+# ComfyUI-Manager onto the PVC, or in a later dedicated build.
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /opt/ComfyUI
 WORKDIR /opt/ComfyUI
-RUN pip3 install --break-system-packages -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Models, inputs, outputs all live on the PVC (mounted at /data) — symlink the
 # ComfyUI dirs to it so a model pull persists across restarts.
