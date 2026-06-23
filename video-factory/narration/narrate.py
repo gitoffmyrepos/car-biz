@@ -57,13 +57,25 @@ def beats(path):
         yield line, exag, cfg
 
 
+# Backend: "chatterbox" (the narrator-tts service) or "kokoro" (the deployed
+# Kokoro TTS, far faster on CPU). With kokoro we pick a deep male voice and lean
+# on the titan DSP for gravitas — Chatterbox CPU synth is ~3-4 min/line, too slow.
+BACKEND = os.environ.get("NARRATOR_BACKEND", "chatterbox")
+KOKORO_VOICE = os.environ.get("NARRATOR_KOKORO_VOICE", "am_onyx")
+
+
 def synth(text, exag, cfg, dest):
-    body = {"text": text}
-    if exag is not None:
-        body["exaggeration"] = exag
-    if cfg is not None:
-        body["cfg_weight"] = cfg
-    r = requests.post(f"{NARRATOR}/tts", json=body, timeout=600)
+    if BACKEND == "kokoro":
+        r = requests.post(f"{NARRATOR}/v1/audio/speech",
+                          json={"input": text, "voice": KOKORO_VOICE, "sample_rate": 24000},
+                          timeout=120)
+    else:
+        body = {"text": text}
+        if exag is not None:
+            body["exaggeration"] = exag
+        if cfg is not None:
+            body["cfg_weight"] = cfg
+        r = requests.post(f"{NARRATOR}/tts", json=body, timeout=600)
     r.raise_for_status()
     with open(dest, "wb") as f:
         f.write(r.content)

@@ -49,11 +49,23 @@ cd video-factory/narration && python narrate.py episode01.txt out/ep01
 Script format: `narration/episode01.txt` (one beat per line; `[exag=.. cfg=..]`
 markers steer delivery). Ep1 = "No Car, No Problem" (hero: Mia).
 
-## Cast (recurring)
-Chara (hero driver — young, hardworking, new in the city), Deuce (veteran
-driver friend), Rosa, Gigi, **Kelvin — the guy at GigWheels who gets drivers on
-the road** (the founder/face; named in every episode's "ask for Kelvin" beat).
-Built once in Blender, reused every episode.
+## Cast (recurring) — locked designs + base seeds for consistency
+- **Chara** (hero driver, new in the city): beautiful young **Black woman**,
+  slightly round oval face, long **black dreadlocks**, warm radiant smile. seed 101.
+- **Kelvin** (runs GigWheels; named in every "ask for Kelvin" beat): **light-skinned
+  Black man**, tall + broad **athletic build (6'3", 240 lb)**, clean **bald fade**,
+  neat well-groomed **beard**, a small **birthmark mole in the center of his
+  forehead**, dressed **dapper** — sharp dark tailored **suit, black shirt, black
+  tie** (charming dapper-boss vibe, but warm/happy not menacing). seed 202.
+- **Alex** (veteran driver friend; replaces "Deuce"): cheerful young **Mexican man**,
+  short dark hair, **full thick beard** (fuller + more rugged/unkempt than Kelvin's
+  neat one), friendly grin. seed 303.
+
+Style: stylized 3D Pixar/DreamWorks cartoon, big expressive eyes, warm rounded
+proportions, champagne-gold + teal accents. The character prompts live in
+`tools/render_cast.py`-style workflows; lock each character's seed so frames stay
+on-model. (For true cross-shot consistency, the recurring cast is rigged once in
+Blender — these AI frames are concept/look-dev + backgrounds.)
 
 ## Ep1 = series-intro / origin film (~2 min, exception to the 30-45s rule)
 The first video introduces the business: narrator carries Chara's arrival in a

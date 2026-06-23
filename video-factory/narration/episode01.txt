@@ -1,5 +1,5 @@
 # "Wheels Up" — Episode 1 (SERIES INTRO / origin film, ~2 min): "New in Town"
-# Narrator (titan voice) carries the story UNTIL Chara + Deuce reach Kelvin.
+# Narrator (titan voice) carries the story UNTIL Chara + Alex reach Kelvin.
 # The 3-way conversation lives in episode01_chars.txt. This file = intro beats
 # then the closing CTA. narrate.py -> ep01_vo.wav + ep01.srt (subtitles).
 #
@@ -14,8 +14,8 @@ A car.
 The apps were hiring. The orders were waiting. But with no wheels of her own, the city stayed just out of reach.
 
 [exag=0.58 cfg=0.31]
-Then she met Deuce.
-Deuce had driven these streets a while. And Deuce knew a name.
+Then she met Alex.
+Alex had driven these streets a while. And Alex knew a name.
 Go and see Kelvin, he told her. Down at GigWheels. He puts new drivers on the road — the honest way.
 So the two of them went to find him.
 

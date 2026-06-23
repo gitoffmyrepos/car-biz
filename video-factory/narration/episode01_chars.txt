@@ -4,11 +4,11 @@
 # Subtitles use `text` verbatim, synced to each line's WAV duration.
 #
 # TRUTH: new driver -> verified in ~24-48h BEFORE keys. No same-day promise here.
-DEUCE|am_onyx|Kelvin. This is Chara. Just moved here, ready to work, needs a car.
+ALEX|am_onyx|Kelvin. This is Chara. Just moved here, ready to work, needs a car.
 KELVIN|am_michael|Welcome to GigWheels, Chara. Here is how it works. You drive, you earn, and you pay one simple weekly price. Insurance and maintenance are on us.
 CHARA|af_heart|And if I have never rented before?
 KELVIN|am_michael|Then we get you verified first. For a new driver that is usually a day or two — about twenty four to forty eight hours. Once you are cleared, the keys are yours.
 CHARA|af_heart|No dealership. No loan.
 KELVIN|am_michael|No dealership, no loan. A fair weekly rate, and a car that is ready when you are.
-DEUCE|am_onyx|Told you. Kelvin looks after his drivers.
+ALEX|am_onyx|Told you. Kelvin looks after his drivers.
 CHARA|af_heart|Then let us get me verified. I have a city to work.
