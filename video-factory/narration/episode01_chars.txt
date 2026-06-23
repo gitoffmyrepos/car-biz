@@ -1,0 +1,8 @@
+# "Wheels Up" Ep1 — character dialogue (Kokoro voices, lip-synced in Blender
+# via Rhubarb-NG from each line's WAV). Format: CHAR|kokoro_voice|text
+# Subtitles use `text` verbatim, in sync with each line's WAV duration.
+MIA|af_heart|My shift starts in an hour and I have no ride.
+DEUCE|am_onyx|Then let us go to GigWheels. Ask for Kelvin — he gets drivers on the road same day.
+MIA|af_heart|Just like that?
+DEUCE|am_onyx|Just like that.
+KELVIN|am_michael|Welcome to GigWheels. Let us get you rolling.

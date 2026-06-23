@@ -49,7 +49,37 @@ cd video-factory/narration && python narrate.py episode01.txt out/ep01
 Script format: `narration/episode01.txt` (one beat per line; `[exag=.. cfg=..]`
 markers steer delivery). Ep1 = "No Car, No Problem" (hero: Mia).
 
-## Per-episode flow (~2-3 min, ≈25-40 short clips, overnight batch)
+## Cast (recurring)
+Mia (hero driver), Deuce (driver friend), Rosa, Gigi, **Kelvin — the guy at
+GigWheels who gets drivers on the road** (the founder/face; named in every
+episode's "go to GigWheels, ask for Kelvin" beat). Built once in Blender,
+reused every episode.
+
+## Subtitles (burned in — required every episode)
+Every line, narration and character, gets an on-screen caption. We own the
+exact script text, so we generate the SRT directly from script + WAV durations
+(no STT drift, perfect sync):
+- Narration: `narrate.py` emits `<prefix>.srt` alongside the VO.
+- Character lines: same cue-builder over `episode01_chars.txt` (one cue per line).
+Merge the narration + dialogue SRTs on the master timeline, then burn at assemble:
+```
+ffmpeg -i ep01.mp4 -vf "subtitles=ep01.srt:force_style=\
+'FontName=Montserrat,Bold=1,Fontsize=15,PrimaryColour=&H00FFFFFF,\
+OutlineColour=&H00000000,Outline=2,Shadow=1,Alignment=2,MarginV=70'" \
+-c:a copy ep01_subbed.mp4
+```
+(bold white + black outline, bottom-center, lifted off the edge — readable on a
+phone with sound off, which is how Status/Reels are watched.)
+
+## Episode length — SHORT on purpose
+Target **30-45s** per episode (60s hard max). Status caps at 30s/item; Reels
+retention dies after ~30s — 2-3 min would BORE, not enthrall. One use-case,
+told tight: hook (3s) → problem → GigWheels/Kelvin → CTA. The series gets its
+depth from MANY short episodes (a different driver each time), not long ones.
+30-45s is also what's actually buildable in Blender per week (labor-bound). An
+occasional ~90s "hero" film for the site/pinned post is fine; weekly = short.
+
+## Per-episode flow (~30-45s, ≈8-15 short clips, overnight batch)
 1. **Script** (Ollama) → beats + character dialogue + VO lines.
 2. **VO** (narrator-tts) → `ep_vo.wav`. **Character voices** (Kokoro) → per-line WAVs.
 3. **Cast** (Blender): pose rigged characters per shot; Rhubarb visemes drive mouths from the WAVs.
