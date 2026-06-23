@@ -1,8 +1,14 @@
-# "Wheels Up" Ep1 — character dialogue (Kokoro voices, lip-synced in Blender
-# via Rhubarb-NG from each line's WAV). Format: CHAR|kokoro_voice|text
-# Subtitles use `text` verbatim, in sync with each line's WAV duration.
-MIA|af_heart|My shift starts in an hour and I have no ride.
-DEUCE|am_onyx|Then let us go to GigWheels. Ask for Kelvin — he gets drivers on the road same day.
-MIA|af_heart|Just like that?
-DEUCE|am_onyx|Just like that.
-KELVIN|am_michael|Welcome to GigWheels. Let us get you rolling.
+# "Wheels Up" Ep1 — the 3-way conversation at the GigWheels lot (plays after the
+# narrator intro, before the narrator outro). Kokoro voices, lip-synced in
+# Blender via Rhubarb-NG. Format: CHAR|kokoro_voice|text
+# Subtitles use `text` verbatim, synced to each line's WAV duration.
+#
+# TRUTH: new driver -> verified in ~24-48h BEFORE keys. No same-day promise here.
+DEUCE|am_onyx|Kelvin. This is Chara. Just moved here, ready to work, needs a car.
+KELVIN|am_michael|Welcome to GigWheels, Chara. Here is how it works. You drive, you earn, and you pay one simple weekly price. Insurance and maintenance are on us.
+CHARA|af_heart|And if I have never rented before?
+KELVIN|am_michael|Then we get you verified first. For a new driver that is usually a day or two — about twenty four to forty eight hours. Once you are cleared, the keys are yours.
+CHARA|af_heart|No dealership. No loan.
+KELVIN|am_michael|No dealership, no loan. A fair weekly rate, and a car that is ready when you are.
+DEUCE|am_onyx|Told you. Kelvin looks after his drivers.
+CHARA|af_heart|Then let us get me verified. I have a city to work.
