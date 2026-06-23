@@ -1,0 +1,8 @@
+# Cinematic narrator TTS — Chatterbox (Resemble AI, MIT). Deep documentary-style
+# delivery with an "exaggeration" knob for dramatic storyteller gravitas.
+# torch/torchaudio are installed CPU-only in the Dockerfile FIRST so chatterbox
+# does not drag in the multi-GB CUDA wheels (offline batch — CPU is fine).
+chatterbox-tts==0.1.2
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+soundfile==0.13.1
