@@ -8,6 +8,7 @@ const COMPANY = [
   { href: '/fleet', label: 'Fleet' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/requirements', label: 'Requirements' },
+  { href: '/list-your-car', label: 'List Your Car' },
   { href: '/faq', label: 'FAQ' },
 ];
 

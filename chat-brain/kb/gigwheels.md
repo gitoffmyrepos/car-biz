@@ -83,5 +83,14 @@ For questions about purchasing a vehicle or any rent-to-own option, contact the 
 ## Pickup location and hours
 Pickup location and times are arranged with the team after approval, usually the same day or the next business day. Contact the team to schedule.
 
+## List your car (owner partner program)
+GigWheels also helps car owners earn from a spare or extra vehicle. If you own a car you're not using, we manage leasing it out weekly to vetted gig drivers on your behalf, and you earn passive weekly income. You keep ownership of the car. GigWheels handles the work: screening and approving drivers, collecting weekly payments, GPS tracking, coordinating maintenance, and vehicle recovery if needed. For managing all of this, GigWheels keeps a percentage of the weekly rate as a management fee, and the rest is paid to you.
+
+## How the owner program works
+1. Tell us about your car through the Contact page (year, make, model, condition). 2. We confirm it meets our condition, mileage, and insurance standards and agree on the weekly rate and your payout split. 3. We match it with an approved driver and handle the lease. 4. You get paid weekly, minus our management fee. You can take the car back at the end of a lease term per the agreement.
+
+## Owner program requirements and payout
+The car should be in good, safe, well-maintained condition and meet our insurance and documentation standards (the team confirms specifics during onboarding). Payouts are weekly. The exact management-fee percentage and your weekly payout are discussed and agreed before your car goes on the road. To get started or ask about your specific car, use the Contact page.
+
 ## Contact / escalation
 For anything not covered here — specific pricing, deposit amounts, availability, account issues, or to speak with a person — direct the customer to the Contact page at https://gigwheels.strategybase.io/contact, or let them know a human agent will follow up.
