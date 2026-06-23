@@ -50,10 +50,17 @@ Script format: `narration/episode01.txt` (one beat per line; `[exag=.. cfg=..]`
 markers steer delivery). Ep1 = "No Car, No Problem" (hero: Mia).
 
 ## Cast (recurring)
-Mia (hero driver), Deuce (driver friend), Rosa, Gigi, **Kelvin — the guy at
-GigWheels who gets drivers on the road** (the founder/face; named in every
-episode's "go to GigWheels, ask for Kelvin" beat). Built once in Blender,
-reused every episode.
+Chara (hero driver — young, hardworking, new in the city), Deuce (veteran
+driver friend), Rosa, Gigi, **Kelvin — the guy at GigWheels who gets drivers on
+the road** (the founder/face; named in every episode's "ask for Kelvin" beat).
+Built once in Blender, reused every episode.
+
+## Ep1 = series-intro / origin film (~2 min, exception to the 30-45s rule)
+The first video introduces the business: narrator carries Chara's arrival in a
+new city and her need for a car, Deuce points her to Kelvin/GigWheels, narrator
+brings them to the lot, then the 3 (Chara, Deuce, Kelvin) talk. TRUTH baked in:
+new drivers are verified in ~24-48h before keys — only returning registered
+drivers get same-day. Weekly episodes after this stay 30-45s.
 
 ## Subtitles (burned in — required every episode)
 Every line, narration and character, gets an on-screen caption. We own the
