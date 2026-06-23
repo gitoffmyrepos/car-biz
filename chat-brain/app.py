@@ -86,6 +86,11 @@ MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
 MAIL_SENDER = os.environ.get("MAIL_SENDER", "admin@strategybase.io")
 MAIL_REPLY_TO = os.environ.get("MAIL_REPLY_TO", "apply@gigwheels.strategybase.io")
 MAIL_SKIP_TLS_VERIFY = os.environ.get("MAIL_SKIP_TLS_VERIFY", "true").lower() == "true"
+# The Proton Bridge catch-all inbox is SHARED across every domain on the account
+# (Job-Application uses apply.strategybase.io on the same mailbox). Only handle
+# mail addressed to our domain so the two agents don't both reply to each other's
+# customers.
+MAIL_RECIPIENT_DOMAIN = os.environ.get("MAIL_RECIPIENT_DOMAIN", "gigwheels.strategybase.io")
 
 # EspoCRM lead-sync (optional — enabled when ESPOCRM_URL is set). Auth as a
 # regular EspoCRM user via the Espo-Authorization header (base64 user:pass).
@@ -612,6 +617,14 @@ def _email_once(imap: "imaplib.IMAP4", start_epoch: float) -> None:
         from_name, from_addr = _parseaddr(hmsg.get("From", ""))
         if _skip_sender(from_addr, hmsg):
             continue
+        # On the shared Proton catch-all, only act on mail addressed to our domain.
+        if EMAIL_BACKEND == "proton":
+            rcpts = " ".join(
+                v for h in ("To", "Cc", "Delivered-To", "X-Original-To", "Envelope-To")
+                for v in (hmsg.get_all(h) or [])
+            ).lower()
+            if MAIL_RECIPIENT_DOMAIN.lower() not in rcpts:
+                continue
         typ, fraw = imap.fetch(num, "(BODY.PEEK[])")
         if typ != "OK" or not fraw or not fraw[0]:
             continue
