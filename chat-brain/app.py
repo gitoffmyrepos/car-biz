@@ -71,6 +71,22 @@ GMAIL_REFRESH_TOKEN = os.environ.get("GMAIL_REFRESH_TOKEN", "")
 EMAIL_POLL_INTERVAL = float(os.environ.get("EMAIL_POLL_INTERVAL", "60"))
 EMAIL_AUTO_SEND = os.environ.get("EMAIL_AUTO_SEND", "true").lower() == "true"
 
+# Email backend: "gmail" (XOAUTH2) or "proton" (Proton Bridge SMTP/IMAP, like the
+# Job-Application). Proton's catch-all domain is RECEIVE-ONLY, so we SEND from a
+# real Proton address (MAIL_SENDER) and put the public alias in Reply-To; inbound
+# arrives at the catch-all (To: apply@gigwheels.strategybase.io). The Bridge runs
+# on the docker VM with a self-signed cert, so TLS verify is skipped on the LAN.
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "gmail").lower()
+MAIL_SMTP_HOST = os.environ.get("MAIL_SMTP_HOST", "")
+MAIL_SMTP_PORT = int(os.environ.get("MAIL_SMTP_PORT", "1025"))
+MAIL_IMAP_HOST = os.environ.get("MAIL_IMAP_HOST", "")
+MAIL_IMAP_PORT = int(os.environ.get("MAIL_IMAP_PORT", "1143"))
+MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
+MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
+MAIL_SENDER = os.environ.get("MAIL_SENDER", "admin@strategybase.io")
+MAIL_REPLY_TO = os.environ.get("MAIL_REPLY_TO", "apply@gigwheels.strategybase.io")
+MAIL_SKIP_TLS_VERIFY = os.environ.get("MAIL_SKIP_TLS_VERIFY", "true").lower() == "true"
+
 # EspoCRM lead-sync (optional — enabled when ESPOCRM_URL is set). Auth as a
 # regular EspoCRM user via the Espo-Authorization header (base64 user:pass).
 ESPOCRM_URL = os.environ.get("ESPOCRM_URL", "").rstrip("/")
@@ -467,6 +483,7 @@ import base64  # noqa: E402
 import email as _email  # noqa: E402
 import imaplib  # noqa: E402
 import smtplib  # noqa: E402
+import ssl  # noqa: E402
 import time as _time  # noqa: E402
 from email.header import decode_header as _decode_header  # noqa: E402
 from email.message import EmailMessage, Message as _Message  # noqa: E402
@@ -519,7 +536,8 @@ def _plain_body(msg: "_Message") -> str:
 def _skip_sender(from_addr: str, msg: "_Message") -> bool:
     """Don't auto-reply to bots, lists, our own address, or bulk mail (loop-safe)."""
     a = (from_addr or "").lower()
-    if not a or a == GMAIL_ADDRESS.lower():
+    own = {GMAIL_ADDRESS.lower(), MAIL_SENDER.lower(), MAIL_REPLY_TO.lower()} - {""}
+    if not a or a in own:
         return True
     if any(s in a for s in ("no-reply", "noreply", "donotreply", "mailer-daemon", "postmaster", "notifications@")):
         return True
@@ -532,15 +550,30 @@ def _skip_sender(from_addr: str, msg: "_Message") -> bool:
 
 def _send_reply(to_addr: str, subject: str, body: str, in_reply_to: str) -> None:
     msg = EmailMessage()
-    msg["From"] = GMAIL_ADDRESS
+    # Proton sends from a real address (catch-all is receive-only) with the public
+    # alias in Reply-To; Gmail sends as itself.
+    msg["From"] = (f"GigWheels <{MAIL_SENDER}>" if EMAIL_BACKEND == "proton" else GMAIL_ADDRESS)
     msg["To"] = to_addr
     msg["Subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+    if EMAIL_BACKEND == "proton":
+        msg["Reply-To"] = MAIL_REPLY_TO
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to
         msg["References"] = in_reply_to
     msg["Auto-Submitted"] = "auto-replied"  # tell other auto-responders not to loop
     msg.set_content(body + "\n\n— GigWheels Assistant (automated). For anything else: "
                            "https://gigwheels.strategybase.io/contact")
+    if EMAIL_BACKEND == "proton":
+        ctx = ssl.create_default_context()
+        if MAIL_SKIP_TLS_VERIFY:
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+        s = smtplib.SMTP(MAIL_SMTP_HOST, MAIL_SMTP_PORT, timeout=30)
+        s.starttls(context=ctx)
+        s.login(MAIL_USERNAME, MAIL_PASSWORD)
+        s.send_message(msg)
+        s.quit()
+        return
     at = _gmail_access_token()
     s = smtplib.SMTP("smtp.gmail.com", 587, timeout=30)
     s.starttls()
@@ -553,7 +586,7 @@ def _send_reply(to_addr: str, subject: str, body: str, in_reply_to: str) -> None
 _email_handled: set = set()  # UIDs we've already acted on this process (mailbox flags untouched)
 
 
-def _email_once(imap: imaplib.IMAP4_SSL, start_epoch: float) -> None:
+def _email_once(imap: "imaplib.IMAP4", start_epoch: float) -> None:
     imap.select("INBOX")
     typ, data = imap.search(None, "UNSEEN")
     if typ != "OK":
@@ -599,16 +632,40 @@ def _email_once(imap: imaplib.IMAP4_SSL, start_epoch: float) -> None:
             log.error("email handle failed for %s: %s", from_addr, e)
 
 
+def _imap_connect_proton() -> "imaplib.IMAP4":
+    """Connect to the Proton Bridge IMAP (STARTTLS, self-signed cert on the LAN)."""
+    imap = imaplib.IMAP4(MAIL_IMAP_HOST, MAIL_IMAP_PORT)
+    ctx = ssl.create_default_context()
+    if MAIL_SKIP_TLS_VERIFY:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    imap.starttls(ssl_context=ctx)
+    imap.login(MAIL_USERNAME, MAIL_PASSWORD)
+    return imap
+
+
 def _email_loop() -> None:
-    if not (GMAIL_REFRESH_TOKEN and GMAIL_ADDRESS):
-        log.info("email agent disabled (no GMAIL_REFRESH_TOKEN)")
-        return
+    proton = EMAIL_BACKEND == "proton"
+    if proton:
+        if not (MAIL_IMAP_HOST and MAIL_USERNAME and MAIL_PASSWORD):
+            log.info("email agent disabled (proton: MAIL_IMAP_HOST/USERNAME/PASSWORD not set)")
+            return
+        who = MAIL_REPLY_TO
+    else:
+        if not (GMAIL_REFRESH_TOKEN and GMAIL_ADDRESS):
+            log.info("email agent disabled (no GMAIL_REFRESH_TOKEN)")
+            return
+        who = GMAIL_ADDRESS
     start_epoch = float(os.environ.get("EMAIL_START_EPOCH", "0")) or _time.time()
-    log.info("email agent started: %s every %ss (auto_send=%s)", GMAIL_ADDRESS, EMAIL_POLL_INTERVAL, EMAIL_AUTO_SEND)
+    log.info("email agent started (%s): %s every %ss (auto_send=%s)",
+             EMAIL_BACKEND, who, EMAIL_POLL_INTERVAL, EMAIL_AUTO_SEND)
     while True:
         try:
-            imap = imaplib.IMAP4_SSL("imap.gmail.com", 993)
-            imap.authenticate("XOAUTH2", lambda x: base64.b64decode(_xoauth2(_gmail_access_token())))
+            if proton:
+                imap = _imap_connect_proton()
+            else:
+                imap = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+                imap.authenticate("XOAUTH2", lambda x: base64.b64decode(_xoauth2(_gmail_access_token())))
             _email_once(imap, start_epoch)
             imap.logout()
         except Exception as e:  # noqa: BLE001 — never let the loop die
