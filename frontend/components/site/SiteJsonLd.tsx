@@ -17,8 +17,8 @@ export function SiteJsonLd() {
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      email: 'support@gigwheels.com',
-      telephone: '+1-555-123-4567',
+      email: 'apply@gigwheels.strategybase.io',
+      telephone: '+1-346-587-1177',
     },
   };
 

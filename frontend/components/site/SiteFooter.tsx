@@ -61,15 +61,16 @@ export function SiteFooter() {
             <h4 className="ed-eyebrow mb-4">Contact</h4>
             <ul className="space-y-3 text-sm ed-muted">
               <li>
-                <a href="mailto:support@gigwheels.com" className="hover:text-white transition-colors">
-                  support@gigwheels.com
+                <a href="mailto:apply@gigwheels.strategybase.io" className="hover:text-white transition-colors break-all">
+                  apply@gigwheels.strategybase.io
                 </a>
               </li>
               <li>
-                <a href="tel:+15551234567" className="hover:text-white transition-colors">
-                  (555) 123-4567
+                <a href="tel:+13465871177" className="hover:text-white transition-colors">
+                  (346) 587-1177
                 </a>
               </li>
+              <li>Katy, TX</li>
             </ul>
             <Link href="/contact" className="ed-cta ed-cta-ghost mt-5 px-5 py-2 text-xs">
               Apply to Rent
