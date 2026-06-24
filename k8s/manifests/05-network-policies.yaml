@@ -184,6 +184,14 @@ spec:
       port: 53
     - protocol: UDP
       port: 53
+  # Allow egress to EspoCRM (gigwheels-crm) for waitlist -> CRM lead sync
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: gigwheels-crm
+    ports:
+    - protocol: TCP
+      port: 80
   # Allow HTTPS egress (for email service, external APIs)
   - to:
     - ipBlock:
