@@ -31,7 +31,7 @@ const MARQUEE_ITEMS = [
 
 const STATS = [
   { value: '2,500+', label: 'Drivers helped' },
-  { value: '$150', label: 'Starting weekly' },
+  { value: '$350', label: 'Starting weekly' },
   { value: '24h', label: 'Approval time' },
   { value: '100%', label: 'Inspected fleet' },
 ];
@@ -67,7 +67,7 @@ const REQUIREMENTS = [
 const FAQ = [
   {
     q: 'How much does it cost per week?',
-    a: 'Rates start at $150/week and vary by vehicle. Every car on the fleet page shows its exact weekly rate and security deposit.',
+    a: 'Rates start at $350/week and vary by vehicle, or $55/day for daily rentals. Sign a 1-month contract (still paid weekly) and save 5% on every weekly payment. Every car on the fleet page shows its exact weekly rate and security deposit.',
   },
   {
     q: 'Do you run a credit check?',
@@ -121,8 +121,9 @@ export default function HomePage() {
               </Reveal>
               <Reveal delay={0.1}>
                 <p className="ed-muted text-lg max-w-xl mb-9 leading-relaxed">
-                  Reliable vehicles for gig and delivery drivers from $150/week. Published prices,
-                  real fleet, approval in 24 hours — no credit check.
+                  Reliable vehicles for gig and delivery drivers from $350/week, or $55/day.
+                  Commit to a 1-month contract and save 5%. Published prices, real fleet,
+                  approval in 24 hours — no credit check.
                 </p>
               </Reveal>
               <Reveal delay={0.15}>

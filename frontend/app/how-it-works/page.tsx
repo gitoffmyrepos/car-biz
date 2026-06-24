@@ -204,6 +204,7 @@ export default function HowItWorksPage() {
                   <span className="text-xl ed-muted mb-2">/week</span>
                 </div>
                 <div className="text-sm ed-muted mt-2">or <span className="text-white font-semibold">$55/day</span> for daily rentals</div>
+                <div className="text-sm ed-muted mt-1">Sign a <span className="text-white font-semibold">1-month contract</span> (still paid weekly) and get <span className="text-gold-light font-semibold">5% off</span> every week — <span className="text-white font-semibold">$332.50/week</span></div>
               </div>
 
               <ul className="space-y-4 mb-8">
@@ -223,7 +224,13 @@ export default function HowItWorksPage() {
                   <svg className="w-5 h-5 text-gold-light flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="ed-muted">No long-term contracts or commitments</span>
+                  <span className="ed-muted">No required long-term contracts &mdash; stay week to week</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-gold-light flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="ed-muted">Commit to a 1-month contract and save 5% on every weekly payment</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <svg className="w-5 h-5 text-gold-light flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

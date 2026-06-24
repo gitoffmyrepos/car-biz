@@ -17,6 +17,9 @@ Verification typically takes about 48 hours after all required documents are sub
 ## Pricing
 Weekly lease rates start at $350 per week, depending on vehicle type and category. The weekly rate includes monthly maintenance service. We also offer daily rentals at $55 per day. Contact the team for specific pricing for a desired category.
 
+## Monthly contract discount
+There are no long-term contracts. The only contract GigWheels offers is a 1-month contract, and it comes with a 5% discount. A driver on the 1-month contract still pays weekly, but receives 5% off the weekly rate for the month. At the standard $350/week that is $332.50/week — about $70 saved over the month — while the driver keeps driving and earning. Drivers who do not want a contract can stay week to week at the regular rate (or rent daily at $55/day); only the 1-month contract earns the 5% discount.
+
 ## Payment methods and schedule
 Accepted payments: Zelle, CashApp, and cash (in person). Payments are weekly. Proof of payment can be uploaded through the customer dashboard for verification. Payment is due on the same weekday each week, based on the pickup day (pick up on Monday → pay every Monday).
 
@@ -48,7 +51,7 @@ GigWheels is built for gig drivers. Using the vehicle for rideshare and delivery
 There is no strict mileage cap for normal gig driving. Any specific mileage terms for your category are confirmed by the team during approval.
 
 ## Minimum term and how long you can keep it
-The lease runs week to week and renews each week as long as payments are current. There is no long fixed contract. Keep the vehicle as long as your account is in good standing; give the team notice when you want to return it.
+The lease runs week to week and renews each week as long as payments are current. There are no long-term contracts; the only contract offered is a 1-month contract (still paid weekly) which earns 5% off the weekly rate. Keep the vehicle as long as your account is in good standing; give the team notice when you want to return it.
 
 ## Returning the vehicle / ending the lease
 To end the lease, contact the team and return the vehicle to the agreed location. The refundable security deposit is returned at the end of the term, minus any damages or outstanding fees.
