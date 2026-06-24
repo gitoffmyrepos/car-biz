@@ -56,7 +56,13 @@ def main():
         raw = os.path.join(WORK, f"a{i:02d}_raw.wav")
         aud = os.path.join(WORK, f"a{i:02d}.wav")
         if kind == "narr":
-            kok(NARR_BEATS[payload], NVOICE, raw)
+            # Prefer the expressive Chatterbox narration (cached by the cbx batch);
+            # fall back to Kokoro if a beat's cbx wav is missing.
+            cbx = os.path.join(ROOT, "narration", "cbx", f"ep01_{payload:02d}.wav")
+            if os.path.exists(cbx) and os.path.getsize(cbx) > 1000:
+                raw = cbx
+            else:
+                kok(NARR_BEATS[payload], NVOICE, raw)
             text = NARR_BEATS[payload]
         else:
             voice, text = CONVO[payload]
