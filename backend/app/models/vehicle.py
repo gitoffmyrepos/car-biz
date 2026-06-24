@@ -69,7 +69,7 @@ class Vehicle(Base):
     weekly_rate: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
         nullable=False,
-        default=Decimal("150.00")
+        default=Decimal("350.00")
     )
     security_deposit: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2),

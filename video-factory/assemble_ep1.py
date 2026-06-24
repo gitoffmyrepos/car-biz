@@ -51,7 +51,7 @@ NARR_BEATS = [  # subtitle text per narration beat (order matches episode01.txt)
 ]
 CONVO = [  # (voice, text) — from episode01_chars.txt
     ("am_onyx",   "Kelvin. This is Chara. Just moved here, ready to work, needs a car."),
-    ("am_michael","Welcome to GigWheels, Chara. You drive, you earn, one simple weekly price. Insurance and maintenance on us."),
+    ("am_michael","Welcome to GigWheels, Chara. You drive, you earn. Three hundred and fifty a week, or fifty five a day. Insurance and maintenance on us."),
     ("af_heart",  "And if I have never rented before?"),
     ("am_michael","We get you verified first — usually a day or two. Once you are cleared, the keys are yours."),
     ("af_heart",  "No dealership. No loan."),

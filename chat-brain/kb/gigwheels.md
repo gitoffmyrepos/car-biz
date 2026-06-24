@@ -15,7 +15,7 @@ No credit check is required. Approval is based on driving history, insurance cov
 Verification typically takes about 48 hours after all required documents are submitted. Once approved, pickup can be the same day or the next business day.
 
 ## Pricing
-Weekly lease rates start at $150 per week, depending on vehicle type and category. The weekly rate includes monthly maintenance service. Contact the team for specific pricing for a desired category.
+Weekly lease rates start at $350 per week, depending on vehicle type and category. The weekly rate includes monthly maintenance service. We also offer daily rentals at $55 per day. Contact the team for specific pricing for a desired category.
 
 ## Payment methods and schedule
 Accepted payments: Zelle, CashApp, and cash (in person). Payments are weekly. Proof of payment can be uploaded through the customer dashboard for verification. Payment is due on the same weekday each week, based on the pickup day (pick up on Monday → pay every Monday).

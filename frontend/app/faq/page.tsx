@@ -40,7 +40,7 @@ const faqItems: FAQItem[] = [
   {
     category: 'Payments',
     question: 'How much does it cost to lease a vehicle weekly?',
-    answer: 'Our weekly lease rates start at $150/week, depending on the vehicle type and category. This rate includes monthly maintenance service. Contact us to get specific pricing for your desired vehicle category.'
+    answer: 'Our weekly lease rates start at $350/week, depending on the vehicle type and category. We also offer daily rentals at $55/day. This rate includes monthly maintenance service. Contact us to get specific pricing for your desired vehicle category.'
   },
   {
     category: 'Payments',
