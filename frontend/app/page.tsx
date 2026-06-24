@@ -111,7 +111,7 @@ export default function HomePage() {
           <div className="ed-container relative z-10 pt-24 pb-16">
             <div className="max-w-2xl">
               <Reveal>
-                <Eyebrow index="01" label="Weekly car leasing" />
+                <Eyebrow index="01" label="Launching soon · Join the waitlist" />
               </Reveal>
               <Reveal delay={0.05}>
                 <h1 className="ed-h1 mt-5 mb-6">
@@ -122,16 +122,16 @@ export default function HomePage() {
               <Reveal delay={0.1}>
                 <p className="ed-muted text-lg max-w-xl mb-9 leading-relaxed">
                   Reliable vehicles for gig and delivery drivers from $350/week, or $55/day.
-                  Commit to a 1-month contract and save 5%. Published prices, real fleet,
-                  approval in 24 hours — no credit check.
+                  We&apos;re launching soon — join the waitlist for first access. Own a car?
+                  List it and earn passive weekly income from day one.
                 </p>
               </Reveal>
               <Reveal delay={0.15}>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <MagneticButton href="/contact" className="ed-cta ed-cta-primary">
-                    Apply now <ArrowRight className="w-4 h-4" />
+                  <MagneticButton href="/waitlist" className="ed-cta ed-cta-primary">
+                    Join the waitlist <ArrowRight className="w-4 h-4" />
                   </MagneticButton>
-                  <GhostCta href="/fleet">Browse the fleet</GhostCta>
+                  <GhostCta href="/waitlist">List your car</GhostCta>
                 </div>
               </Reveal>
 

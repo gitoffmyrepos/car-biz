@@ -37,8 +37,8 @@ export function SiteNav() {
                 {l.label}
               </Link>
             ))}
-            <Link href="/contact" className="ed-cta ed-cta-ghost px-5 py-2 text-xs">
-              Apply
+            <Link href="/waitlist" className="ed-cta ed-cta-ghost px-5 py-2 text-xs">
+              Join waitlist
             </Link>
           </div>
 
@@ -71,8 +71,8 @@ export function SiteNav() {
                 {l.label}
               </Link>
             ))}
-            <Link href="/contact" className="ed-cta ed-cta-ghost mt-2" onClick={close}>
-              Apply
+            <Link href="/waitlist" className="ed-cta ed-cta-ghost mt-2" onClick={close}>
+              Join waitlist
             </Link>
           </div>
         )}
