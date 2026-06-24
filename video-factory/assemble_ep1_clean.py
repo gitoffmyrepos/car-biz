@@ -133,8 +133,13 @@ def main():
        "[vo][m][s]amix=inputs=3:duration=first:dropout_transition=0,"
        "loudnorm=I=-14:TP=-1.5,aformat=channel_layouts=stereo[a]",
        "-map", "[v]", "-map", "[a]", "-shortest",
-       "-c:v", "libx264", "-pix_fmt", "yuv420p",
-       "-c:a", "aac", "-b:a", "192k", "-ac", "2", "-ar", "48000", out)   # 48k stereo = universal
+       # WhatsApp/IG-safe: H.264 High@4.0, yuv420p, CFR 30fps, AAC-LC 44.1k stereo,
+       # and +faststart (moov atom at front) — without faststart WhatsApp rejects
+       # the upload ("could not be sent").
+       "-c:v", "libx264", "-profile:v", "high", "-level", "4.0", "-pix_fmt", "yuv420p",
+       "-r", "30", "-vsync", "cfr",
+       "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-ar", "44100",
+       "-movflags", "+faststart", out)
     print(f"CLEAN EPISODE -> {out}  ({t:.1f}s, voice={NVOICE})")
 
 
