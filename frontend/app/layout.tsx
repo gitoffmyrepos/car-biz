@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: '%s | GigWheels',
   },
   description:
-    'Get a car today, pay just $150/week. Perfect for DoorDash, Uber, and delivery drivers. No credit check needed. Quick approval in 24 hours.',
+    'Get a car today, pay just $350/week. Perfect for DoorDash, Uber, and delivery drivers. No credit check needed. Quick approval in 24 hours.',
   keywords: ['car leasing', 'weekly payments', 'DoorDash car', 'Uber driver', 'delivery driver', 'affordable car rental', 'no credit check'],
   authors: [{ name: 'GigWheels' }],
   alternates: {
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'GigWheels | Weekly Car Rentals for Gig Drivers',
     description:
-      'Get a car today, pay just $150/week. Perfect for DoorDash, Uber, and delivery drivers. No credit check needed.',
+      'Get a car today, pay just $350/week. Perfect for DoorDash, Uber, and delivery drivers. No credit check needed.',
     type: 'website',
     locale: 'en_US',
     siteName: 'GigWheels',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'GigWheels | Weekly Car Rentals for Gig Drivers',
     description:
-      'Get a car today, pay just $150/week. Perfect for gig workers and delivery drivers.',
+      'Get a car today, pay just $350/week. Perfect for gig workers and delivery drivers.',
   },
   robots: {
     index: true,

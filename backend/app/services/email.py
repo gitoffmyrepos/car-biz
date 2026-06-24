@@ -2114,7 +2114,7 @@ For urgent matters: legal@fxweeklylease.com
 
                 <p><strong>Why GigWheels?</strong></p>
                 <ul>
-                    <li><strong>Flexible Weekly Payments</strong> - Starting from just $150/week</li>
+                    <li><strong>Flexible Weekly Payments</strong> - Starting from just $350/week</li>
                     <li><strong>No Long-Term Commitment</strong> - Week-to-week flexibility</li>
                     <li><strong>Premium Vehicles</strong> - Quality, well-maintained fleet</li>
                     <li><strong>Simple Process</strong> - Quick approval and pickup</li>
@@ -2155,7 +2155,7 @@ GETTING STARTED
 4. Drive Away - Once approved, pick up your vehicle and enjoy!
 
 WHY GIGWHEELS?
-- Flexible Weekly Payments - Starting from just $150/week
+- Flexible Weekly Payments - Starting from just $350/week
 - No Long-Term Commitment - Week-to-week flexibility
 - Premium Vehicles - Quality, well-maintained fleet
 - Simple Process - Quick approval and pickup

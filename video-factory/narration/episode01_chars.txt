@@ -5,7 +5,7 @@
 #
 # TRUTH: new driver -> verified in ~24-48h BEFORE keys. No same-day promise here.
 ALEX|am_onyx|Kelvin. This is Chara. Just moved here, ready to work, needs a car.
-KELVIN|am_michael|Welcome to GigWheels, Chara. Here is how it works. You drive, you earn, and you pay one simple weekly price. Insurance and maintenance are on us.
+KELVIN|am_michael|Welcome to GigWheels, Chara. Here is how it works. You drive, you earn. Three hundred and fifty a week, or fifty five a day. Insurance and maintenance are on us.
 CHARA|af_heart|And if I have never rented before?
 KELVIN|am_michael|Then we get you verified first. For a new driver that is usually a day or two — about twenty four to forty eight hours. Once you are cleared, the keys are yours.
 CHARA|af_heart|No dealership. No loan.

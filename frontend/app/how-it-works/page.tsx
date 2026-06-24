@@ -200,9 +200,10 @@ export default function HowItWorksPage() {
               <div className="text-center mb-6">
                 <span className="text-sm font-semibold text-gold-light uppercase tracking-wider">Starting From</span>
                 <div className="flex items-end justify-center gap-1 mt-2">
-                  <span className="text-5xl font-bold text-white">$150</span>
+                  <span className="text-5xl font-bold text-white">$350</span>
                   <span className="text-xl ed-muted mb-2">/week</span>
                 </div>
+                <div className="text-sm ed-muted mt-2">or <span className="text-white font-semibold">$55/day</span> for daily rentals</div>
               </div>
 
               <ul className="space-y-4 mb-8">

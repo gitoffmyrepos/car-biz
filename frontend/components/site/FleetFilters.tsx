@@ -17,9 +17,9 @@ const SORTS: { value: string; label: string }[] = [
 ];
 const PRICE_BANDS: { value: string; label: string; min?: number; max?: number }[] = [
   { value: '', label: 'Any price' },
-  { value: '0-150', label: 'Under $150', max: 150 },
-  { value: '150-250', label: '$150 – $250', min: 150, max: 250 },
-  { value: '250-', label: '$250+', min: 250 },
+  { value: '0-350', label: 'Under $350', max: 350 },
+  { value: '350-450', label: '$350 – $450', min: 350, max: 450 },
+  { value: '450-', label: '$450+', min: 450 },
 ];
 
 export function FleetFilters() {
