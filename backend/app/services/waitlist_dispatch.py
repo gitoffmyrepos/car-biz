@@ -108,9 +108,15 @@ async def dispatch(entry) -> None:
     try:
         subject, html = welcome_email_html(entry)
         from app.services.email import email_service
-        send = getattr(email_service, "send_email", None) or getattr(email_service, "send", None)
-        if send:
-            await send(to=entry.email, subject=subject, html=html)
+        if getattr(email_service, "enabled", False):
+            await email_service._dispatch({
+                "from": email_service.from_email,
+                "to": [entry.email],
+                "subject": subject,
+                "html": html,
+            })
+        else:
+            logger.info("email disabled; would thank waitlist %s", entry.id)
     except Exception as exc:
         logger.error("waitlist welcome email failed for %s: %s", entry.id, exc)
     try:
