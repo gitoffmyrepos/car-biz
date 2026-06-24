@@ -16,10 +16,14 @@ ENDCARD = os.path.join(ROOT, "assets", "endcard_bg.png")
 WORK = os.path.join(ROOT, "build_clean")
 NVOICE = os.environ.get("NARRATOR_KOKORO_VOICE", "af_bella")   # warm + expressive
 GAP = 0.26   # natural breath between lines (smooth, not a hard cut)
-# Clean voice polish: tame rumble, lift presence for clarity/expression, even
-# loudness, tiny edge fades so joins never click. No atempo (it caused artifacts).
-VPOLISH = ("highpass=f=85,equalizer=f=3000:t=q:w=1.2:g=2.5,"
-           "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:d=0.02,afade=t=out:d=0.04")
+# Clean voice polish: tame rumble, lift presence for clarity/expression, tiny
+# edge fades so joins never click. NO per-segment loudnorm — single-pass loudnorm
+# silenced ~half the short clips (the dialogue skips/breaks). One loudnorm runs
+# on the final mix instead. No atempo (it caused artifacts).
+# NOTE: afade=t=out needs a start time; without st it fades from t=0 and silences
+# the whole clip (that was the dialogue dropout bug). Use only a leading fade-in;
+# the silence gaps between segments mask any trailing click.
+VPOLISH = "highpass=f=85,equalizer=f=3000:t=q:w=1.2:g=2.5,afade=t=in:d=0.02"
 
 
 def sh(*a):
@@ -67,18 +71,24 @@ def main():
         else:
             voice, text = CONVO[payload]
             kok(text, voice, raw)
-        sh("ffmpeg", "-y", "-i", raw, "-af", VPOLISH, "-ar", "24000", aud)
+        # Force ONE uniform PCM format (16-bit / 24k / mono) on every segment so
+        # the concat has no format seams (the cause of the dialogue clicks/skips).
+        sh("ffmpeg", "-y", "-i", raw, "-af", VPOLISH,
+           "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", aud)
         segs.append((aud, dur(aud), text, prefix))
 
-    # 2) ONE continuous VO track: seg, gap, seg, gap ... (smooth, no hard cuts)
+    # 2) ONE continuous VO track: seg, gap, seg, gap ... (smooth, no hard cuts).
     sil = os.path.join(WORK, "gap.wav")
-    sh("ffmpeg", "-y", "-f", "lavfi", "-t", str(GAP), "-i", "anullsrc=r=24000:cl=mono", sil)
+    sh("ffmpeg", "-y", "-f", "lavfi", "-t", str(GAP), "-i", "anullsrc=r=24000:cl=mono",
+       "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", sil)
     listf = os.path.join(WORK, "vo_list.txt")
     with open(listf, "w") as f:
         for aud, *_ in segs:
             f.write(f"file '{aud}'\nfile '{sil}'\n")
     vo = os.path.join(WORK, "vo.wav")
-    sh("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listf, "-c", "copy", vo)
+    # Re-encode (NOT copy) so the whole track is one clean stream — no seam glitches.
+    sh("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listf,
+       "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", vo)
 
     # 3) silent scene clips (Ken Burns), logo overlay on brand scenes; subtitle cues
     clips, srt, t = [], [], 0.0
