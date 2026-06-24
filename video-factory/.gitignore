@@ -4,3 +4,4 @@ narration/out/
 *.mp4
 assets/*.png
 assets/*.wav
+narration/cbx/
