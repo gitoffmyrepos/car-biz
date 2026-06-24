@@ -9,6 +9,7 @@ from fastapi import APIRouter
 
 from app.api.auth import router as auth_router
 from app.api.inquiries import router as inquiries_router
+from app.api.waitlist import router as waitlist_router
 from app.api.admin import router as admin_router
 from app.api.admin_vehicle_images import router as admin_vehicle_images_router
 from app.api.customer import router as customer_router
@@ -22,6 +23,7 @@ router = APIRouter()
 # Include sub-routers
 router.include_router(auth_router)
 router.include_router(inquiries_router)
+router.include_router(waitlist_router)
 router.include_router(admin_router)
 router.include_router(admin_vehicle_images_router)
 router.include_router(customer_router)

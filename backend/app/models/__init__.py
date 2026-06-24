@@ -7,6 +7,12 @@ from app.models.inquiry import (
     Timeframe,
     VehicleType,
 )
+from app.models.waitlist import (
+    WaitlistEntry,
+    WaitlistRole,
+    BusinessCategory,
+    WaitlistStatus,
+)
 from app.models.customer_profile import (
     CustomerProfile,
     InsuranceStatus,
@@ -130,4 +136,8 @@ __all__ = [
     "BanRecord",
     "BanReason",
     "BanStatus",
+    "WaitlistEntry",
+    "WaitlistRole",
+    "BusinessCategory",
+    "WaitlistStatus",
 ]
