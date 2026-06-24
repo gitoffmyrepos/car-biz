@@ -44,6 +44,11 @@ const faqItems: FAQItem[] = [
   },
   {
     category: 'Payments',
+    question: 'Do you offer a discount for longer commitments?',
+    answer: 'Yes. If you sign a 1-month contract you still pay weekly, but you get 5% off the weekly rate for the whole month. At the standard $350/week that brings your payment to $332.50/week, saving you about $70 over the month while you keep driving and earning. You stay flexible week to week if you prefer — the discount is simply a reward for committing to the month.'
+  },
+  {
+    category: 'Payments',
     question: 'What payment methods do you accept?',
     answer: 'We accept payments via Zelle, CashApp, and cash (in-person). Payments are due weekly, and you can upload proof of payment through your customer dashboard for verification.'
   },

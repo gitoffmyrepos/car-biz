@@ -107,7 +107,7 @@ const initialFormData: VehicleFormData = {
   body_type: '',
   license_plate: '',
   mileage: '',
-  weekly_rate: 150,
+  weekly_rate: 350,
   security_deposit: '',
   status: 'available',
   condition: 'good',
@@ -602,7 +602,7 @@ export default function AdminVehiclesPage() {
 
   const downloadCSVTemplate = () => {
     const csvContent = 'vin,make,model,year,color,body_type,engine,transmission,mileage,status,condition,weekly_rate,notes\n' +
-      'ABC123,Toyota,Camry,2020,Silver,Sedan,2.5L,Automatic,45000,available,good,150.00,Clean vehicle\n';
+      'ABC123,Toyota,Camry,2020,Silver,Sedan,2.5L,Automatic,45000,available,good,350.00,Clean vehicle\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
