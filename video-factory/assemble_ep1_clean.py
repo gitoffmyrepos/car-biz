@@ -124,13 +124,17 @@ def main():
     style = ("FontName=DejaVu Sans,Bold=1,Fontsize=9,PrimaryColour=&H00FFFFFF,"
              "OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=0,"
              "Alignment=2,MarginV=64,MarginL=70,MarginR=70,WrapStyle=0")
+    # Voice MUST dominate (it's an ad): VO up front, music + SFX kept low under it.
+    # Output stereo AAC for max player/WhatsApp compatibility.
     sh("ffmpeg", "-y", "-i", silent, "-i", vo, "-i", MUSIC, "-i", SFX,
        "-filter_complex",
        f"[0:v]subtitles={srtf}:force_style='{style}'[v];"
-       "[1:a]volume=1.0[vo];[2:a]volume=0.12[m];[3:a]volume=0.4[s];"
-       "[vo][m][s]amix=inputs=3:duration=first:dropout_transition=0,loudnorm=I=-15:TP=-1.5[a]",
+       "[1:a]volume=1.4[vo];[2:a]volume=0.08[m];[3:a]volume=0.14[s];"
+       "[vo][m][s]amix=inputs=3:duration=first:dropout_transition=0,"
+       "loudnorm=I=-14:TP=-1.5,aformat=channel_layouts=stereo[a]",
        "-map", "[v]", "-map", "[a]", "-shortest",
-       "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", out)
+       "-c:v", "libx264", "-pix_fmt", "yuv420p",
+       "-c:a", "aac", "-b:a", "192k", "-ac", "2", "-ar", "48000", out)   # 48k stereo = universal
     print(f"CLEAN EPISODE -> {out}  ({t:.1f}s, voice={NVOICE})")
 
 
