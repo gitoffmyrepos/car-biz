@@ -124,13 +124,13 @@ spec:
             secretKeyRef:
               name: gigwheels-secrets
               key: resend-api-key
-        # Waitlist -> EspoCRM lead sync (key in standalone gigwheels-crm-sync secret)
+        # Waitlist -> EspoCRM lead sync (key from Vault via gigwheels-secrets)
         - name: ESPOCRM_URL
           value: "http://espocrm.gigwheels-crm.svc.cluster.local"
         - name: ESPOCRM_API_KEY
           valueFrom:
             secretKeyRef:
-              name: gigwheels-crm-sync
+              name: gigwheels-secrets
               key: espocrm-api-key
         - name: SMTP_USER
           valueFrom:
