@@ -308,7 +308,9 @@ def _ensure_lead(contact: dict, conv_id: int, first_msg: str) -> None:
             "emailAddress": contact.get("email") or None,
             "phoneNumber": contact.get("phone_number") or contact.get("phone") or None,
             "source": "Web Site",
-            "description": f"{marker} conv={conv_id}. First chat: {first_msg[:240]}",
+            "title": "Chat lead",            # filterable chat-origin marker
+            "tags": ["chat"],                 # real EspoCRM tag once Tags is enabled on Lead
+            "description": f"[chat] {marker} conv={conv_id}. First chat: {first_msg[:240]}",
         }
         cr = _espo("POST", "/api/v1/Lead", json=payload)
         if cr.status_code < 300:
