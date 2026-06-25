@@ -296,15 +296,15 @@ export default function HomePage() {
             </Reveal>
             <Reveal delay={0.05}>
               <p className="ed-muted max-w-xl mx-auto mb-9">
-                Apply today, get approved tomorrow, and drive the same day. No credit check, no long-term contract.
+                We&apos;re launching soon. Join the waitlist for first access — drivers and car owners welcome.
               </p>
             </Reveal>
             <Reveal delay={0.1}>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <MagneticButton href="/contact" className="ed-cta ed-cta-primary">
-                  Apply now <ArrowRight className="w-4 h-4" />
+                <MagneticButton href="/waitlist" className="ed-cta ed-cta-primary">
+                  Join the waitlist <ArrowRight className="w-4 h-4" />
                 </MagneticButton>
-                <GhostCta href="/fleet">See available cars</GhostCta>
+                <GhostCta href="/waitlist">List your car</GhostCta>
               </div>
             </Reveal>
           </div>

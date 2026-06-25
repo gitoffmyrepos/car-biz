@@ -412,7 +412,7 @@ export default function HowItWorksPage() {
               Ready to Get Started?
             </h2>
             <p className="ed-muted text-lg mb-8 max-w-2xl mx-auto">
-              Join our growing community of satisfied customers. Apply today and drive away tomorrow.
+              Join our growing community of drivers and car owners. Get on the waitlist for first access at launch.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/contact" className="ed-cta ed-cta-primary">
