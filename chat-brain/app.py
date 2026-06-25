@@ -321,6 +321,34 @@ def _ensure_lead(contact: dict, conv_id: int, first_msg: str) -> None:
         log.error("lead-sync error conv=%s: %s", conv_id, e)
 
 
+def _ensure_call_lead(from_number: str, call_sid: str) -> None:
+    """Upsert an inbound phone caller as an EspoCRM Lead (deduped by caller number)."""
+    if not ESPOCRM_URL or not from_number:
+        return
+    marker = f"call:from={from_number}"
+    try:
+        q = _espo("GET", "/api/v1/Lead", params={
+            "where[0][type]": "contains", "where[0][attribute]": "description",
+            "where[0][value]": marker, "maxSize": 1})
+        if q.status_code < 300 and (q.json() or {}).get("total", 0) > 0:
+            return
+        payload = {
+            "lastName": f"Caller {from_number[-4:]}" if len(from_number) >= 4 else "Phone Caller",
+            "phoneNumber": from_number,
+            "source": "Web Site",
+            "title": "Call lead",            # filterable phone-origin marker
+            "tags": ["call"],                 # real EspoCRM tag once Tags is enabled on Lead
+            "description": f"[call] {marker} sid={call_sid}. Inbound phone call to GigWheels.",
+        }
+        cr = _espo("POST", "/api/v1/Lead", json=payload)
+        if cr.status_code < 300:
+            log.info("CRM call-lead created for %s", from_number)
+        else:
+            log.warning("CRM call-lead create %s: %s", cr.status_code, cr.text[:160])
+    except Exception as e:  # noqa: BLE001 — best-effort, never break the call
+        log.error("call-lead error %s: %s", from_number, e)
+
+
 def _poll_once() -> None:
     r = _cw("GET", f"/api/v1/accounts/{CW_ACCOUNT_ID}/conversations", params={"status": "open"})
     if r.status_code >= 300:
@@ -469,9 +497,21 @@ def _connect_stream() -> str:
 
 
 @app.api_route("/voice", methods=["GET", "POST"])
-async def voice() -> _Resp:
+async def voice(req: Request) -> _Resp:
     """Telnyx voice webhook entrypoint. With streaming enabled, connect the call
-    to the real-time gateway (Whisper+Kokoro); otherwise greet + <Gather>."""
+    to the real-time gateway (Whisper+Kokoro); otherwise greet + <Gather>.
+    Captures the caller's number as an EspoCRM 'Call lead' (best-effort, non-blocking)."""
+    if req.method == "POST":
+        try:
+            from urllib.parse import parse_qs
+            import asyncio
+            data = parse_qs((await req.body()).decode("utf-8", "ignore"))
+            frm = (data.get("From") or [""])[0].strip()
+            sid = (data.get("CallSid") or data.get("CallSidLegacy") or [""])[0].strip()
+            if frm:  # fire-and-forget so the TeXML greeting returns immediately
+                asyncio.create_task(asyncio.to_thread(_ensure_call_lead, frm, sid))
+        except Exception as e:  # noqa: BLE001
+            log.error("voice lead capture error: %s", e)
     if VOICE_STREAM_ENABLED:
         return _texml(_connect_stream())
     return _texml(_gather(_GREETING))
