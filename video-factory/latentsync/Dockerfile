@@ -5,7 +5,7 @@ FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive PIP_NO_CACHE_DIR=1 HF_HOME=/data/hf
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git ffmpeg libgl1 libglib2.0-0 libsndfile1 build-essential wget \
+        git ffmpeg libgl1 libglib2.0-0 libsndfile1 build-essential cmake pkg-config wget \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
