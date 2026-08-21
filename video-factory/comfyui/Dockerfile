@@ -32,10 +32,13 @@ RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /opt/Comfy
 WORKDIR /opt/ComfyUI
 RUN pip3 install -r requirements.txt
 
-# Models, inputs, outputs all live on the PVC (mounted at /data) — symlink the
-# ComfyUI dirs to it so a model pull persists across restarts.
-RUN rm -rf models input output && \
-    ln -s /data/models models && ln -s /data/input input && ln -s /data/output output
+# Models, inputs, outputs and user state all live on the PVC (mounted at /data) —
+# symlink the ComfyUI dirs to it so pulls and saved work persist across restarts.
+# `user/` holds saved workflows and UI settings; left in the image layer it is wiped
+# on every pod restart (hit 2026-08-21 — installed workflows vanished on rollout).
+RUN rm -rf models input output user && \
+    ln -s /data/models models && ln -s /data/input input && \
+    ln -s /data/output output && ln -s /data/user user
 
 EXPOSE 8188
 # --listen exposes the API; clients POST workflows to /prompt.
