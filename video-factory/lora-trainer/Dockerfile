@@ -24,11 +24,21 @@ WORKDIR /opt
 RUN git clone --depth 1 https://github.com/kohya-ss/musubi-tuner.git /opt/musubi-tuner
 WORKDIR /opt/musubi-tuner
 
-# cu128 wheels — must match the driver the 5090 nodes run (sm_120).
+# cu128 wheels FIRST — must match the driver the 5090 nodes run (sm_120). Installing torch
+# up front means the editable install below sees "torch>=2.7.1" already satisfied and will
+# not pull a CPU build over it.
 RUN pip3 install --break-system-packages --no-cache-dir \
-      torch torchvision --index-url https://download.pytorch.org/whl/cu128 \
- && pip3 install --break-system-packages --no-cache-dir -r requirements.txt \
- && pip3 install --break-system-packages --no-cache-dir accelerate safetensors
+      torch torchvision --index-url https://download.pytorch.org/whl/cu128
+
+# musubi-tuner has NO requirements.txt — it declares deps in pyproject.toml. Install the
+# package itself; -r requirements.txt fails the build outright.
+RUN pip3 install --break-system-packages --no-cache-dir -e . \
+ && pip3 install --break-system-packages --no-cache-dir bitsandbytes
+
+# Fail the BUILD, not a 3-hour training run, if CUDA or the 8-bit optimizer is broken.
+RUN python3 -c "import torch, bitsandbytes; print('torch', torch.__version__)" \
+ && python3 -c "import musubi_tuner" 2>/dev/null || \
+    python3 -c "import sys; sys.path.insert(0,'src'); import musubi_tuner; print('musubi ok')"
 
 # Datasets, base models and LoRA output all live on the shared PVC.
 VOLUME ["/data"]
