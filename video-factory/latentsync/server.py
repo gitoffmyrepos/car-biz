@@ -20,11 +20,17 @@ log = logging.getLogger("latentsync")
 
 LS = "/app/LatentSync"
 CKPT_DIR = os.environ.get("LS_CKPT_DIR", "/data/latentsync/checkpoints")
+
+# LatentSync hard-rejects a face smaller than 50x80 px (image_processor.py) with a
+# RuntimeError, and below ~250px the mouth is too few pixels for sync to be visible at all.
+# Measured on our first pass: wide shots put the face at 55-105px. Dialogue must therefore be
+# rendered as close-ups (see production/period.py PERIOD_CU) before this service is worth
+# calling. 1.6 + stage2_512 gives a 512 face crop instead of 1.5's 256.
 # LatentSync 1.5 unet + the whisper tiny it needs, from the official HF repo.
-HF_REPO = os.environ.get("LS_HF_REPO", "ByteDance/LatentSync-1.5")
+HF_REPO = os.environ.get("LS_HF_REPO", "ByteDance/LatentSync-1.6")
 UNET = os.path.join(CKPT_DIR, "latentsync_unet.pt")
 WHISPER = os.path.join(CKPT_DIR, "whisper", "tiny.pt")
-CONFIG = os.path.join(LS, "configs", "unet", "stage2.yaml")
+CONFIG = os.path.join(LS, "configs", "unet", "stage2_512.yaml")
 
 app = FastAPI()
 _ready = {"weights": False}
