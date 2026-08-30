@@ -12,20 +12,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-# Blackwell-compatible torch (cu128) BEFORE LatentSync's own requirements so its
-# older torch pin doesn't downgrade us onto an sm_120-incompatible build.
-RUN pip install --upgrade pip setuptools wheel Cython && \
-    pip install --index-url https://download.pytorch.org/whl/cu128 \
-        torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
-
+# torch cu128 goes in BEFORE LatentSync's requirements, and its own torch pins plus the
+# cu121 --extra-index-url are stripped, so nothing downgrades us off an sm_120-capable build.
 RUN git clone --depth 1 https://github.com/bytedance/LatentSync.git /app/LatentSync
 WORKDIR /app/LatentSync
-# Install LatentSync deps but DROP its torch pins (we already set cu128 above).
-# Drop LatentSync's torch pins (cu121/2.5.1 would downgrade us off sm_120) and its
-# --extra-index-url line, which would otherwise pull cu121 wheels back in.
-RUN sed -i '/^torch/d; /^torchvision/d; /^torchaudio/d; /^triton/d; /extra-index-url/d' requirements.txt && \
+
+# ONE layer for the whole Python stack. Kaniko snapshots the full filesystem after every RUN,
+# and the torch + CUDA tree is ~10GB; snapshotting it twice is what exhausted the build's
+# ephemeral storage and killed three earlier attempts at exactly this step.
+RUN pip install --upgrade pip setuptools wheel Cython && \
+    pip install --index-url https://download.pytorch.org/whl/cu128 \
+        torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 && \
+    sed -i '/^torch/d; /^torchvision/d; /^torchaudio/d; /^triton/d; /extra-index-url/d' requirements.txt && \
     pip install -r requirements.txt && \
-    pip install "huggingface_hub>=0.23" fastapi "uvicorn[standard]" python-multipart
+    pip install "huggingface_hub>=0.23" fastapi "uvicorn[standard]" python-multipart && \
+    rm -rf /root/.cache /tmp/*
 
 COPY server.py /app/server.py
 WORKDIR /app
